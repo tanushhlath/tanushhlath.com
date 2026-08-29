@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+/*
+  DESIGN TOKENS — v3 (five-route redesign)
+  Dark is the default voice of the site; light is a fully-designed second
+  mode, not an inversion. Both share one accent hierarchy: electric blue
+  dominant, lavender supporting, warm peach used rarely. See DESIGN.md.
+*/
+:root {
+  --color-ink: #090b10;
+  --color-ink-raised: #11141b;
+  --color-ink-raised-2: #171b24;
+  --color-ink-line: rgba(243, 240, 232, 0.1);
+  --color-ink-line-strong: rgba(243, 240, 232, 0.2);
+
+  --color-paper: #f3f0e8;
+  --color-paper-dim: #9ba0ac;
+  --color-paper-faint: #6a6d78;
+
+  --color-azure: #5d6cff;
+  --color-azure-soft: #8b97ff;
+  --color-azure-dim: rgba(93, 108, 255, 0.16);
+
+  --color-ember: #ffb08f;
+  --color-lavender: #a999ff;
+
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-cinematic: cubic-bezier(0.6, 0.02, 0.15, 1);
+
+  --dur-fast: 180ms;
+  --dur-base: 420ms;
+  --dur-slow: 720ms;
+  --dur-cinematic: 1100ms;
+
+  color-scheme: dark;
+}
+
+/* Light mode — a distinct, deliberately designed second palette, not a
+   simple inversion of dark. Applied via [data-theme="light"] set by the
+   blocking script in layout.tsx (see ThemeScript) before first paint. */
+:root[data-theme="light"] {
+  --color-ink: #f4f1e9;
+  --color-ink-raised: #ece9e0;
+  --color-ink-raised-2: #e3ded2;
+  --color-ink-line: rgba(17, 19, 24, 0.1);
+  --color-ink-line-strong: rgba(17, 19, 24, 0.18);
+
+  --color-paper: #111318;
+  --color-paper-dim: #666b76;
+  --color-paper-faint: #8b8f86;
+
+  --color-azure: #4e5dff;
+  --color-azure-soft: #6672e6;
+  --color-azure-dim: rgba(78, 93, 255, 0.1);
+
+  --color-ember: #e98f6e;
+  --color-lavender: #6f63c9;
+
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-raised: var(--color-ink-raised);
+  --color-ink-raised-2: var(--color-ink-raised-2);
+  --color-ink-line: var(--color-ink-line);
+  --color-ink-line-strong: var(--color-ink-line-strong);
+  --color-paper: var(--color-paper);
+  --color-paper-dim: var(--color-paper-dim);
+  --color-paper-faint: var(--color-paper-faint);
+  --color-azure: var(--color-azure);
+  --color-azure-soft: var(--color-azure-soft);
+  --color-azure-dim: var(--color-azure-dim);
+  --color-ember: var(--color-ember);
+  --color-lavender: var(--color-lavender);
+
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-fraunces);
+
+  --breakpoint-xs: 30rem;
+}
+
+html {
+  background: var(--color-ink);
+}
+
+body {
+  position: relative;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Background depth: soft, fixed radial fields. Subconscious, not
+   decorative. Dark leans blue/peach; light is quieter and warmer. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(93, 108, 255, 0.1), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 60%, rgba(255, 176, 143, 0.05), transparent 60%);
+}
+:root[data-theme="light"] body::after {
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(78, 93, 255, 0.06), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 60%, rgba(233, 143, 110, 0.05), transparent 60%);
+}
+
+#main,
+header,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: var(--color-azure);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-azure-soft);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+* {
+  border-color: var(--color-ink-line);
+}
+
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+/* Grain/texture: an extremely subtle noise so large flat panels don't feel
+   like flat UI. Applied once via body::before, not per-section. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+:root[data-theme="light"] body::before {
+  opacity: 0.02;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* A very faint fixed grid, opt-in per section (Archive, Lab) rather than
+   global — a functional texture, not a decorative one. */
+.bg-grid-faint {
+  background-image:
+    linear-gradient(var(--color-ink-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-ink-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+/* Theme switch: while `.theme-transitioning` is on <html> (briefly, see
+   ThemeToggle), color-bearing properties crossfade instead of snapping.
+   Removed right after so it never interferes with ordinary hover/motion
+   transitions. */
+.theme-transitioning,
+.theme-transitioning * {
+  transition:
+    background-color 0.4s var(--ease-standard),
+    border-color 0.4s var(--ease-standard),
+    color 0.4s var(--ease-standard),
+    fill 0.4s var(--ease-standard),
+    stroke 0.4s var(--ease-standard) !important;
+}
+
+/* Native View Transitions: used for card → detail continuity. No-ops
+   safely in browsers without support. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-cinematic);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Custom cursor (desktop, fine-pointer only — see components/misc/Cursor.tsx).
+   The component always mounts; visibility is CSS-driven off the body class
+   the effect toggles, so there's no enable/disable React state to manage. */
+.cursor-dot {
+  opacity: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.has-custom-cursor {
+    cursor: none;
+  }
+  body.has-custom-cursor a,
+  body.has-custom-cursor button {
+    cursor: none;
+  }
+  body.has-custom-cursor .cursor-dot {
+    opacity: 1;
+  }
+}
