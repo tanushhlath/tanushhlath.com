@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/favicon.ico" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Manrope:wght@400..800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
+      Sets data-theme on <html> before first paint — this is what avoids a
+      flash of the wrong theme. Plain inline script, runs synchronously
+      before anything else, no framework needed for this.
+    -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem("theme");
+          var t =
+            s === "light" || s === "dark"
+              ? s
+              : window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark";
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+      })();
+    </script>
+
+    <title>Tanushh Lath — I build, lead, compete, and keep asking better questions.</title>
+    <meta
+      name="description"
+      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
+    />
+    <link rel="canonical" href="https://tanushhlath.com/" />
+
+    <meta property="og:title" content="Tanushh Lath" />
+    <meta
+      property="og:description"
+      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
+    />
+    <meta property="og:url" content="https://tanushhlath.com/" />
+    <meta property="og:site_name" content="Tanushh Lath" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://tanushhlath.com/og-image.svg" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Tanushh Lath" />
+    <meta
+      name="twitter:description"
+      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
+    />
+    <meta name="twitter:image" content="https://tanushhlath.com/og-image.svg" />
+  </head>
+  <body class="bg-ink text-paper antialiased selection:bg-azure selection:text-paper">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

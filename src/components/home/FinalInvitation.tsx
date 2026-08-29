@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { Reveal } from "@/components/motion/Reveal";
 import { Magnetic } from "@/components/ui/Magnetic";
 

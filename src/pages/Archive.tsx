@@ -1,17 +1,14 @@
-import type { Metadata } from "next";
+import { Meta } from "@/lib/Meta";
+import { pageMeta } from "@/pageMeta";
 import { PageHero } from "@/components/ui/PageHero";
 import { ArchiveView } from "@/components/archive/ArchiveView";
 import { getArchive } from "@/lib/content";
-
-export const metadata: Metadata = {
-  title: "Archive",
-  description: "Everything, organized — every project, experience, achievement, and story moment in one filterable list.",
-};
 
 export default function ArchivePage() {
   const entries = getArchive();
   return (
     <>
+      <Meta title={pageMeta.archive.title} description={pageMeta.archive.description} />
       <PageHero
         kicker="Archive"
         title="Everything, organized"

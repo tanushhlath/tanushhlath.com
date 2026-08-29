@@ -4,7 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "runtimeArgs": ["node_modules/vite/bin/vite.js"],
       "port": 3000,
       "autoPort": true
     }

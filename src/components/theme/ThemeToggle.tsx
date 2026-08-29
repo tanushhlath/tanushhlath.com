@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -7,18 +5,18 @@ type Theme = "dark" | "light";
 
 /**
  * Sun/moon theme toggle. Renders the "dark" icon on the server and during
- * the first client render (matching what ThemeScript defaults to when
- * nothing is stored) so hydration never mismatches, then syncs to the
- * real stored theme immediately after mount.
+ * the first client render (matching what the inline script in index.html
+ * defaults to when nothing is stored) so hydration never mismatches, then
+ * syncs to the real stored theme immediately after mount.
  */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Syncing to the theme the pre-paint script (ThemeScript) already
-    // applied to <html> — this can only be read client-side, so an effect
-    // is the correct tool here despite the lint heuristic.
+    // Syncing to the theme the pre-paint inline script in index.html
+    // already applied to <html> — this can only be read client-side, so
+    // an effect is the correct tool here despite the lint heuristic.
     const current = document.documentElement.getAttribute("data-theme");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (current === "light" || current === "dark") setTheme(current);

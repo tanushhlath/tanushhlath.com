@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { site } from "@/content/site";
 import { CopyEmail } from "@/components/ui/CopyEmail";
 

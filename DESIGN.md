@@ -8,7 +8,7 @@ are indie magazines and studio sites, not dashboards.
 
 ## Color
 
-Defined as CSS variables in `src/app/globals.css`, exposed to Tailwind via
+Defined as CSS variables in `src/index.css`, exposed to Tailwind via
 `@theme inline` (Tailwind v4's CSS-based config — there's no
 `tailwind.config.js`).
 
@@ -26,7 +26,8 @@ values in components.
 
 ## Typography
 
-Two fonts, loaded via `next/font/google` in `src/app/layout.tsx`:
+Two fonts, loaded from Google Fonts via `<link>` tags in `index.html`,
+referenced as `--font-fraunces` / `--font-manrope` in `src/index.css`:
 
 - **Fraunces** (`font-display` utility) — an editorial serif with real
   personality, used for all large headings. Its optical-size and softness

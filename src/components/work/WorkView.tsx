@@ -1,8 +1,7 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "@/lib/Link";
+import { useSearchParams } from "react-router-dom";
+import { usePathname, useRouter } from "@/lib/navigation";
 import { motion } from "framer-motion";
 import { Achievement, Experience, Project } from "@/types/content";
 import { ProjectsGrid } from "@/components/work/ProjectsGrid";
@@ -29,7 +28,7 @@ export function WorkView({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initial = searchParams.get("tab");
   const [lens, setLens] = useState<Lens>(
     initial === "did" || initial === "recognized" ? initial : "built"
@@ -39,7 +38,7 @@ export function WorkView({
     setLens(value as Lens);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   return (

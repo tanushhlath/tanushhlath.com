@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { Reveal } from "@/components/motion/Reveal";
 import { Tag, TierTag } from "@/components/ui/Tag";
 import { Achievement } from "@/types/content";

@@ -1,5 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from "@/lib/Image";
+import Link from "@/lib/Link";
 import { Project } from "@/types/content";
 import { Tag, TierTag } from "@/components/ui/Tag";
 import { Reveal } from "@/components/motion/Reveal";

@@ -7,6 +7,9 @@
   dominant, lavender supporting, warm peach used rarely. See DESIGN.md.
 */
 :root {
+  --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-fraunces: "Fraunces", ui-serif, Georgia, serif;
+
   --color-ink: #090b10;
   --color-ink-raised: #11141b;
   --color-ink-raised-2: #171b24;
@@ -39,7 +42,7 @@
 
 /* Light mode — a distinct, deliberately designed second palette, not a
    simple inversion of dark. Applied via [data-theme="light"] set by the
-   blocking script in layout.tsx (see ThemeScript) before first paint. */
+   blocking script in index.html before first paint. */
 :root[data-theme="light"] {
   --color-ink: #f4f1e9;
   --color-ink-raised: #ece9e0;
@@ -84,13 +87,21 @@
 
 html {
   background: var(--color-ink);
+  height: 100%;
 }
 
 body {
   position: relative;
+  min-height: 100%;
   background: var(--color-ink);
   color: var(--color-paper);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+#root {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
 }
 
 /* Background depth: soft, fixed radial fields. Subconscious, not

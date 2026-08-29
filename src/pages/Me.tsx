@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
+import Image from "@/lib/Image";
+import Link from "@/lib/Link";
+import { Meta } from "@/lib/Meta";
+import { pageMeta } from "@/pageMeta";
 import { Reveal } from "@/components/motion/Reveal";
 import { Kicker } from "@/components/ui/Kicker";
 import { PersonalCollage } from "@/components/me/PersonalCollage";
@@ -8,14 +9,10 @@ import { InterestsGrid } from "@/components/care/InterestsGrid";
 import { SkillsView } from "@/components/skills/SkillsView";
 import { site, personalDetails, interests, skills } from "@/lib/content";
 
-export const metadata: Metadata = {
-  title: "Me",
-  description: site.bioShort,
-};
-
 export default function MePage() {
   return (
     <>
+      <Meta title={pageMeta.me.title} description={pageMeta.me.description} />
       <section className="px-5 sm:px-8 pt-36 pb-16 sm:pt-44">
         <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-end">
           <Reveal>

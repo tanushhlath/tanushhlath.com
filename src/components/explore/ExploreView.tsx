@@ -1,8 +1,6 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/Link";
+import { useRouter } from "@/lib/navigation";
 import { motion } from "framer-motion";
 import { ExploreLensKey, getLens, getRandomArchiveEntry } from "@/lib/content";
 import { ProjectCard } from "@/components/work/ProjectCard";

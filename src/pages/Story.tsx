@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
+import { Meta } from "@/lib/Meta";
+import { pageMeta } from "@/pageMeta";
 import { PageHero } from "@/components/ui/PageHero";
 import { TimelineView } from "@/components/story/TimelineView";
 import { ContinueThread } from "@/components/ui/ContinueThread";
 import { getProjectById, timeline } from "@/lib/content";
-
-export const metadata: Metadata = {
-  title: "My Story",
-  description: "How I got here — the stages, turning points, and moments that shaped who I am.",
-};
 
 export default function StoryPage() {
   const chronological = [...timeline].sort((a, b) => a.year - b.year);
@@ -19,6 +15,7 @@ export default function StoryPage() {
 
   return (
     <>
+      <Meta title={pageMeta.story.title} description={pageMeta.story.description} />
       <PageHero
         kicker="My story"
         title="How I got here"

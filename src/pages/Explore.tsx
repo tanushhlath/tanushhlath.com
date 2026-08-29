@@ -1,15 +1,12 @@
-import type { Metadata } from "next";
+import { Meta } from "@/lib/Meta";
+import { pageMeta } from "@/pageMeta";
 import { PageHero } from "@/components/ui/PageHero";
 import { ExploreView } from "@/components/explore/ExploreView";
-
-export const metadata: Metadata = {
-  title: "Explore",
-  description: "Pick a lens and let the site assemble what's relevant from across everything — or skip the choice entirely.",
-};
 
 export default function ExplorePage() {
   return (
     <>
+      <Meta title={pageMeta.explore.title} description={pageMeta.explore.description} />
       <PageHero
         kicker="Explore"
         title="A different way in"

@@ -1,7 +1,5 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { motion } from "framer-motion";
 import { Interest } from "@/types/content";
 import { resolveExperiences, resolveProjects } from "@/lib/content";

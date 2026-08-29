@@ -1,7 +1,6 @@
-"use client";
-
 import { useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "react-router-dom";
+import { usePathname, useRouter } from "@/lib/navigation";
 import { motion } from "framer-motion";
 import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 import { NowPanel } from "@/components/beyond/NowPanel";
@@ -20,7 +19,7 @@ const modes: { value: Mode; label: string; hint: string }[] = [
 export function BeyondView({ labIdeas }: { labIdeas: LabIdea[] }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initial = searchParams.get("tab");
   const [mode, setMode] = useState<Mode>(initial === "next" || initial === "lab" ? initial : "now");
 
@@ -28,7 +27,7 @@ export function BeyondView({ labIdeas }: { labIdeas: LabIdea[] }) {
     setMode(value as Mode);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   return (

@@ -1,7 +1,10 @@
-# [Your Name] — Personal Site
+# Tanushh Lath — Personal Site
 
 A living personal website — not a résumé, not a portfolio template. Built with
-Next.js (App Router) + TypeScript + Tailwind CSS v4 + Framer Motion.
+Vite + React + React Router + TypeScript + Tailwind CSS v4 + Framer Motion.
+No Next.js, no Node.js server required in production — `npm run build`
+produces a fully static site (real HTML per page, pre-rendered at build
+time) that any static host can serve.
 
 ## Quick start
 
@@ -30,7 +33,12 @@ src/
   lib/         ← Reads content, resolves relationships (project → skill → etc).
   components/  ← Presentation. Never edit these to change what's ON the page —
                  edit src/content/ instead.
-  app/         ← Routes. One folder per URL.
+  pages/       ← One file per route (Home, Story, Work, Me, Beyond, ...).
+  routes.tsx   ← The route table — shared by the browser and the static build.
+  main.tsx     ← Browser entry point (hydrates the pre-rendered HTML).
+  entry-server.tsx ← Used only at build time to pre-render every route.
+scripts/
+  prerender.mjs ← Renders every route to a real static index.html in dist/.
 ```
 
 Content, presentation, and components are deliberately kept apart (see
@@ -40,8 +48,15 @@ layout code.
 ## Commands
 
 ```bash
-npm run dev      # local dev server
-npm run build    # production build (also type-checks)
-npm run start    # run the production build locally
+npm run dev      # local dev server (Vite)
+npm run build    # type-checks, builds, and pre-renders every route into dist/
+npm run start    # serve the built dist/ folder locally, exactly as a host would
 npm run lint     # ESLint
 ```
+
+## Deploying
+
+`npm run build` is the only step a host needs to run. The result is a plain
+`dist/` folder of static files — upload it as-is to any static host
+(Netlify, Cloudflare Pages, GitHub Pages, S3, a shared-hosting `public_html`
+folder, etc.). There is no server process to keep running.

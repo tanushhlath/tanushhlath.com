@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { site } from "@/content/site";
 import { staggerContainer, viewportOnce } from "@/lib/motion";

@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { Experience } from "@/types/content";
 import { FeaturedExperienceCard, ExperienceRow, categoryLabel } from "@/components/do/ExperienceCard";

@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "@/lib/Link";
+import { usePathname, useRouter } from "@/lib/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { navGroups, primaryNav } from "@/lib/nav";

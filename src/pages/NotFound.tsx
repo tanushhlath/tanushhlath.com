@@ -1,8 +1,11 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
+import { Meta } from "@/lib/Meta";
+import { pageMeta } from "@/pageMeta";
 
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
     <div className="flex min-h-[70svh] flex-col items-center justify-center px-5 text-center">
+      <Meta title={pageMeta.notFound.title} description={pageMeta.notFound.description} />
       <p className="font-display text-[clamp(4rem,15vw,8rem)] leading-none text-paper">404</p>
       <p className="mt-4 max-w-md text-paper-dim">
         Nothing here — but there&rsquo;s plenty everywhere else. Try exploring instead.

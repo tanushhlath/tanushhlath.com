@@ -1,7 +1,8 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { Experience } from "@/types/content";
 import { Tag, TierTag } from "@/components/ui/Tag";
 
+// eslint-disable-next-line react-refresh/only-export-components -- shared lookup table used by ExperiencesView/WorkView; not worth a separate file for one constant.
 export const categoryLabel: Record<string, string> = {
   leadership: "Leadership",
   competition: "Competition",

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/Link";
 import { timeline } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 import { Kicker } from "@/components/ui/Kicker";
