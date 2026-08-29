@@ -3,9 +3,16 @@
 ## What gets deployed
 
 `npm run build` produces a `dist/` folder of plain static files — real HTML
-for every page (pre-rendered at build time), CSS, JS, and images. There is
-no server process, no Node.js runtime, and no framework-specific hosting
-requirement. Any static host works: upload `dist/` and you're done.
+for every page (pre-rendered at build time, JS/CSS inlined so each page is
+fully self-contained), plus images and favicons. There is no server
+process, no Node.js runtime, and no framework-specific hosting requirement.
+Any static host works: upload `dist/` and you're done.
+
+The same output is also mirrored onto the project root itself (root
+`index.html` plus `story/`, `work/`, `me/`, etc.) so the primary project
+folder always has a working copy you can double-click open locally with no
+build/server step — but for hosting, upload `dist/` (or the mirrored root
+files) either way works since they're identical.
 
 This means you can use **any** of the following — pick whichever is
 easiest for you, there's no "recommended" one anymore:
@@ -35,8 +42,10 @@ a set of nameservers), and the host provisions HTTPS automatically.
 
 Once your real domain is live, update the site URL in these two places:
 
-- `index.html` — the `og:url`, `og:image`, `twitter:image`, and canonical
-  values reference `https://tanushhlath.com`.
+- `dev.html` — the `og:url`, `og:image`, `twitter:image`, and canonical
+  values reference `https://tanushhlath.com`. (This is the real source
+  file; root `index.html` is generated from it by `npm run build` — don't
+  edit `index.html` directly, it gets overwritten.)
 - `scripts/prerender.mjs` — the `SITE_URL` constant, used for every page's
   canonical link, Open Graph URL, and `sitemap.xml`.
 

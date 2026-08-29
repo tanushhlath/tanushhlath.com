@@ -38,8 +38,19 @@ src/
   main.tsx     ← Browser entry point (hydrates the pre-rendered HTML).
   entry-server.tsx ← Used only at build time to pre-render every route.
 scripts/
-  prerender.mjs ← Renders every route to a real static index.html in dist/.
+  prerender.mjs        ← Renders every route to a real static index.html in dist/.
+  copy-dist-to-root.mjs ← Mirrors dist/ onto the project root after a build.
+  restore-dev-index.mjs ← Copies dev.html back over index.html before dev/build.
+dev.html       ← The real Vite entry (edit this for <head>/meta changes).
 ```
+
+Root `index.html` — and the `story/`, `work/`, `me/`, `beyond/`, `archive/`,
+`explore/`, `images/` folders, favicons, `sitemap.xml`, and `robots.txt`
+next to it — are **generated**. Every `npm run build` overwrites them with
+the freshly compiled site, so the primary project folder always has a
+working, self-contained copy of the whole site (double-click `index.html`
+to open it, no server needed). Don't hand-edit any of those; edit
+`dev.html` and the files under `src/` instead, then rebuild.
 
 Content, presentation, and components are deliberately kept apart (see
 `CONTENT_GUIDE.md`) so that updating your information never means touching
