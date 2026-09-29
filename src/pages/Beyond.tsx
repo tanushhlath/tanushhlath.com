@@ -1,23 +1,12 @@
-import { Meta } from "@/lib/Meta";
-import { pageMeta } from "@/pageMeta";
-import { PageHero } from "@/components/ui/PageHero";
 import { BeyondView } from "@/components/beyond/BeyondView";
-import { byYearDesc, labIdeas } from "@/lib/content";
 
+/**
+ * /beyond/ — Now, Next and Lab. Everything lives in src/components/beyond/
+ * (BeyondView) and src/components/lab/ (LabView); the words come from
+ * src/content/pages.ts (pages.beyond, beyondModes, beyondCopy), now.ts,
+ * next.ts and lab.ts. The page's <title>/meta come from the route table
+ * (App mounts <Meta/>).
+ */
 export default function BeyondPage() {
-  return (
-    <>
-      <Meta title={pageMeta.beyond.title} description={pageMeta.beyond.description} />
-      <PageHero
-        kicker="Beyond"
-        title="What's alive, and what's next"
-        intro="Not a repeat of Work — this is the living, forward-looking side of things."
-      />
-      <div className="px-5 sm:px-8 pb-32">
-        <div className="mx-auto max-w-4xl">
-          <BeyondView labIdeas={byYearDesc(labIdeas)} />
-        </div>
-      </div>
-    </>
-  );
+  return <BeyondView />;
 }

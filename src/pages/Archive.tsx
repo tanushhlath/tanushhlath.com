@@ -1,24 +1,28 @@
-import { Meta } from "@/lib/Meta";
-import { pageMeta } from "@/pageMeta";
-import { PageHero } from "@/components/ui/PageHero";
 import { ArchiveView } from "@/components/archive/ArchiveView";
-import { getArchive } from "@/lib/content";
+import { PageHero } from "@/components/ui";
+import { pages } from "@/lib/content";
 
+/**
+ * /archive/ — everything, organized: every project, event and story
+ * moment on one searchable, filterable list, derived from the content
+ * files (see src/components/archive/archiveModel.ts). Copy lives in
+ * src/content/pages.ts (`pages.archive`, `archiveCopy`); styles in
+ * src/styles/archive.css. <title>/meta come from App's <Meta/>.
+ */
 export default function ArchivePage() {
-  const entries = getArchive();
+  const copy = pages.archive;
   return (
-    <>
-      <Meta title={pageMeta.archive.title} description={pageMeta.archive.description} />
+    <div className="archive-page">
       <PageHero
-        kicker="Archive"
-        title="Everything, organized"
-        intro="The featured pages show what matters most. This shows all of it — filter by type or year to find something specific."
+        variant="compact"
+        className="ar-hero"
+        kicker={copy.kicker}
+        kickerTone="quiet"
+        title={copy.heading ?? copy.title}
+        intro={copy.intro}
+        headingId="archive-title"
       />
-      <div className="px-5 sm:px-8 pb-32">
-        <div className="mx-auto max-w-4xl">
-          <ArchiveView entries={entries} />
-        </div>
-      </div>
-    </>
+      <ArchiveView />
+    </div>
   );
 }

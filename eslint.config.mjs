@@ -6,7 +6,8 @@ import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
 export default tseslint.config(
-  globalIgnores(["dist", "dist-ssr", "node_modules"]),
+  // dist/ and its mirror on the project root (assets/app.js…) are build output.
+  globalIgnores(["dist", "dist-ssr", "node_modules", "assets", "private-media", "Portfolio Media"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -25,7 +26,16 @@ export default tseslint.config(
     },
   },
   {
-    files: ["scripts/**/*.mjs", "vite.config.ts"],
+    files: ["scripts/**/*.mjs"],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: globals.node,
+    },
+  },
+  {
+    files: ["vite.config.ts"],
     languageOptions: {
       globals: globals.node,
     },

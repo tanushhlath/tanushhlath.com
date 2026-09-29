@@ -1,38 +1,28 @@
-import { Meta } from "@/lib/Meta";
-import { pageMeta } from "@/pageMeta";
-import { PageHero } from "@/components/ui/PageHero";
-import { TimelineView } from "@/components/story/TimelineView";
-import { ContinueThread } from "@/components/ui/ContinueThread";
-import { getProjectById, timeline } from "@/lib/content";
+import { StoryHero } from "@/components/story/StoryHero";
+import { StoryOnward } from "@/components/story/StoryOnward";
+import { StoryTimeline } from "@/components/story/StoryTimeline";
+import { getStoryModel } from "@/components/story/storyModel";
 
-export default function StoryPage() {
-  const chronological = [...timeline].sort((a, b) => a.year - b.year);
-
-  const latest = [...chronological].reverse().find((e) => e.relatedProjects?.length);
-  const latestProject = latest?.relatedProjects?.[0]
-    ? getProjectById(latest.relatedProjects[0])
-    : undefined;
-
+/**
+ * STORY — how I got here, as a narrative timeline.
+ *
+ *   #story-intro     heading + the chapters as a row of date markers
+ *   #story-timeline  sticky year marker, a spine that fills with scroll,
+ *                    chapters (#chapter-…) opening out of their date
+ *                    markers, moments (#<moment-id>) and quote moments
+ *   #story-onward    the project it led to, then Work / Me / Beyond
+ *
+ * Content: src/content/story.ts (moments, chapters = consecutive `era`s)
+ * and src/content/pages.ts (`pages.story`, `storyCopy`).
+ * Styles: src/styles/story.css. <title>/meta come from App's <Meta/>.
+ */
+export default function Story() {
+  const model = getStoryModel();
   return (
-    <>
-      <Meta title={pageMeta.story.title} description={pageMeta.story.description} />
-      <PageHero
-        kicker="My story"
-        title="How I got here"
-        intro="Not a résumé timeline — the actual shape of it, including the parts that didn't look like progress at the time. Click any moment for the fuller version."
-      />
-      <div className="px-5 sm:px-8 pb-16">
-        <div className="mx-auto max-w-3xl">
-          <TimelineView events={chronological} />
-        </div>
-      </div>
-      {latestProject && (
-        <ContinueThread
-          threads={[
-            { lead: "This is where the story led", title: latestProject.title, href: `/work/${latestProject.slug}` },
-          ]}
-        />
-      )}
-    </>
+    <div className="story-page">
+      <StoryHero chapters={model.chapters} pageIndex={model.pageIndex} />
+      <StoryTimeline model={model} />
+      <StoryOnward model={model} />
+    </div>
   );
 }

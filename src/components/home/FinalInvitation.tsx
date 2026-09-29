@@ -1,37 +1,89 @@
-import Link from "@/lib/Link";
-import { Reveal } from "@/components/motion/Reveal";
-import { Magnetic } from "@/components/ui/Magnetic";
+import { useRef } from "react";
+import { motion } from "framer-motion";
+import { Parallax, Stagger, StaggerItem, TextReveal, useDepthEnabled, useSectionProgress } from "@/animations";
+import Link from "@/routing/Link";
+import { home, navigation } from "@/lib/content";
+import { pathOf } from "@/routing/paths";
+import { pad, splitSentences, type ScrollOffsets } from "./homeUtils";
 
-const links = [
-  { href: "/work", label: "See the full body of work" },
-  { href: "/beyond", label: "See what's next" },
-  { href: "/explore", label: "Explore a different way" },
-  { href: "/archive", label: "Enter the archive" },
-];
+/**
+ * FINALE — "That's the surface. There's a lot more underneath."
+ *
+ * The line is taken literally: the first sentence sits above a hairline
+ * (the surface) and the second below it. As the section scrolls in, the
+ * surface draws out from the centre and the two sentences part — the
+ * upper one rising, the lower one sinking — so the page ends on depth.
+ * Then four ways further in, each a tile with the destination's one-line
+ * description from the menu copy.
+ */
+
+/** The surface line draws from 0 → full width as the heading approaches the centre. */
+const LINE_RANGE: ScrollOffsets = ["start 0.9", "center 0.5"];
+
+const MENU_ITEMS = [navigation.home, ...navigation.primary, ...navigation.secondary];
+
+/** The menu description of the page a link lands on ("/beyond/#next" → Beyond's). */
+function describe(href: string): string | undefined {
+  const path = pathOf(href);
+  return MENU_ITEMS.find((item) => pathOf(item.href) === path)?.description;
+}
 
 export function FinalInvitation() {
+  const copy = home.finale;
+  const [surface, ...rest] = splitSentences(copy.heading);
+  const under = rest.join(" ");
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const progress = useSectionProgress(headingRef, LINE_RANGE);
+  const live = useDepthEnabled();
+
   return (
-    <section className="border-t border-ink-line px-5 sm:px-8 py-28 sm:py-36 text-center">
-      <div className="mx-auto max-w-3xl">
-        <Reveal>
-          <h2 className="font-display text-balance text-[clamp(2rem,6vw,4rem)] leading-tight text-paper">
-            That&rsquo;s the surface. There&rsquo;s a lot more underneath.
-          </h2>
-        </Reveal>
-        <Reveal delay={0.1} className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          {links.map((l) => (
-            <Magnetic key={l.href} strength={0.2}>
-              <Link
-                href={l.href}
-                data-cursor="view"
-                data-cursor-label="Go"
-                className="inline-block rounded-full border border-ink-line px-5 py-2.5 text-sm text-paper-dim transition-colors duration-200 hover:border-azure-soft hover:text-azure-soft"
-              >
-                {l.label}
-              </Link>
-            </Magnetic>
-          ))}
-        </Reveal>
+    <section id="more" className="home-section home-finale" aria-labelledby="home-finale-title">
+      <div className="home-container">
+        {/* One copy of the text: the aria-label names the heading; the two
+            animated sentences are its only text, hidden from assistive tech. */}
+        <h2 ref={headingRef} id="home-finale-title" className="home-finale__heading" aria-label={copy.heading}>
+          <span aria-hidden="true" className="home-finale__lines">
+            <Parallax as="span" speed={0.12} className="home-finale__surface">
+              <TextReveal as="span" text={surface ?? copy.heading} srText={false} />
+            </Parallax>
+            {under && (
+              <>
+                {" "}
+                <span className="home-finale__line">
+                  <motion.span className="home-finale__line-fill" style={live ? { scaleX: progress } : undefined} />
+                </span>
+                <Parallax as="span" speed={-0.12} className="home-finale__under">
+                  <TextReveal as="span" text={under} delay={0.25} srText={false} />
+                </Parallax>
+              </>
+            )}
+          </span>
+        </h2>
+
+        <Stagger as="ul" variant="scale" gap={0.07} className="home-finale__links">
+          {copy.links.map((link, i) => {
+            const description = describe(link.href);
+            return (
+              <StaggerItem as="li" key={link.href}>
+                <Link href={link.href} className="home-finale__tile" data-cursor="explore" data-cursor-label="Go">
+                  <span className="home-finale__index" aria-hidden="true">
+                    {pad(i + 1)}
+                  </span>
+                  <span className="home-finale__label">{link.label}</span>
+                  {description && (
+                    <>
+                      {" "}
+                      <span className="home-finale__desc">{description}</span>
+                    </>
+                  )}
+                  <span className="home-finale__arrow" aria-hidden="true">
+                    →
+                  </span>
+                </Link>
+              </StaggerItem>
+            );
+          })}
+        </Stagger>
       </div>
     </section>
   );

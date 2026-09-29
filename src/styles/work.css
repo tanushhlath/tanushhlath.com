@@ -1,0 +1,2482 @@
+/*
+  WORK — /work/ (Built · Did · Recognized · All).
+  Components: src/components/work/*. Imported from src/index.css.
+
+  Every class here is prefixed `wk-` (or scoped under .work-page) so
+  nothing leaks into other pages. The file is unlayered on purpose: it
+  also tunes shared parts on this page (tabs, filter chips, tags, links,
+  media covers), and those rules must win over their generic styles.
+
+  Contents
+    1. Page shell + tokens
+    2. Shared parts on this page (kicker, tags, links, tabs, filters)
+    3. Hero (heading, media fragments, lens switcher)
+    4. Lens head (ghost word, displaced intro) + stage
+    5. BUILT      featured compositions, compact cards
+    6. Project art (generated visuals for projects without photos)
+    7. DID        timeline spine, sticky years, rows
+    8. RECOGNIZED results as type
+    9. ALL        year ribbon, mosaic, compact rows
+   10. Dock, coda, empty state
+   11. Atmosphere per lens (the page background shifts with the lens)
+   12. Responsive + reduced motion
+*/
+
+/* ================================================================== */
+/* 1. Page shell + tokens                                              */
+/* ================================================================== */
+
+.work-page {
+  --wk-gutter: var(--page-gutter);
+  --wk-max: var(--page-max);
+  /* Room under the fixed top bar for sticky elements. */
+  --wk-top: 6.25rem;
+  --wk-hair: var(--color-ink-line);
+  --wk-hair-strong: var(--color-ink-line-strong);
+  --wk-radius: 22px;
+  --wk-ease: var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+  --wk-glass: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  position: relative;
+  /* The site footer brings its own top margin; the coda needs little more. */
+  padding-bottom: clamp(1rem, 2.5vw, 2rem);
+}
+
+.wk-shell {
+  width: min(100% - 2 * var(--wk-gutter), var(--wk-max));
+  margin-inline: auto;
+}
+
+.work-page :where(h1, h2, h3, h4, p, ol, ul, dl, dd, blockquote) {
+  margin: 0;
+}
+.work-page :where(ol, ul) {
+  list-style: none;
+  padding: 0;
+}
+/* Zero-specificity scope so every link class below (and ui.css) can set its own colour. */
+:where(.work-page) a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ================================================================== */
+/* 2. Shared parts on this page                                        */
+/* ================================================================== */
+
+/*
+  Kicker, Tag, ExternalLink, ArrowLink, SegmentedTabs and FilterBar use
+  their site defaults (styles/ui.css). Only Work-specific variants live
+  here.
+*/
+
+.work-page .ext-link {
+  font-size: 0.92rem;
+}
+
+/* The inline "Open" affordance inside cards and rows: the arrow slides
+   through when its card is hovered or focused (same motion as ArrowLink). */
+.wk-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-open__arrow {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1.2em;
+  overflow: hidden;
+}
+.wk-open__glyph {
+  position: absolute;
+  inset: 0;
+  display: block;
+  line-height: 1.2em;
+  transition: transform 0.45s var(--wk-ease);
+}
+.wk-open__glyph--next {
+  transform: translateX(-120%);
+}
+a:is(:hover, :focus-visible) .wk-open .wk-open__glyph:not(.wk-open__glyph--next) {
+  transform: translateX(120%);
+}
+a:is(:hover, :focus-visible) .wk-open .wk-open__glyph--next {
+  transform: translateX(0);
+}
+
+/* Lens switcher: the editorial tabs, a touch larger, hints aligned under
+   the label (past the index numeral). */
+.work-page .seg-tabs--editorial .seg-tabs__label {
+  font-size: clamp(1.45rem, 2.7vw, 2.35rem);
+}
+.work-page .seg-tabs__hint {
+  padding-left: 1.3rem;
+}
+
+/* Covers inside this page's cards keep the card's corners. */
+.work-page .media-cover {
+  border-radius: inherit;
+}
+
+/* ================================================================== */
+/* 3. Hero                                                             */
+/* ================================================================== */
+
+.wk-hero {
+  position: relative;
+  isolation: isolate;
+  padding-top: clamp(7.5rem, 17vh, 11.5rem);
+}
+
+.wk-hero__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.wk-hero__copy {
+  max-width: min(64rem, 100%);
+}
+
+.wk-hero__kicker {
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.wk-hero__title {
+  font-family: var(--font-display);
+  font-weight: 340;
+  font-size: clamp(3rem, 8.4vw, 8rem);
+  line-height: 0.94;
+  letter-spacing: -0.038em;
+  max-width: 11.5ch;
+  text-wrap: balance;
+  color: var(--color-paper);
+}
+
+/* The verb that belongs to the active lens: colour + an underline that draws in. */
+.wk-hero__title .text-reveal__piece {
+  background-image: linear-gradient(var(--color-azure), var(--color-azure));
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 0% 0.055em;
+  transition:
+    color 0.6s var(--wk-ease),
+    background-size 0.8s var(--motion-ease-cinematic, ease);
+}
+.wk-hero__title .wk-hero__verb {
+  color: var(--color-azure-soft);
+  background-size: 100% 0.055em;
+}
+
+.wk-hero__intro {
+  margin-top: clamp(1.4rem, 2.6vw, 2.1rem);
+  max-width: 34rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  line-height: 1.55;
+  color: var(--color-paper-dim);
+}
+
+.wk-hero__lenses {
+  margin-top: clamp(2.75rem, 6vw, 5rem);
+}
+
+/* Media fragments: real event photos floating at different depths. */
+.wk-hero__fragments {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(100deg, transparent 38%, #000 62%);
+  mask-image: linear-gradient(100deg, transparent 38%, #000 62%);
+}
+.wk-hero__fragment {
+  position: absolute;
+  display: block;
+  width: var(--wk-frag-w);
+}
+.wk-hero__fragment[data-slot="0"] {
+  --wk-frag-w: clamp(150px, 17vw, 270px);
+  --wk-frag-r: 4deg;
+  right: calc(var(--wk-gutter) + 1%);
+  top: 20%;
+}
+.wk-hero__fragment[data-slot="1"] {
+  --wk-frag-w: clamp(120px, 13vw, 210px);
+  --wk-frag-r: -5deg;
+  right: calc(var(--wk-gutter) + 20%);
+  top: 44%;
+}
+.wk-hero__fragment[data-slot="2"] {
+  --wk-frag-w: clamp(110px, 11.5vw, 185px);
+  --wk-frag-r: 6deg;
+  right: calc(var(--wk-gutter) - 1%);
+  top: 55%;
+}
+.wk-hero__fragment[data-slot="3"] {
+  --wk-frag-w: clamp(90px, 8.5vw, 140px);
+  --wk-frag-r: -3deg;
+  right: calc(var(--wk-gutter) + 28%);
+  top: 17%;
+}
+.wk-hero__fragment-reveal {
+  display: block;
+}
+.wk-hero__fragment-inner {
+  display: block;
+  rotate: var(--wk-frag-r);
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0.8;
+  box-shadow: var(--depth-shadow-lg);
+  outline: 1px solid var(--wk-hair-strong);
+  outline-offset: -1px;
+}
+.wk-hero__fragment[data-slot="3"] .wk-hero__fragment-inner {
+  opacity: 0.62;
+  filter: saturate(0.7);
+}
+:root[data-theme="light"] .wk-hero__fragment-inner {
+  opacity: 0.92;
+}
+
+/* ================================================================== */
+/* 4. Lens head + stage                                                */
+/* ================================================================== */
+
+.wk-lenses {
+  position: relative;
+  padding-top: clamp(3rem, 7vw, 6rem);
+}
+
+.wk-lenshead {
+  position: relative;
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+  padding-bottom: clamp(2.25rem, 4.5vw, 3.5rem);
+}
+
+/* The lens word, huge and outlined, sliding in the direction of travel. */
+.wk-lenshead__ghost {
+  position: absolute;
+  z-index: -1;
+  top: -0.42em;
+  left: -0.06em;
+  right: 0;
+  font-family: var(--font-display);
+  font-size: clamp(5.5rem, 18vw, 17rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.wk-lenshead__ghost-word {
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-paper) 13%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-azure) 10%, transparent), transparent 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.wk-lenshead__intro {
+  position: relative;
+  max-width: 24ch;
+  min-height: 2.4em;
+  padding-top: clamp(2.5rem, 7vw, 6.5rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.4vw, 2.8rem);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  font-weight: 350;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+
+.wk-displace {
+  position: relative;
+  display: block;
+}
+.wk-displace__line {
+  display: block;
+}
+.wk-displace__mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.08em 0.04em 0.16em;
+  margin: -0.08em -0.04em -0.16em;
+}
+.wk-displace__word {
+  display: inline-block;
+}
+
+.wk-filters {
+  max-width: 100%;
+}
+
+.wk-stage {
+  position: relative;
+  min-height: 60vh;
+}
+.wk-stage__lens {
+  position: relative;
+}
+
+/* ================================================================== */
+/* 5. BUILT                                                            */
+/* ================================================================== */
+
+.wk-built {
+  display: grid;
+  gap: clamp(5.5rem, 13vw, 11rem);
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.wk-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(0, 1fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: center;
+}
+.wk-feature[data-side="end"] .wk-feature__visual {
+  order: 2;
+}
+
+.wk-feature__visual {
+  position: relative;
+}
+
+.wk-feature__numeral {
+  position: absolute;
+  z-index: 0;
+  top: -0.55em;
+  left: -0.1em;
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 15vw, 14rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--wk-hair-strong);
+  pointer-events: none;
+  user-select: none;
+}
+.wk-feature[data-side="end"] .wk-feature__numeral {
+  left: auto;
+  right: -0.1em;
+}
+
+/* A second plane behind the stage — the frame's shadow in space. */
+.wk-feature__plane {
+  position: absolute;
+  z-index: 0;
+  inset: 9% -3.5% -7% 7%;
+  border: 1px solid var(--wk-hair-strong);
+  border-radius: calc(var(--wk-radius) + 8px);
+  background:
+    radial-gradient(90% 70% at 100% 100%, color-mix(in srgb, var(--color-lavender) 12%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--color-azure-dim), transparent 62%);
+}
+.wk-feature[data-side="end"] .wk-feature__plane {
+  inset: 9% 7% -7% -3.5%;
+}
+
+.wk-feature__frame {
+  position: relative;
+  z-index: 1;
+}
+.wk-feature__tilt {
+  border-radius: calc(var(--wk-radius) + 4px);
+}
+.wk-feature__stage {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: calc(var(--wk-radius) + 4px);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--color-ink-raised);
+  box-shadow: var(--depth-shadow-lg);
+  outline: 1px solid var(--wk-hair-strong);
+  outline-offset: -1px;
+}
+.wk-feature__cover,
+.wk-feature__mask {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+}
+.wk-feature__mask-inner {
+  position: absolute;
+  inset: 0;
+}
+/* Taller than the frame so the scroll-linked crop never shows an edge. */
+.wk-feature__crop {
+  position: absolute;
+  inset: -9% 0;
+  display: block;
+}
+
+.wk-feature__text {
+  display: grid;
+  gap: 1.3rem;
+  align-content: center;
+  max-width: 34rem;
+}
+.wk-feature__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-feature__index {
+  margin-right: 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-azure-soft);
+  font-variant-numeric: tabular-nums;
+}
+.wk-feature__title {
+  font-family: var(--font-display);
+  font-weight: 380;
+  font-size: clamp(2.1rem, 4.3vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.wk-feature__title-link {
+  transition: color 0.3s ease;
+}
+.wk-feature__title-link:hover {
+  color: var(--color-azure-soft);
+}
+.wk-feature__summary {
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  line-height: 1.62;
+  color: var(--color-paper-dim);
+}
+.wk-feature__beat {
+  display: grid;
+  gap: 0.4rem;
+  padding-left: 1.1rem;
+  border-left: 1px solid var(--color-azure);
+}
+.wk-feature__beat-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-feature__beat-text {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--color-paper);
+}
+.wk-feature__tools {
+  display: grid;
+  gap: 0.55rem;
+}
+.wk-feature__tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.wk-feature__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.6rem;
+  padding-top: 0.4rem;
+}
+.wk-feature__open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 1.4rem 0 1.5rem;
+  border-radius: 999px;
+  background: var(--color-accent-solid);
+  color: var(--color-on-accent);
+  font-weight: 650;
+  font-size: 0.92rem;
+  box-shadow: 0 12px 30px -14px color-mix(in srgb, var(--color-azure) 80%, transparent);
+  transition:
+    transform 0.35s var(--wk-ease),
+    box-shadow 0.35s ease;
+}
+.wk-feature__open:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px -14px color-mix(in srgb, var(--color-azure) 90%, transparent);
+}
+
+/* Compact project cards */
+.wk-built__more {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: clamp(1.25rem, 2.6vw, 2rem);
+}
+.wk-built__item {
+  display: flex;
+}
+.wk-pcard {
+  display: flex;
+  width: 100%;
+  border-radius: var(--wk-radius);
+}
+.wk-pcard__link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: var(--wk-radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: color-mix(in srgb, var(--color-ink-raised) 92%, transparent);
+  border: 1px solid var(--wk-hair);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.45s ease;
+}
+.wk-pcard__link:hover {
+  border-color: color-mix(in srgb, var(--color-azure) 45%, transparent);
+  box-shadow: var(--depth-shadow-md);
+}
+.wk-pcard__visual {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: calc(var(--wk-radius) - 1px) calc(var(--wk-radius) - 1px) 0 0;
+}
+.wk-pcard__body {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.35rem 1.5rem 1.5rem;
+}
+.wk-pcard__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-pcard__index {
+  color: var(--color-azure-soft);
+  font-variant-numeric: tabular-nums;
+}
+.wk-pcard__status {
+  color: var(--color-paper-dim);
+}
+.wk-pcard__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  transition: color 0.3s ease;
+}
+.wk-pcard__link:hover .wk-pcard__title {
+  color: var(--color-azure-soft);
+}
+.wk-pcard__summary {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-paper-dim);
+}
+.wk-pcard__open {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-azure-soft);
+}
+
+/* ================================================================== */
+/* 6. Project art                                                      */
+/* ================================================================== */
+
+.wk-art {
+  --wk-art-surface: #131721;
+  --wk-art-surface-2: #1b202c;
+  --wk-art-paper: #1d2230;
+  --wk-art-ink: color-mix(in srgb, var(--color-paper) 58%, transparent);
+  --wk-art-ink-dim: color-mix(in srgb, var(--color-paper) 22%, transparent);
+  --wk-art-line: color-mix(in srgb, var(--color-paper) 15%, transparent);
+  --wk-art-edge: color-mix(in srgb, var(--color-paper) 16%, transparent);
+  --wk-art-accent: var(--color-azure);
+  --wk-art-soft: color-mix(in srgb, var(--color-lavender) 48%, transparent);
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+  background:
+    radial-gradient(110% 85% at 88% 0%, color-mix(in srgb, var(--color-azure) 30%, transparent), transparent 62%),
+    radial-gradient(80% 70% at 0% 100%, color-mix(in srgb, var(--color-lavender) 15%, transparent), transparent 70%),
+    var(--color-ink-raised);
+}
+:root[data-theme="light"] .wk-art {
+  --wk-art-surface: #fbf9f4;
+  --wk-art-surface-2: #efebe1;
+  --wk-art-paper: #fffdf8;
+  --wk-art-ink: color-mix(in srgb, var(--color-paper) 55%, transparent);
+  --wk-art-ink-dim: color-mix(in srgb, var(--color-paper) 18%, transparent);
+  --wk-art-line: color-mix(in srgb, var(--color-paper) 14%, transparent);
+  --wk-art-edge: color-mix(in srgb, var(--color-paper) 14%, transparent);
+  --wk-art-soft: color-mix(in srgb, var(--color-lavender) 38%, transparent);
+  background:
+    radial-gradient(110% 85% at 88% 0%, color-mix(in srgb, var(--color-azure) 18%, transparent), transparent 62%),
+    radial-gradient(80% 70% at 0% 100%, color-mix(in srgb, var(--color-lavender) 12%, transparent), transparent 70%),
+    var(--color-ink-raised);
+}
+
+.wk-art__layer {
+  position: absolute;
+  inset: -3%;
+  display: block;
+}
+.wk-art__back {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-paper) 13%, transparent) 1px, transparent 1.6px);
+  background-size: 18px 18px;
+  -webkit-mask-image: radial-gradient(75% 70% at 62% 45%, #000 25%, transparent 85%);
+  mask-image: radial-gradient(75% 70% at 62% 45%, #000 25%, transparent 85%);
+  opacity: 0.75;
+}
+.wk-art__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 55% 50%;
+  transition: transform 1.2s var(--wk-ease);
+}
+a:hover .wk-art__mid .wk-art__svg {
+  transform: scale(1.035);
+}
+a:hover .wk-art__front .wk-art__svg {
+  transform: translate3d(-1.2%, -2%, 0) scale(1.045);
+}
+.wk-art--thumb .wk-art__front {
+  display: none;
+}
+
+.wk-art__surface {
+  fill: var(--wk-art-surface);
+}
+.wk-art__surface-2 {
+  fill: var(--wk-art-surface-2);
+}
+.wk-art__paper {
+  fill: var(--wk-art-paper);
+}
+.wk-art__ink {
+  fill: var(--wk-art-ink);
+}
+.wk-art__ink--dim {
+  fill: var(--wk-art-ink-dim);
+}
+.wk-art__accent {
+  fill: var(--wk-art-accent);
+}
+.wk-art__soft {
+  fill: var(--wk-art-soft);
+}
+.wk-art__on-accent {
+  fill: rgba(255, 255, 255, 0.82);
+}
+.wk-art__edge {
+  stroke: var(--wk-art-edge);
+  stroke-width: 1;
+}
+.wk-art__edge--accent {
+  stroke: var(--wk-art-accent);
+  stroke-width: 1.5;
+}
+.wk-art__line {
+  stroke: var(--wk-art-line);
+  stroke-width: 1.2;
+}
+.wk-art__line--faint {
+  stroke-width: 0.8;
+}
+.wk-art__line--accent {
+  stroke: var(--wk-art-accent);
+  stroke-width: 1.6;
+  opacity: 0.7;
+}
+.wk-art__line--dashed {
+  stroke: var(--wk-art-accent);
+  stroke-dasharray: 3 7;
+  opacity: 0.7;
+}
+.wk-art__nofill {
+  fill: none;
+}
+.wk-art__marker {
+  opacity: 0.85;
+}
+.wk-art__cursor {
+  fill: var(--color-paper);
+  stroke: var(--color-ink);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.wk-art__lens {
+  fill: color-mix(in srgb, var(--wk-art-accent) 12%, transparent);
+  stroke: var(--wk-art-accent);
+  stroke-width: 3;
+}
+.wk-art__handle {
+  stroke: var(--wk-art-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.wk-art__handle--thin {
+  stroke-width: 2.5;
+}
+
+/* Living details — paused until the art is on screen (its reveal is visible). */
+.wk-art__dot {
+  fill: var(--wk-art-ink);
+  animation: wk-typing 1.3s ease-in-out infinite both;
+  animation-play-state: paused;
+}
+.wk-art__pulse {
+  stroke: var(--wk-art-accent);
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wk-pulse 2.8s var(--motion-ease-exit, ease-out) infinite;
+  animation-play-state: paused;
+  opacity: 0;
+}
+.wk-art__flow {
+  stroke: var(--wk-art-accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 5 22;
+  animation: wk-flow 2.2s linear infinite;
+  animation-play-state: paused;
+}
+.wk-art__spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wk-spark 4.5s ease-in-out infinite;
+  animation-play-state: paused;
+}
+[data-reveal="visible"] .wk-art :is(.wk-art__dot, .wk-art__pulse, .wk-art__flow, .wk-art__spark) {
+  animation-play-state: running;
+}
+
+@keyframes wk-typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+@keyframes wk-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes wk-flow {
+  to {
+    stroke-dashoffset: -54;
+  }
+}
+@keyframes wk-spark {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.18) rotate(20deg);
+  }
+}
+
+.wk-art__label,
+.wk-feature__chip {
+  position: absolute;
+  z-index: 2;
+  left: clamp(0.8rem, 3%, 1.25rem);
+  bottom: clamp(0.8rem, 3%, 1.1rem);
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--wk-hair);
+  background: var(--wk-glass);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+.wk-feature__chip {
+  z-index: 3;
+  left: clamp(1rem, 3.5%, 1.5rem);
+  bottom: clamp(1rem, 3.5%, 1.4rem);
+}
+
+/* ================================================================== */
+/* 7. DID                                                            */
+/* ================================================================== */
+
+.wk-did {
+  --wk-year-col: clamp(8.5rem, 14vw, 12rem);
+  --wk-col-gap: 2.5rem;
+  --wk-spine-x: calc(var(--wk-year-col) + var(--wk-col-gap) / 2);
+  --wk-node-x: calc(var(--wk-col-gap) / -2 - 7px);
+  position: relative;
+  padding-top: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.wk-did__spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--wk-spine-x);
+  width: 1px;
+  background: var(--wk-hair);
+}
+.wk-did__spine-fill {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, var(--color-azure) 0%, var(--color-azure) 70%, var(--color-lavender) 100%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-azure) 60%, transparent);
+}
+
+.wk-did__year {
+  display: grid;
+  grid-template-columns: var(--wk-year-col) minmax(0, 1fr);
+  column-gap: var(--wk-col-gap);
+  padding-block: clamp(1.25rem, 3vw, 2.5rem);
+}
+.wk-did__marker {
+  position: sticky;
+  top: var(--wk-top);
+  align-self: start;
+  z-index: 2;
+}
+.wk-did__marker-inner {
+  display: grid;
+  gap: 0.6rem;
+}
+.wk-did__year-label {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.8rem, 5.4vw, 4.75rem);
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  font-variant-numeric: lining-nums;
+  color: var(--color-paper);
+}
+.wk-did__year[data-undated] .wk-did__year-label {
+  font-size: clamp(1.6rem, 2.6vw, 2.25rem);
+  font-style: italic;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.wk-did__year-count {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+
+.wk-did__rows {
+  display: grid;
+}
+.wk-did__item + .wk-did__item {
+  border-top: 1px solid var(--wk-hair);
+}
+
+.wk-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: clamp(1rem, 2.5vw, 2rem);
+  padding: 1.35rem 0.25rem 1.4rem 0;
+  border-radius: 14px;
+  transition: background-color 0.35s ease;
+}
+.wk-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 -1rem;
+  z-index: -1;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--color-azure-dim), transparent 75%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.wk-row:hover::before,
+.wk-row[data-open]::before {
+  opacity: 1;
+}
+
+.wk-row__node {
+  position: absolute;
+  top: 1.7rem;
+  left: var(--wk-node-x);
+  display: grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-paper-faint);
+  transition:
+    color 0.35s ease,
+    transform 0.45s var(--wk-ease);
+}
+.wk-did__item[data-reveal="visible"] .wk-row__node {
+  color: var(--color-azure-soft);
+}
+.wk-row:hover .wk-row__node,
+.wk-row[data-open] .wk-row__node {
+  color: var(--color-azure);
+  transform: scale(1.35);
+}
+
+/* align-content: start — when the cover makes the row taller than its text,
+   the spare height stays below the text instead of stretching the rows
+   (a stretched, line-clamped summary would show a sliced extra line). */
+.wk-row__main {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.wk-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.95rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-row__date {
+  color: var(--color-azure-soft);
+  font-variant-numeric: tabular-nums;
+}
+.wk-row__heading {
+  font: inherit;
+}
+.wk-row__toggle {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-row__toggle:focus-visible {
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+.wk-row__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.2rem, 1.9vw, 1.55rem);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+  color: var(--color-paper);
+  text-wrap: pretty;
+  transition: color 0.3s ease;
+}
+.wk-row[data-importance="featured"] .wk-row__title {
+  font-size: clamp(1.45rem, 2.5vw, 2.05rem);
+  line-height: 1.1;
+}
+.wk-row[data-importance="archive"] .wk-row__title {
+  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+}
+.wk-row__toggle:hover .wk-row__title,
+.wk-row[data-open] .wk-row__title {
+  color: var(--color-azure-soft);
+}
+.wk-row__plus {
+  position: relative;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: 0.1rem;
+  border: 1px solid var(--wk-hair-strong);
+  border-radius: 50%;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    transform 0.45s var(--wk-ease);
+}
+.wk-row__plus::before,
+.wk-row__plus::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 1.5px;
+  margin: -0.75px 0 0 -4.5px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform 0.45s var(--wk-ease);
+}
+.wk-row__plus::after {
+  transform: rotate(90deg);
+}
+.wk-row__toggle:hover .wk-row__plus {
+  border-color: color-mix(in srgb, var(--color-azure) 60%, transparent);
+}
+.wk-row[data-open] .wk-row__plus {
+  background: var(--color-azure-dim);
+  border-color: var(--color-azure);
+  transform: rotate(180deg);
+}
+.wk-row[data-open] .wk-row__plus::after {
+  transform: rotate(0deg);
+}
+
+.wk-row__context {
+  font-size: 0.9rem;
+  color: var(--color-paper-dim);
+}
+.wk-row__badge,
+.wk-mini__result,
+.wk-tile__result {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-lavender-soft);
+}
+.wk-row__badge {
+  width: fit-content;
+  padding: 0.25rem 0.7rem 0.25rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-lavender) 38%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-lavender) 8%, transparent);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.wk-ribbon {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+}
+.wk-row__summary {
+  max-width: 64ch;
+  font-size: 0.95rem;
+  line-height: 1.58;
+  color: var(--color-paper-dim);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.wk-row[data-importance="archive"] .wk-row__summary {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.wk-row[data-open] .wk-row__summary {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  color: var(--color-paper);
+}
+
+/* A closed row's region is empty: take it out of the layout (no stray gap). */
+.wk-row__region:empty {
+  display: none;
+}
+.wk-row__panel {
+  overflow: hidden;
+}
+.wk-row__panel-inner {
+  display: grid;
+  gap: 1.15rem;
+  max-width: 66ch;
+  padding-top: 0.7rem;
+}
+.wk-row__details {
+  display: grid;
+  gap: 1rem;
+}
+.wk-row__details dt {
+  margin-bottom: 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-row__details dd {
+  font-size: 0.97rem;
+  line-height: 1.62;
+  color: var(--color-paper-dim);
+}
+.wk-row__learning dd {
+  padding-left: 1rem;
+  border-left: 1px solid var(--color-azure);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: var(--color-paper);
+}
+.wk-row__open {
+  justify-self: start;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--color-azure-soft);
+}
+
+.wk-row__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+.wk-row__thumb {
+  display: block;
+  width: clamp(92px, 9.5vw, 132px);
+  border-radius: 10px;
+}
+.wk-row[data-importance="featured"] .wk-row__thumb {
+  width: clamp(112px, 13vw, 184px);
+}
+/* The frame sets the cover's shape (the cover fills it): a 4:3 print here,
+   a wide strip on phones (section 12). */
+.wk-row__thumb-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  outline: 1px solid var(--wk-hair-strong);
+  outline-offset: -1px;
+  box-shadow: var(--depth-shadow-sm);
+  rotate: 0deg;
+  transition:
+    rotate 0.5s var(--wk-ease),
+    box-shadow 0.4s ease;
+}
+.wk-row:hover .wk-row__thumb-frame {
+  rotate: -2deg;
+  box-shadow: var(--depth-shadow-md);
+}
+.wk-row__go {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-paper-faint);
+  transition: color 0.25s ease;
+}
+.wk-row__go:hover,
+.wk-row:hover .wk-row__go {
+  color: var(--color-azure-soft);
+}
+
+/* Category markers — shape carries the category, colour the state. */
+.wk-marker {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.wk-marker[data-cat="entrepreneurship"] {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.wk-marker[data-cat="leadership"] {
+  width: 10px;
+  border-radius: 0;
+  clip-path: polygon(50% 4%, 100% 96%, 0 96%);
+}
+.wk-marker[data-cat="global"] {
+  background: transparent;
+  border: 2px solid currentColor;
+}
+.wk-marker[data-cat="communication"] {
+  width: 10px;
+  height: 10px;
+  clip-path: inset(0 0 42% 0);
+  transform: translateY(2px);
+}
+.wk-marker[data-cat="writing"] {
+  width: 11px;
+  height: 3px;
+  border-radius: 2px;
+}
+.wk-marker[data-cat="arts"] {
+  width: 11px;
+  height: 11px;
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 62% 36%, 100% 38%, 70% 60%, 80% 98%, 50% 76%, 20% 98%, 30% 60%, 0% 38%, 38% 36%);
+}
+.wk-marker[data-cat="sports"] {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+}
+.wk-marker[data-cat="school"] {
+  border-radius: 2px;
+}
+
+/* ================================================================== */
+/* 8. RECOGNIZED                                                       */
+/* ================================================================== */
+
+.wk-rec {
+  display: grid;
+  gap: clamp(4rem, 9vw, 7rem);
+  padding-top: clamp(1rem, 3vw, 2.5rem);
+}
+.wk-rec__list {
+  display: grid;
+  gap: clamp(4rem, 9vw, 7.5rem);
+}
+
+.wk-result {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+/* Type in the wide column, the print in the narrow one — on either side. */
+.wk-result[data-print] {
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: clamp(1.75rem, 5vw, 5rem);
+}
+.wk-result[data-print][data-align="end"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr);
+}
+.wk-result[data-print][data-align="end"] .wk-result__print-wrap {
+  order: -1;
+}
+
+/* The body is the headline's measuring box (see .wk-result__title). */
+.wk-result__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(0.9rem, 1.6vw, 1.25rem);
+  justify-items: start;
+  container-type: inline-size;
+}
+.wk-result:not([data-print])[data-align="end"] .wk-result__body {
+  justify-items: end;
+  text-align: right;
+}
+
+.wk-result__meta {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-result:not([data-print])[data-align="end"] .wk-result__meta {
+  flex-direction: row-reverse;
+}
+.wk-result__rule {
+  flex: 1;
+  max-width: 16rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--wk-hair-strong), transparent);
+}
+.wk-result:not([data-print])[data-align="end"] .wk-result__rule {
+  background: linear-gradient(270deg, var(--wk-hair-strong), transparent);
+}
+
+/*
+  The headline is set at its design size (--wk-size) unless its longest
+  unbreakable piece (--wk-fit characters, set per result in
+  RecognizedLens.tsx) would not fit the column at that size — then it
+  steps down to exactly what fits (~0.62em per uppercase character).
+  "GRAND NATIONAL FINALE" stays huge and never runs past its column.
+*/
+.wk-result {
+  --wk-size: clamp(2.5rem, 6.4vw, 6rem);
+}
+.wk-result[data-size="xl"] {
+  --wk-size: clamp(3.1rem, 9.4vw, 9.25rem);
+}
+.wk-result__title {
+  font-family: var(--font-display);
+  font-weight: 380;
+  font-size: min(var(--wk-size), 100cqi / (var(--wk-fit, 6) * 0.62));
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.wk-result[data-size="l"] .wk-result__title {
+  max-width: 14ch;
+}
+.wk-result__type {
+  display: block;
+  transition: transform 0.7s var(--wk-ease);
+}
+.wk-result:hover .wk-result__type {
+  transform: translateX(0.05em);
+}
+.wk-result:not([data-print])[data-align="end"]:hover .wk-result__type {
+  transform: translateX(-0.05em);
+}
+.wk-result__num {
+  display: inline-block;
+  margin-right: 0.14em;
+  font-weight: 300;
+  font-variant-numeric: lining-nums;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-azure-soft);
+  transition: color 0.6s ease;
+}
+.wk-result:hover .wk-result__num {
+  color: color-mix(in srgb, var(--color-azure) 28%, transparent);
+}
+.wk-result__suffix {
+  display: inline-block;
+  margin-left: 0.03em;
+  vertical-align: top;
+  font-size: 0.36em;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-azure-soft);
+  -webkit-text-stroke: 0;
+}
+.wk-result__words {
+  transition: color 0.5s ease;
+}
+.wk-result:hover .wk-result__words {
+  color: var(--color-azure-soft);
+}
+
+.wk-result__detail {
+  max-width: 42ch;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  line-height: 1.35;
+  color: var(--color-paper-dim);
+}
+
+.wk-result__source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1rem;
+}
+.wk-result:not([data-print])[data-align="end"] .wk-result__source {
+  justify-content: flex-end;
+}
+.wk-result__link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: clamp(1rem, 1.3vw, 1.12rem);
+  font-weight: 600;
+  color: var(--color-paper);
+  transition: color 0.3s ease;
+}
+/* The whole result opens the event: the link's hit area covers the block. */
+.wk-result__link::after {
+  content: "";
+  position: absolute;
+  inset: -1rem;
+  z-index: 2;
+}
+.wk-result__link:hover,
+.wk-result:hover .wk-result__link {
+  color: var(--color-azure-soft);
+}
+.wk-result__open {
+  color: var(--color-azure-soft);
+}
+.wk-result__org {
+  font-size: 0.85rem;
+  color: var(--color-paper-faint);
+}
+
+/* Photo print (featured results) */
+.wk-result__print-wrap {
+  position: relative;
+  z-index: 3;
+}
+.wk-result__print {
+  border-radius: 14px;
+}
+.wk-result__print-link {
+  display: block;
+  border-radius: 14px;
+  rotate: 2.5deg;
+  transition: rotate 0.7s var(--wk-ease);
+}
+.wk-result[data-align="end"] .wk-result__print-link {
+  rotate: -2.5deg;
+}
+.wk-result:hover .wk-result__print-link {
+  rotate: 0deg;
+}
+.wk-result__print-frame {
+  display: block;
+  padding: clamp(6px, 0.8vw, 10px);
+  border-radius: 14px;
+  background: var(--color-ink-raised-2);
+  box-shadow: var(--depth-shadow-lg);
+  outline: 1px solid var(--wk-hair-strong);
+  outline-offset: -1px;
+}
+.wk-result__print-mask {
+  display: block;
+  border-radius: 9px;
+}
+
+/*
+  Image bleed (other major results): the photo as atmosphere, not as a
+  second text. It is blurred past legibility (certificates and screenshots
+  carry their own words) and masked into a soft glow that fades out at
+  every edge and away from the side the type sits on.
+*/
+.wk-result__bleed {
+  --wk-bleed-toward: 90deg;
+  position: absolute;
+  z-index: 0;
+  top: -12%;
+  bottom: -12%;
+  right: -2%;
+  width: min(48%, 560px);
+  opacity: 0.26;
+  filter: blur(12px) saturate(0.5);
+  -webkit-mask-image:
+    linear-gradient(var(--wk-bleed-toward), transparent, #000 62%),
+    radial-gradient(closest-side, #000 38%, transparent);
+  mask-image:
+    linear-gradient(var(--wk-bleed-toward), transparent, #000 62%),
+    radial-gradient(closest-side, #000 38%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+.wk-result[data-align="end"] .wk-result__bleed {
+  --wk-bleed-toward: 270deg;
+  right: auto;
+  left: -2%;
+}
+.wk-result:hover .wk-result__bleed {
+  opacity: 0.38;
+}
+:root[data-theme="light"] .wk-result__bleed {
+  opacity: 0.3;
+}
+
+/* Minor results */
+.wk-rec__more {
+  display: grid;
+  gap: 1.25rem;
+}
+.wk-rec__more-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+.wk-rec__minor {
+  border-top: 1px solid var(--wk-hair);
+}
+.wk-minor {
+  display: grid;
+  grid-template-columns: minmax(9rem, 18rem) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.5rem 2rem;
+  padding: 1.15rem 0.25rem;
+  border-bottom: 1px solid var(--wk-hair);
+  transition:
+    padding 0.45s var(--wk-ease),
+    background-color 0.35s ease;
+}
+.wk-minor:hover {
+  padding-left: 0.9rem;
+  background: linear-gradient(90deg, var(--color-azure-dim), transparent 70%);
+}
+.wk-minor__result {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  transition: color 0.3s ease;
+}
+.wk-minor:hover .wk-minor__result {
+  color: var(--color-azure-soft);
+}
+.wk-minor__event {
+  color: var(--color-paper-dim);
+}
+.wk-minor__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-paper-faint);
+}
+.wk-minor__meta-text {
+  min-width: 0;
+}
+.wk-minor__open {
+  color: var(--color-azure-soft);
+}
+
+/* ================================================================== */
+/* 9. ALL                                                              */
+/* ================================================================== */
+
+.wk-all {
+  display: grid;
+  gap: clamp(3rem, 7vw, 5rem);
+  padding-top: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.wk-all__ribbon-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(0.35rem, 1vw, 0.75rem);
+  border-bottom: 1px solid var(--wk-hair-strong);
+}
+.wk-all__ribbon-link {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem 0.4rem 0.85rem;
+  border-radius: 12px 12px 0 0;
+  transition: background-color 0.3s ease;
+}
+.wk-all__ribbon-link:hover {
+  background: var(--color-azure-dim);
+}
+.wk-all__ribbon-bar {
+  position: relative;
+  display: block;
+  height: clamp(44px, 7vw, 84px);
+}
+.wk-all__ribbon-bar > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-origin: 50% 100%;
+  border-radius: 7px 7px 2px 2px;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--color-azure) 60%, transparent), color-mix(in srgb, var(--color-azure) 14%, transparent));
+  transition: background-color 0.3s ease;
+}
+.wk-all__ribbon-link:hover .wk-all__ribbon-bar > span {
+  background: var(--color-azure);
+}
+.wk-all__ribbon-year {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 1.6vw, 1.3rem);
+  line-height: 1.1;
+  color: var(--color-paper);
+}
+.wk-all__ribbon-count {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+
+.wk-all__year {
+  display: grid;
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
+  scroll-margin-top: var(--wk-top);
+}
+.wk-all__year-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1.1rem;
+}
+.wk-all__year-label {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.wk-all__year-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--wk-hair);
+}
+.wk-all__year-count {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+
+.wk-all__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+  gap: clamp(0.9rem, 1.6vw, 1.3rem);
+}
+.wk-all__cell {
+  display: flex;
+}
+.wk-all__cell[data-size="featured"] {
+  grid-column: span 2;
+}
+
+.wk-tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  isolation: isolate;
+  background: color-mix(in srgb, var(--color-ink-raised) 90%, transparent);
+  border: 1px solid var(--wk-hair);
+  transition:
+    border-color 0.3s ease,
+    transform 0.5s var(--wk-ease),
+    box-shadow 0.45s ease;
+}
+.wk-tile:hover {
+  border-color: color-mix(in srgb, var(--color-azure) 45%, transparent);
+  transform: translateY(-3px);
+  box-shadow: var(--depth-shadow-md);
+}
+.wk-all__cell[data-size="featured"] .wk-tile {
+  flex-direction: row;
+}
+.wk-tile__cover {
+  position: relative;
+  display: block;
+  flex: none;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+.wk-all__cell[data-size="featured"] .wk-tile__cover {
+  flex: 1.25 1 0;
+  aspect-ratio: auto;
+  min-height: 15rem;
+}
+.wk-tile__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.1rem 1.2rem 1.15rem;
+}
+.wk-all__cell[data-size="featured"] .wk-tile__body {
+  flex: 1 1 0;
+  justify-content: center;
+  padding: 1.6rem 1.6rem 1.5rem;
+  gap: 0.75rem;
+}
+.wk-tile__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-tile__kind {
+  color: var(--color-paper-dim);
+}
+.wk-tile__kind[data-kind="project"] {
+  color: var(--color-azure-soft);
+}
+.wk-tile__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+  color: var(--color-paper);
+  text-wrap: pretty;
+  transition: color 0.3s ease;
+}
+.wk-all__cell[data-size="featured"] .wk-tile__title {
+  font-size: clamp(1.5rem, 2.3vw, 2.05rem);
+  line-height: 1.08;
+}
+.wk-tile:hover .wk-tile__title {
+  color: var(--color-azure-soft);
+}
+.wk-tile__summary {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--color-paper-dim);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+.wk-tile__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--color-paper-faint);
+}
+.wk-tile__status {
+  color: var(--color-azure-soft);
+}
+.wk-tile__open {
+  color: var(--color-azure-soft);
+}
+
+/* Compact rows for the smaller records of a year */
+.wk-all__compact {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(1rem, 2.5vw, 2rem);
+  border-top: 1px solid var(--wk-hair);
+}
+.wk-all__compact-item {
+  border-bottom: 1px solid var(--wk-hair);
+}
+.wk-mini {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.85rem;
+  height: 100%;
+  padding: 0.95rem 0.25rem;
+  transition: padding 0.45s var(--wk-ease);
+}
+.wk-mini:hover {
+  padding-left: 0.6rem;
+}
+.wk-mini__marker {
+  margin-top: 0.42rem;
+  color: var(--color-paper-faint);
+  transition: color 0.3s ease;
+}
+.wk-mini:hover .wk-mini__marker {
+  color: var(--color-azure);
+}
+.wk-mini__text {
+  display: grid;
+  gap: 0.25rem;
+}
+.wk-mini__title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-paper);
+  transition: color 0.3s ease;
+}
+.wk-mini:hover .wk-mini__title {
+  color: var(--color-azure-soft);
+}
+.wk-mini__meta {
+  font-size: 0.78rem;
+  color: var(--color-paper-faint);
+}
+.wk-mini__result {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.wk-mini__arrow {
+  color: var(--color-paper-faint);
+  transition:
+    transform 0.4s var(--wk-ease),
+    color 0.3s ease;
+}
+.wk-mini:hover .wk-mini__arrow {
+  color: var(--color-azure-soft);
+  transform: translateX(3px);
+}
+
+/* ================================================================== */
+/* 10. Dock, coda, empty state                                         */
+/* ================================================================== */
+
+.wk-dock {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  translate: -50% 0;
+  padding: 0.3rem;
+  border: 1px solid var(--wk-hair-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink-raised) 80%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: var(--depth-shadow-lg);
+}
+.wk-dock[aria-hidden="true"] {
+  pointer-events: none;
+}
+.wk-dock__list {
+  display: flex;
+  gap: 0.15rem;
+}
+.wk-dock__button {
+  position: relative;
+  min-height: 44px;
+  padding: 0 1.05rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--color-paper-dim);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.wk-dock__button:hover {
+  color: var(--color-paper);
+}
+.wk-dock__button[aria-pressed="true"] {
+  color: var(--color-on-accent);
+}
+.wk-dock__pill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-azure);
+}
+.wk-dock__label {
+  position: relative;
+}
+
+/* The ending: the door into the next lens, then the ways out of Work. */
+.wk-coda {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  margin-top: clamp(3.5rem, 8vw, 6rem);
+}
+.wk-coda__rule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--wk-hair-strong), var(--wk-hair) 60%, transparent);
+}
+.wk-coda__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem 2.25rem;
+  padding-top: clamp(1.25rem, 3vw, 1.75rem);
+  border-top: 1px solid var(--wk-hair);
+}
+
+.wk-next {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "kicker kicker kicker"
+    "index label arrow"
+    "index hint arrow";
+  align-items: center;
+  column-gap: clamp(1rem, 2.6vw, 2rem);
+  row-gap: 0.45rem;
+  padding: clamp(0.25rem, 1vw, 0.75rem) 0 clamp(0.5rem, 1.5vw, 1rem);
+}
+/* The same soft wash the rows use on hover, spread under the whole door. */
+.wk-next::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem -1rem;
+  z-index: -1;
+  border-radius: var(--wk-radius);
+  background: linear-gradient(90deg, var(--color-azure-dim), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.wk-next:is(:hover, :focus-visible)::before {
+  opacity: 1;
+}
+.wk-next:focus-visible {
+  outline-offset: 0.75rem;
+  border-radius: var(--wk-radius);
+}
+.wk-next__kicker {
+  grid-area: kicker;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.wk-next__index {
+  grid-area: index;
+  align-self: start;
+  padding-top: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-azure-soft);
+}
+.wk-next__label {
+  grid-area: label;
+  font-family: var(--font-display);
+  font-weight: 340;
+  font-size: clamp(2.75rem, 7vw, 5.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  color: var(--color-paper);
+  transition:
+    color 0.35s ease,
+    transform 0.6s var(--wk-ease);
+}
+.wk-next:is(:hover, :focus-visible) .wk-next__label {
+  color: var(--color-azure-soft);
+  transform: translateX(0.08em);
+}
+.wk-next__hint {
+  grid-area: hint;
+  font-size: clamp(0.95rem, 1.3vw, 1.08rem);
+  color: var(--color-paper-dim);
+}
+.wk-next__count {
+  color: var(--color-paper-faint);
+}
+.wk-next__arrow {
+  grid-area: arrow;
+  display: grid;
+  place-items: center;
+  width: clamp(3rem, 5vw, 4rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--wk-hair-strong);
+  border-radius: 50%;
+  font-size: 1.3rem;
+  color: var(--color-azure-soft);
+  transition:
+    transform 0.45s var(--wk-ease),
+    border-color 0.35s ease,
+    background-color 0.35s ease;
+}
+.wk-next:is(:hover, :focus-visible) .wk-next__arrow {
+  transform: translateX(6px);
+  border-color: var(--color-azure);
+  background: var(--color-azure-dim);
+}
+
+.wk-empty {
+  padding: 3rem 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.35rem;
+  color: var(--color-paper-dim);
+}
+
+/* ================================================================== */
+/* 11. Atmosphere per lens                                             */
+/* ================================================================== */
+
+/*
+  The page sets html[data-atmo="work-<lens>"] (useAtmosphere); the
+  background's registered colours and light positions glide to these
+  over ~1.2 s (styles/atmosphere.css). Built keeps the route's own
+  energetic blue.
+*/
+.atmo[data-route="work"][data-atmo="work-did"] {
+  --atmo-key-x: 8%;
+  --atmo-key-y: -4%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+  --atmo-fill-x: 100%;
+  --atmo-fill-y: 64%;
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 9%);
+}
+.atmo[data-route="work"][data-atmo="work-recognized"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 24%);
+  --atmo-key-x: 52%;
+  --atmo-key-y: -10%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-warm) 7%);
+  --atmo-rim-y: 104%;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-violet) 16%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+}
+.atmo[data-route="work"][data-atmo="work-all"] {
+  --atmo-key-x: 72%;
+  --atmo-key-y: 0%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-violet) 12%);
+  --atmo-fill-x: 6%;
+  --atmo-fill-y: 90%;
+}
+
+/* ================================================================== */
+/* 12. Responsive + reduced motion                                     */
+/* ================================================================== */
+
+/* Tablet */
+@media (max-width: 1023px) {
+  .wk-feature,
+  .wk-result[data-print],
+  .wk-result[data-print][data-align="end"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wk-feature[data-side="end"] .wk-feature__visual {
+    order: 0;
+  }
+  .wk-feature__text {
+    max-width: 40rem;
+  }
+  .wk-result[data-print] .wk-result__print-wrap,
+  .wk-result[data-print][data-align="end"] .wk-result__print-wrap {
+    order: -1;
+    width: min(78%, 26rem);
+  }
+  .wk-result[data-print][data-align="end"] .wk-result__print-wrap {
+    justify-self: end;
+  }
+  .wk-all__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wk-all__compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wk-hero__fragments {
+    -webkit-mask-image: linear-gradient(100deg, transparent 30%, #000 70%);
+    mask-image: linear-gradient(100deg, transparent 30%, #000 70%);
+  }
+  .wk-hero__fragment[data-slot="3"] {
+    display: none;
+  }
+}
+
+/* Lens switcher: 2 × 2 below 900px */
+@media (max-width: 899px) {
+  /* Lens switcher: a 2 × 2 grid of large targets (ui.css switches at
+     640px; the Work labels are larger, so four columns get tight sooner). */
+  .work-page .seg-tabs--editorial {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .work-page .seg-tabs--editorial .seg-tabs__tab,
+  .work-page .seg-tabs--editorial .seg-tabs__tab + .seg-tabs__tab {
+    padding: 1rem 0.9rem 1.05rem;
+    border-left: 0;
+    border-top: 0;
+    border-bottom: 1px solid var(--wk-hair);
+  }
+  .work-page .seg-tabs--editorial .seg-tabs__tab:nth-child(odd) {
+    padding-left: 0;
+  }
+  .work-page .seg-tabs--editorial .seg-tabs__tab:nth-child(even) {
+    border-left: 1px solid var(--wk-hair);
+  }
+  .work-page .seg-tabs--editorial .seg-tabs__label {
+    font-size: clamp(1.45rem, 3.4vw, 2rem);
+  }
+  .work-page .seg-tabs__hint {
+    padding-left: 0;
+    font-size: 0.75rem;
+  }
+}
+
+/* Phones: recomposed, not shrunk */
+@media (max-width: 767px) {
+  .work-page {
+    --wk-top: 5.25rem;
+    --wk-radius: 18px;
+  }
+
+  /* Hero: the heading first, then the photos as a tilted contact strip, then the lenses. */
+  .wk-hero {
+    display: flex;
+    flex-direction: column;
+    padding-top: 6.5rem;
+  }
+  .wk-hero__inner {
+    display: contents;
+  }
+  .wk-hero__copy {
+    order: 1;
+    width: min(100% - 2 * var(--wk-gutter), var(--wk-max));
+    margin-inline: auto;
+  }
+  .wk-hero__fragments {
+    order: 2;
+    position: relative;
+    inset: auto;
+    height: 9.5rem;
+    margin: 2rem var(--wk-gutter) 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .wk-hero__fragment[data-slot] {
+    top: auto;
+    right: auto;
+  }
+  .wk-hero__fragment[data-slot="0"] {
+    --wk-frag-w: 42%;
+    left: 0;
+    top: 0.6rem;
+  }
+  .wk-hero__fragment[data-slot="1"] {
+    --wk-frag-w: 36%;
+    left: 31%;
+    top: 2.2rem;
+  }
+  .wk-hero__fragment[data-slot="2"] {
+    --wk-frag-w: 38%;
+    left: 62%;
+    top: 0;
+  }
+  .wk-hero__lenses {
+    order: 3;
+    width: min(100% - 2 * var(--wk-gutter), var(--wk-max));
+    margin: 2.25rem auto 0;
+  }
+  .wk-hero__title {
+    font-size: clamp(2.75rem, 13.5vw, 4rem);
+  }
+
+  .wk-lenshead__intro {
+    padding-top: 2.75rem;
+  }
+
+  /* Built */
+  .wk-feature__numeral {
+    font-size: 5.5rem;
+    top: -0.62em;
+  }
+  .wk-feature__plane,
+  .wk-feature[data-side="end"] .wk-feature__plane {
+    inset: 7% -2% -5% 5%;
+  }
+  .wk-feature__stage {
+    aspect-ratio: 5 / 4;
+  }
+
+  /*
+    Did: one column, the spine at the left edge. Each year's marker is a
+    shelf across the whole screen that sticks right under the top bar — the
+    same frosted surface as the bar, so the two read as one header — and
+    fades out at its foot. Rows scrolling underneath disappear into it
+    instead of showing around the year pill. The shelf lives inside its
+    year group, so the next group pushes it out; in the flow it is the
+    divider that opens the year.
+  */
+  .wk-did {
+    --wk-spine-x: 7px;
+    --wk-node-x: calc(-1.75rem);
+  }
+  .wk-did__year {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 0.75rem 1.5rem;
+  }
+  .wk-did__marker {
+    top: var(--chrome-h, 60px);
+    z-index: 3;
+    justify-self: stretch;
+    margin: 0 calc(-1 * var(--wk-gutter)) 0.1rem;
+    padding: 0.55rem var(--wk-gutter) 1.05rem calc(var(--wk-gutter) + 1.75rem);
+    pointer-events: none;
+  }
+  .wk-did__marker::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--color-ink) 74%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 1.05rem), transparent);
+    mask-image: linear-gradient(180deg, #000 calc(100% - 1.05rem), transparent);
+  }
+  .wk-did__marker-inner {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding: 0.45rem 0.95rem;
+    border: 1px solid var(--wk-hair-strong);
+    border-radius: 999px;
+    background: var(--wk-glass);
+  }
+  .wk-did__year-label,
+  .wk-did__year[data-undated] .wk-did__year-label {
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+  .wk-did__rows {
+    padding-left: 1.75rem;
+  }
+  .wk-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1rem;
+    padding: 1.15rem 0 1.2rem;
+  }
+  .wk-row::before {
+    left: -0.75rem;
+  }
+  .wk-row__node {
+    top: 1.5rem;
+  }
+  .wk-row__thumb,
+  .wk-row[data-importance="featured"] .wk-row__thumb {
+    width: clamp(96px, 17vw, 120px);
+  }
+  .wk-row__go {
+    font-size: 0.75rem;
+  }
+
+  /* Recognized */
+  .wk-result:not([data-print])[data-align="end"] .wk-result__body {
+    justify-items: start;
+    text-align: left;
+  }
+  .wk-result:not([data-print])[data-align="end"] .wk-result__meta {
+    flex-direction: row;
+  }
+  .wk-result:not([data-print])[data-align="end"] .wk-result__rule {
+    background: linear-gradient(90deg, var(--wk-hair-strong), transparent);
+  }
+  .wk-result:not([data-print])[data-align="end"] .wk-result__source {
+    justify-content: flex-start;
+  }
+  .wk-result[data-print] .wk-result__print-wrap,
+  .wk-result[data-print][data-align="end"] .wk-result__print-wrap {
+    width: min(72%, 18rem);
+  }
+  /* The bleed moves up behind the headline and fades out before the copy. */
+  .wk-result__bleed,
+  .wk-result[data-align="end"] .wk-result__bleed {
+    --wk-bleed-toward: 90deg;
+    top: -1.5rem;
+    bottom: auto;
+    left: auto;
+    right: calc(-1 * var(--wk-gutter));
+    width: 82%;
+    height: min(70%, 17rem);
+    -webkit-mask-image:
+      linear-gradient(var(--wk-bleed-toward), transparent, #000 58%),
+      linear-gradient(180deg, transparent, #000 22%, #000 48%, transparent);
+    mask-image:
+      linear-gradient(var(--wk-bleed-toward), transparent, #000 58%),
+      linear-gradient(180deg, transparent, #000 22%, #000 48%, transparent);
+  }
+
+  /* More recognition: the result on its own line, the event under it at
+     full width, then category · year with the arrow at the end. */
+  .wk-minor {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
+  }
+  .wk-minor__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* All */
+  .wk-all__grid,
+  .wk-all__compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wk-all__cell[data-size="featured"] {
+    grid-column: auto;
+  }
+  .wk-all__cell[data-size="featured"] .wk-tile {
+    flex-direction: column;
+  }
+  .wk-all__cell[data-size="featured"] .wk-tile__cover {
+    flex: none;
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
+  .wk-all__ribbon-count {
+    display: none;
+  }
+  .wk-all__ribbon-year {
+    font-size: 0.8rem;
+  }
+
+  .wk-dock__button {
+    padding: 0 0.8rem;
+    font-size: 0.78rem;
+  }
+}
+
+/*
+  Phones: a Did row is recomposed as one column instead of a squeezed
+  text column beside a stamp-sized thumbnail. The title takes the full
+  width (the +/− toggle moves up to the end of the date line), the cover
+  becomes a wide strip across the row, and "Open →" follows the summary.
+  .wk-row__main / __aside dissolve (display: contents) so their parts can
+  be ordered as one column.
+*/
+@media (max-width: 640px) {
+  .wk-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.2rem 0 0.85rem;
+  }
+  .wk-row__main,
+  .wk-row__aside {
+    display: contents;
+  }
+  .wk-row__meta {
+    order: 1;
+    padding-right: 2.75rem;
+  }
+  .wk-row__heading {
+    order: 2;
+  }
+  .wk-row__context {
+    order: 3;
+  }
+  .wk-row__badge {
+    order: 4;
+  }
+  .wk-row__thumb {
+    order: 5;
+  }
+  .wk-row__summary {
+    order: 6;
+  }
+  .wk-row__region {
+    order: 7;
+  }
+  .wk-row__go {
+    order: 8;
+  }
+
+  .wk-row__toggle {
+    display: block;
+  }
+  .wk-row__plus {
+    position: absolute;
+    top: 0.72rem;
+    right: 0;
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+  }
+
+  .wk-row__thumb,
+  .wk-row[data-importance="featured"] .wk-row__thumb {
+    width: 100%;
+    margin-block: 0.35rem 0.2rem;
+  }
+  .wk-row__thumb-frame {
+    aspect-ratio: 2 / 1;
+  }
+  .wk-row[data-importance="featured"] .wk-row__thumb-frame {
+    aspect-ratio: 16 / 9;
+  }
+  .wk-row[data-importance="archive"] .wk-row__thumb-frame {
+    aspect-ratio: 5 / 2;
+  }
+  .wk-row:hover .wk-row__thumb-frame {
+    rotate: 0deg;
+  }
+
+  .wk-row[data-importance="archive"] .wk-row__summary {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  /* Full 44px touch target; the negative margins keep it visually close. */
+  .wk-row__go {
+    align-self: flex-start;
+    margin-block: -0.35rem -0.3rem;
+  }
+  /* An open row ends with its own "Open the full record" link; a second
+     "Open" straight under it would only repeat it. */
+  .wk-row[data-open] .wk-row__go {
+    display: none;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .wk-dock__button {
+    padding: 0 0.62rem;
+    font-size: 0.74rem;
+  }
+  .work-page .seg-tabs--editorial .seg-tabs__label {
+    font-size: 1.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wk-art :is(.wk-art__dot, .wk-art__pulse, .wk-art__flow, .wk-art__spark) {
+    animation: none !important;
+  }
+  .wk-art__pulse {
+    opacity: 0;
+  }
+  .wk-art__svg,
+  .wk-row__thumb-frame,
+  .wk-result__print-link,
+  .wk-result__type,
+  .wk-tile,
+  .wk-next__label,
+  .wk-next__arrow {
+    transition: none !important;
+  }
+  a:hover .wk-art__mid .wk-art__svg,
+  a:hover .wk-art__front .wk-art__svg,
+  .wk-result:hover .wk-result__type,
+  .wk-tile:hover,
+  .wk-next:is(:hover, :focus-visible) .wk-next__label,
+  .wk-next:is(:hover, :focus-visible) .wk-next__arrow {
+    transform: none;
+  }
+}

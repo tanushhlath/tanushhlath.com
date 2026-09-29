@@ -1,0 +1,666 @@
+/*
+  ATMOSPHERE — the living background behind every page.
+  Component: src/components/atmosphere/Atmosphere.tsx (rendered once by
+  App). Colors come from the --atmo-* tokens in styles/theme.css, so light
+  mode automatically gets its own warm, paper-toned version of every mood.
+
+  One fixed stack of layers sits behind all content:
+    base      tint + three soft lights (key, fill, rim) — every route
+    fields    slowly drifting color fields          — Work, Explore
+    planes    two faint tilted depth planes          — Work
+    ruler     timeline ruler that drifts with scroll — Story
+    numeral   a giant, barely-there year             — Story
+    grid      dense dot grid                         — Archive
+    sketch    grid + fine line-work                  — Beyond › Lab
+    horizon   a forward-leaning horizon line         — Beyond › Next
+    pulse     a slow breathing light                 — Beyond › Now
+    glow      soft light that leans toward the pointer — Home, Me, Explore
+    vignette, grain                                  — every route
+
+  The route family arrives as .atmo[data-route] (home, story, work,
+  work-item, me, beyond, archive, explore, not-found); page sections can
+  add a sub-mood with useAtmosphere("beyond-lab"), which arrives as
+  .atmo[data-atmo]. Lights and colors glide between moods over ~1.2 s
+  (registered @property values), layers crossfade, nothing snaps.
+
+  Performance: layers are painted once and only ever moved with
+  transform/translate; hidden layers pause their animations; reduced
+  motion freezes everything.
+*/
+
+/* ------------------------------------------------------------------ */
+/* Registered properties — what makes the mood changes glide           */
+/* ------------------------------------------------------------------ */
+
+@property --atmo-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-key {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-fill {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-rim {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-field-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-field-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --atmo-key-x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 80%;
+}
+@property --atmo-key-y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+@property --atmo-fill-x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+@property --atmo-fill-y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+@property --atmo-rim-x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 50%;
+}
+@property --atmo-rim-y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+/* ------------------------------------------------------------------ */
+/* The stack                                                           */
+/* ------------------------------------------------------------------ */
+
+.atmo {
+  /* Default mood = Home: blue midnight, a soft light bloom. */
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 3%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 16%);
+  --atmo-key-x: 78%;
+  --atmo-key-y: -6%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-violet) 7%);
+  --atmo-fill-x: 4%;
+  --atmo-fill-y: 96%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-light) 60%);
+  --atmo-rim-x: 26%;
+  --atmo-rim-y: 20%;
+  --atmo-glow: color-mix(in srgb, transparent, var(--atmo-blue) 11%);
+  --atmo-field-1: transparent;
+  --atmo-field-2: transparent;
+  --atmo-grain-k: 1;
+
+  position: fixed;
+  inset: 0;
+  /* Inside body's stacking context (styles/base.css): above the page
+     color, below everything — even a page's own -z-* decorations. */
+  z-index: -100;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  /* Opaque: the stack is its own compositing group, so the grain's blend
+     needs the real page color underneath it. */
+  background-color: var(--color-ink);
+  transition-property:
+    background-color, --atmo-tint, --atmo-key, --atmo-fill, --atmo-rim, --atmo-glow, --atmo-field-1,
+    --atmo-field-2, --atmo-key-x, --atmo-key-y, --atmo-fill-x, --atmo-fill-y, --atmo-rim-x, --atmo-rim-y;
+  transition-duration: 1.2s;
+  transition-timing-function: var(--ease-standard);
+}
+
+.atmo__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-standard);
+}
+
+.atmo__base {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 68vmax 52vmax at var(--atmo-key-x) var(--atmo-key-y), var(--atmo-key), transparent 70%),
+    radial-gradient(ellipse 56vmax 44vmax at var(--atmo-fill-x) var(--atmo-fill-y), var(--atmo-fill), transparent 70%),
+    radial-gradient(ellipse 60vmax 40vmax at var(--atmo-rim-x) var(--atmo-rim-y), var(--atmo-rim), transparent 70%),
+    linear-gradient(var(--atmo-tint), var(--atmo-tint));
+}
+
+/* Drifting color fields. The layer's edges are transparent, so it can
+   move and turn without ever showing a seam. */
+.atmo__fields {
+  background:
+    radial-gradient(ellipse 42vmax 34vmax at 28% 32%, var(--atmo-field-1), transparent 70%),
+    radial-gradient(ellipse 36vmax 42vmax at 74% 70%, var(--atmo-field-2), transparent 70%);
+  animation: atmo-drift 46s ease-in-out infinite alternate paused;
+}
+
+/* Two faint panes of glass at different depths. */
+.atmo__planes {
+  perspective: 1600px;
+}
+.atmo__planes::before,
+.atmo__planes::after {
+  content: "";
+  position: absolute;
+  border: 1px solid var(--atmo-line);
+  border-radius: 28px;
+  background: linear-gradient(145deg, color-mix(in srgb, transparent, var(--atmo-blue) 6%), transparent 62%);
+  animation: atmo-float 32s ease-in-out infinite alternate paused;
+}
+.atmo__planes::before {
+  top: 9vh;
+  right: -9vw;
+  width: min(52vw, 56rem);
+  aspect-ratio: 4 / 3;
+  transform: rotateY(-26deg) rotateX(9deg) rotateZ(-3deg);
+}
+.atmo__planes::after {
+  bottom: 4vh;
+  left: -7vw;
+  width: min(32vw, 34rem);
+  aspect-ratio: 5 / 4;
+  transform: translateZ(-220px) rotateY(22deg) rotateX(-6deg) rotateZ(2deg);
+  animation-duration: 40s;
+  animation-direction: alternate-reverse;
+}
+
+/* Story's timeline ruler, down the right-hand edge. Where the browser
+   supports scroll-driven animations it drifts slowly as the page
+   scrolls; elsewhere it simply stays put. */
+.atmo__ruler {
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+}
+.atmo__ruler::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: clamp(0.75rem, 3vw, 3rem);
+  width: 23px;
+  height: calc(100% + 480px);
+  background:
+    linear-gradient(var(--atmo-line-strong), var(--atmo-line-strong)) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(to bottom, var(--atmo-line-strong) 0 1px, transparent 1px) 50% 0 / 9px 48px repeat-y,
+    linear-gradient(to bottom, var(--atmo-line-strong) 0 1px, transparent 1px) 50% 0 / 23px 240px repeat-y;
+}
+@supports (animation-timeline: scroll()) {
+  .atmo__ruler::before {
+    animation: atmo-ruler linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+/* A giant year, barely there (set with useAtmosphere("story-2024")). */
+.atmo__numeral span {
+  position: absolute;
+  right: clamp(2.5rem, 7vw, 8rem);
+  bottom: -0.1em;
+  font-family: var(--font-display);
+  font-size: clamp(9rem, 30vw, 32rem);
+  font-weight: 400;
+  font-optical-sizing: auto;
+  font-variant-numeric: lining-nums;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--atmo-numeral);
+  white-space: nowrap;
+}
+
+/* Archive: graph-paper dots with a quiet major grid. */
+.atmo__grid {
+  background:
+    radial-gradient(circle at 1px 1px, var(--atmo-line-strong) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    linear-gradient(var(--atmo-line) 1px, transparent 1px) 0 0 / 120px 120px,
+    linear-gradient(90deg, var(--atmo-line) 1px, transparent 1px) 0 0 / 120px 120px;
+  mask-image: radial-gradient(ellipse 95% 85% at 50% 30%, #000 35%, transparent 100%);
+}
+
+/* Lab: a workspace grid with fine, hand-drawn-feeling line-work. */
+.atmo__sketch {
+  background:
+    linear-gradient(var(--atmo-line) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--atmo-line) 1px, transparent 1px) 0 0 / 48px 48px;
+  mask-image: radial-gradient(ellipse 100% 90% at 50% 40%, #000 40%, transparent 100%);
+}
+.atmo__sketch::after {
+  --sketch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='xMidYMid slice' fill='none' stroke='black' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1010 118c92-30 214-4 276 70 36 43 44 92 30 140'/%3E%3Cpath d='M1302 318l14 12 10-17'/%3E%3Ccircle cx='1178' cy='646' r='118' stroke-dasharray='3 11'/%3E%3Ccircle cx='1178' cy='646' r='3'/%3E%3Cpath d='M1178 528v-26M1178 790v-26M1060 646h-26M1322 646h-26'/%3E%3Cpath d='M78 760c62-48 128-62 196-10 56 42 118 36 170-6 50-40 118-44 176 8'/%3E%3Cpath d='M204 174h18M213 165v18M612 96h14M619 89v14M892 812h16M900 804v16'/%3E%3Crect x='156' y='402' width='232' height='148' rx='8' transform='rotate(-4 272 476)' stroke-dasharray='2 7'/%3E%3Cpath d='M520 262c78 6 160 30 232 70'/%3E%3Cpath d='M738 318l15 15-20 5'/%3E%3Cpath d='M300 300l40-40 40 40-40 40z' stroke-dasharray='2 6'/%3E%3C/svg%3E");
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--atmo-line-strong);
+  -webkit-mask: var(--sketch) center / cover no-repeat;
+  mask: var(--sketch) center / cover no-repeat;
+}
+
+/* Beyond › Next: a horizon that leans forward. */
+.atmo__horizon {
+  background:
+    linear-gradient(
+        to right,
+        transparent,
+        color-mix(in srgb, transparent, var(--atmo-blue) 40%) 58%,
+        color-mix(in srgb, transparent, var(--atmo-violet) 28%) 82%,
+        transparent
+      )
+      0 64% / 100% 1px no-repeat,
+    radial-gradient(ellipse 72% 20% at 70% 64%, color-mix(in srgb, transparent, var(--atmo-blue) 12%), transparent 70%);
+  animation: atmo-horizon 20s ease-in-out infinite alternate paused;
+}
+
+/* Beyond › Now: one slow, breathing light. */
+.atmo__pulse::before {
+  content: "";
+  position: absolute;
+  left: 72%;
+  top: 32%;
+  width: 64vmax;
+  height: 64vmax;
+  margin: -32vmax 0 0 -32vmax;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, transparent, var(--atmo-blue) 16%),
+    color-mix(in srgb, transparent, var(--atmo-violet) 6%) 55%,
+    transparent
+  );
+  animation: atmo-breathe 6.5s ease-in-out infinite alternate paused;
+}
+
+/* The pointer glow. Its transform is written by Atmosphere.tsx — only
+   while the pointer moves, and never on touch or under reduced motion. */
+.atmo__glow {
+  position: absolute;
+  left: 62%;
+  top: 30%;
+  width: 110vmax;
+  height: 110vmax;
+  margin: -55vmax 0 0 -55vmax;
+  background: radial-gradient(closest-side, var(--atmo-glow), transparent);
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-standard);
+  will-change: transform;
+}
+
+.atmo__vignette {
+  opacity: 1;
+  background: radial-gradient(ellipse 130% 110% at 50% 35%, transparent 52%, var(--atmo-edge));
+}
+
+/* Film grain: one small tile of SVG noise, softly blended. */
+.atmo__grain {
+  opacity: calc(var(--atmo-grain) * var(--atmo-grain-k));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: soft-light;
+}
+
+/* ------------------------------------------------------------------ */
+/* Moods, per route family                                             */
+/* ------------------------------------------------------------------ */
+
+/* Home — the default above; the pointer glow is its signature. */
+.atmo[data-route="home"] .atmo__glow {
+  opacity: 1;
+}
+
+/* Story — reflective and archival: warmer charcoal, a timeline ruler,
+   a giant year, a little more paper grain. */
+.atmo[data-route="story"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-sepia) 6%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-sepia) 10%);
+  --atmo-key-x: 12%;
+  --atmo-key-y: 4%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 7%);
+  --atmo-fill-x: 96%;
+  --atmo-fill-y: 88%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-light) 40%);
+  --atmo-rim-x: 50%;
+  --atmo-rim-y: 108%;
+  --atmo-glow: transparent;
+  --atmo-grain-k: 1.4;
+}
+.atmo[data-route="story"] :is(.atmo__ruler, .atmo__numeral) {
+  opacity: 1;
+}
+
+/* Work — the most energetic room: deeper electric blue, moving fields,
+   depth planes. A single record (work-item) keeps the same world, calmer. */
+.atmo[data-route="work"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 7%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 30%);
+  --atmo-key-x: 88%;
+  --atmo-key-y: 4%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 16%);
+  --atmo-fill-x: 0%;
+  --atmo-fill-y: 70%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-violet) 10%);
+  --atmo-rim-x: 55%;
+  --atmo-rim-y: 110%;
+  --atmo-glow: transparent;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 22%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-violet) 12%);
+}
+.atmo[data-route="work-item"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 4%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 18%);
+  --atmo-key-x: 90%;
+  --atmo-key-y: -6%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-violet) 6%);
+  --atmo-fill-x: 0%;
+  --atmo-fill-y: 100%;
+  --atmo-rim: transparent;
+  --atmo-rim-x: 50%;
+  --atmo-rim-y: 110%;
+  --atmo-glow: transparent;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-violet) 6%);
+}
+.atmo[data-route="work"] :is(.atmo__fields, .atmo__planes) {
+  opacity: 1;
+}
+.atmo[data-route="work-item"] .atmo__fields {
+  opacity: 0.45;
+}
+.atmo[data-route="work-item"] .atmo__planes {
+  opacity: 0.5;
+}
+.atmo[data-route^="work"] .atmo__fields,
+.atmo[data-route^="work"] .atmo__planes::before,
+.atmo[data-route^="work"] .atmo__planes::after {
+  animation-play-state: running;
+}
+
+/* Me — personal and human: softer, warm-dark, a warm glow. */
+.atmo[data-route="me"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-warm) 3%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 10%);
+  --atmo-key-x: 16%;
+  --atmo-key-y: 8%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 8%);
+  --atmo-fill-x: 94%;
+  --atmo-fill-y: 78%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-light) 50%);
+  --atmo-rim-x: 62%;
+  --atmo-rim-y: -6%;
+  --atmo-glow: color-mix(in srgb, transparent, var(--atmo-warm) 9%);
+  --atmo-grain-k: 1.15;
+}
+.atmo[data-route="me"] .atmo__glow {
+  opacity: 0.8;
+}
+
+/* Beyond — experimental: deep violet and blue. Its three modes (below)
+   each get their own room. */
+.atmo[data-route="beyond"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-violet) 5%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 18%);
+  --atmo-key-x: 84%;
+  --atmo-key-y: 6%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-fill-x: 6%;
+  --atmo-fill-y: 92%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-violet) 6%);
+  --atmo-rim-x: 50%;
+  --atmo-rim-y: 50%;
+  --atmo-glow: transparent;
+}
+
+/* Archive — functional and dense: usability first. */
+.atmo[data-route="archive"] {
+  --atmo-tint: transparent;
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 8%);
+  --atmo-key-x: 90%;
+  --atmo-key-y: -10%;
+  --atmo-fill: transparent;
+  --atmo-rim: transparent;
+  --atmo-glow: transparent;
+  --atmo-grain-k: 0.6;
+}
+.atmo[data-route="archive"] .atmo__grid {
+  opacity: 1;
+}
+
+/* Explore — playful: drifting fields and a glow that follows you.
+   Each lens (below) tints the room differently. */
+.atmo[data-route="explore"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-violet) 3%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 14%);
+  --atmo-key-x: 14%;
+  --atmo-key-y: 10%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-fill-x: 92%;
+  --atmo-fill-y: 86%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-warm) 5%);
+  --atmo-rim-x: 86%;
+  --atmo-rim-y: 6%;
+  --atmo-glow: color-mix(in srgb, transparent, var(--atmo-violet) 12%);
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-violet) 14%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+}
+.atmo[data-route="explore"] .atmo__fields {
+  opacity: 0.8;
+  animation-duration: 34s;
+  animation-play-state: running;
+}
+.atmo[data-route="explore"] .atmo__glow {
+  opacity: 0.9;
+}
+
+/* Not found — quiet: one dim light, a deeper vignette. */
+.atmo[data-route="not-found"] {
+  --atmo-tint: transparent;
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 10%);
+  --atmo-key-x: 50%;
+  --atmo-key-y: 36%;
+  --atmo-fill: transparent;
+  --atmo-rim: transparent;
+  --atmo-glow: transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sub-moods, set by pages with useAtmosphere(…)                       */
+/* ------------------------------------------------------------------ */
+
+/* Beyond › Now — clean and alive. */
+.atmo[data-atmo="beyond-now"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-key-x: 76%;
+  --atmo-key-y: 12%;
+}
+.atmo[data-atmo="beyond-now"] .atmo__pulse {
+  opacity: 1;
+}
+.atmo[data-atmo="beyond-now"] .atmo__pulse::before {
+  animation-play-state: running;
+}
+
+/* Beyond › Next — spacious, the light far ahead on the right. */
+.atmo[data-atmo="beyond-next"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 3%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 20%);
+  --atmo-key-x: 104%;
+  --atmo-key-y: 58%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-violet) 9%);
+  --atmo-fill-x: -4%;
+  --atmo-fill-y: 30%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-light) 30%);
+  --atmo-rim-x: 100%;
+  --atmo-rim-y: 64%;
+  --atmo-grain-k: 0.8;
+}
+.atmo[data-atmo="beyond-next"] .atmo__horizon {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+/* Beyond › Lab — a creative workspace. */
+.atmo[data-atmo="beyond-lab"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-violet) 2%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 10%);
+  --atmo-key-x: 50%;
+  --atmo-key-y: -10%;
+  --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 8%);
+  --atmo-fill-x: 100%;
+  --atmo-fill-y: 100%;
+  --atmo-rim: transparent;
+  --atmo-grain-k: 1.2;
+}
+.atmo[data-atmo="beyond-lab"] .atmo__sketch {
+  opacity: 1;
+}
+
+/* Explore lenses — each shifts the light a little. */
+.atmo[data-atmo="explore-built"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 22%);
+  --atmo-key-x: 86%;
+  --atmo-key-y: 8%;
+  --atmo-glow: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 20%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 10%);
+}
+.atmo[data-atmo="explore-grown"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 18%);
+  --atmo-key-x: 50%;
+  --atmo-key-y: 104%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-light) 30%);
+  --atmo-rim-x: 50%;
+  --atmo-rim-y: 100%;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-violet) 18%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 8%);
+}
+.atmo[data-atmo="explore-tried"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-key-x: 10%;
+  --atmo-key-y: 20%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-warm) 6%);
+  --atmo-rim-x: 80%;
+  --atmo-rim-y: 90%;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-warm) 7%);
+}
+.atmo[data-atmo="explore-care"] {
+  --atmo-tint: color-mix(in srgb, transparent, var(--atmo-warm) 3%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 11%);
+  --atmo-key-x: 20%;
+  --atmo-key-y: 12%;
+  --atmo-glow: color-mix(in srgb, transparent, var(--atmo-warm) 10%);
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-warm) 8%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-violet) 10%);
+}
+.atmo[data-atmo="explore-proud"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-light) 60%);
+  --atmo-key-x: 50%;
+  --atmo-key-y: -10%;
+  --atmo-rim: color-mix(in srgb, transparent, var(--atmo-warm) 7%);
+  --atmo-rim-x: 50%;
+  --atmo-rim-y: 0%;
+  --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+  --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-warm) 8%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+@keyframes atmo-drift {
+  0% {
+    transform: translate3d(-3vw, -2vh, 0) rotate(-3deg) scale(1);
+  }
+  50% {
+    transform: translate3d(2vw, 3vh, 0) rotate(4deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(4vw, -3vh, 0) rotate(-1deg) scale(1.03);
+  }
+}
+
+@keyframes atmo-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: -2vw 3vh;
+  }
+}
+
+@keyframes atmo-ruler {
+  to {
+    transform: translate3d(0, -480px, 0);
+  }
+}
+
+@keyframes atmo-horizon {
+  from {
+    translate: -3vw 0;
+  }
+  to {
+    translate: 3vw 0;
+  }
+}
+
+@keyframes atmo-breathe {
+  from {
+    opacity: 0.6;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Theme switch: the wash reveals the new theme's final colors (no glide
+   inside the circle); the no-View-Transitions fallback glides at the
+   same pace as the rest of the page. */
+html.vt-theme .atmo {
+  transition: none;
+}
+html.theme-transitioning .atmo {
+  transition-duration: 360ms;
+}
+
+@media (max-width: 40rem) {
+  .atmo__planes {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmo *,
+  .atmo *::before,
+  .atmo *::after {
+    animation: none !important;
+  }
+}
+
+@media print, (forced-colors: active) {
+  .atmo {
+    display: none;
+  }
+}

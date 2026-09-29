@@ -1,44 +1,53 @@
-import Link from "@/lib/Link";
-import { currently } from "@/lib/content";
-import { Reveal } from "@/components/motion/Reveal";
-import { Kicker } from "@/components/ui/Kicker";
+import { Reveal, Stagger, StaggerItem } from "@/animations";
+import { formatMonthYear, getLatestNowUpdate, getNowItems, home, nowLabels } from "@/lib/content";
+import { HomeLink } from "./parts";
 
-const labelText: Record<string, string> = {
-  building: "Currently building",
-  learning: "Currently learning",
-  reading: "Currently reading",
-  exploring: "Currently exploring",
-  goal: "Currently aiming for",
-  challenge: "Currently wrestling with",
-};
-
+/**
+ * RIGHT NOW — a live snapshot (the first few items of now.ts), so the
+ * homepage never feels frozen. A big label with a live dot and the month
+ * of the latest update sits on the left (sticky on wide screens); the
+ * items stand up out of the page in perspective, one after another, as
+ * they arrive (reversible "tilt" reveal). Leads to Beyond → Now.
+ */
 export function CurrentStatus() {
-  const featured = currently.slice(0, 3);
+  const copy = home.current;
+  const items = getNowItems(copy.count);
+  const updated = getLatestNowUpdate();
+  if (items.length === 0) return null;
+
   return (
-    <section className="border-t border-ink-line bg-ink-raised/40 px-5 sm:px-8 py-24 sm:py-32">
-      <div className="mx-auto max-w-5xl">
-        <Reveal>
-          <Kicker>Right now</Kicker>
-        </Reveal>
-        <div className="mt-10 grid gap-px overflow-hidden rounded-2xl bg-ink-line sm:grid-cols-3">
-          {featured.map((item, i) => (
-            <Reveal key={item.id} delay={i * 0.06} className="bg-ink p-6 sm:p-8">
-              <p className="text-xs uppercase tracking-[0.18em] text-azure-soft">
-                {labelText[item.label]}
-              </p>
-              <p className="mt-3 font-display text-xl sm:text-2xl text-paper">{item.value}</p>
-              {item.note && <p className="mt-2 text-sm text-paper-dim">{item.note}</p>}
+    <section id={copy.id ?? "right-now"} className="home-section home-now" aria-labelledby="home-now-title">
+      <div className="home-container home-now__grid">
+        <div className="home-now__aside">
+          <Reveal variant="drift">
+            <h2 id="home-now-title" className="home-now__title">
+              <span className="home-now__live" aria-hidden="true" />
+              {copy.kicker}
+            </h2>
+          </Reveal>
+          {updated && (
+            <Reveal variant="fade" delay={0.15} className="home-now__stamp">
+              <time dateTime={updated}>{formatMonthYear(updated)}</time>
             </Reveal>
-          ))}
+          )}
+          {copy.cta && (
+            <Reveal variant="fade" delay={0.25} className="home-now__cta">
+              <HomeLink href={copy.cta.href} cursor="explore">
+                {copy.cta.label}
+              </HomeLink>
+            </Reveal>
+          )}
         </div>
-        <Reveal delay={0.2} className="mt-8">
-          <Link
-            href="/beyond?tab=now"
-            className="inline-flex items-center gap-2 text-sm text-paper-dim hover:text-azure-soft transition-colors duration-200"
-          >
-            See everything that&rsquo;s alive right now →
-          </Link>
-        </Reveal>
+
+        <Stagger as="ol" variant="tilt" gap={0.1} className="home-now__list">
+          {items.map((item) => (
+            <StaggerItem as="li" key={item.id} className="home-now__item" data-now={item.label}>
+              <p className="home-now__lead">{nowLabels[item.label].lead}</p>
+              <p className="home-now__value">{item.value}</p>
+              {item.note && <p className="home-now__note">{item.note}</p>}
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
     </section>
   );

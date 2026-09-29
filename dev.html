@@ -1,64 +1,90 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="alternate icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#090B10" />
+
+    <!--
+      Theme, before first paint: dark unless the visitor has explicitly
+      picked light with the theme toggle (localStorage "theme"). Never
+      follows the OS setting — dark is the site's first impression.
+    -->
+    <script>
+      (function () {
+        var theme = "dark";
+        try {
+          if (localStorage.getItem("theme") === "light") theme = "light";
+        } catch (e) {}
+        document.documentElement.setAttribute("data-theme", theme);
+        if (theme === "light") {
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", "#F4F1E9");
+        }
+        // Deep links carrying UI state (/work/#did, /beyond/#lab, old ?tab=):
+        // the prerendered page shows the default tab until the app applies
+        // the URL a moment after loading. Mark the page so those panels stay
+        // hidden until then instead of flashing the wrong state (App.tsx
+        // clears this; the timer is a fail-safe if scripts never run).
+        if (location.hash.length > 1 || /[?&]tab=/.test(location.search)) {
+          document.documentElement.setAttribute("data-hash-pending", "");
+          setTimeout(function () {
+            document.documentElement.removeAttribute("data-hash-pending");
+          }, 3000);
+        }
+      })();
+    </script>
+
+    <!-- seo:start -->
+    <!--
+      Default metadata for `npm run dev`. scripts/prerender.mjs replaces
+      everything between seo:start and seo:end on every built page with
+      that page's own title, description, canonical URL, Open Graph /
+      Twitter tags and structured data (from src/content/pages.ts and the
+      content records). Keep both marker comments. The noindex keeps this
+      template (also reachable at /dev.html on the host) out of search
+      results; built pages get their own robots tag.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Tanushh Lath — I build, lead, compete, and keep asking better questions.</title>
+    <meta
+      name="description"
+      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact."
+    />
+    <link rel="canonical" href="https://tanushhlath.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tanushh Lath" />
+    <meta property="og:url" content="https://tanushhlath.com/" />
+    <meta property="og:title" content="Tanushh Lath" />
+    <meta property="og:image" content="https://tanushhlath.com/images/branding/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- seo:end -->
+
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/images/branding/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/images/branding/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/images/branding/apple-touch-icon.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Manrope:wght@400..800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@400..800&display=swap"
       rel="stylesheet"
     />
 
-    <!--
-      Sets data-theme on <html> before first paint — this is what avoids a
-      flash of the wrong theme. Plain inline script, runs synchronously
-      before anything else, no framework needed for this.
-    -->
-    <script>
-      (function () {
-        try {
-          var s = localStorage.getItem("theme");
-          var t =
-            s === "light" || s === "dark"
-              ? s
-              : window.matchMedia("(prefers-color-scheme: light)").matches
-                ? "light"
-                : "dark";
-          document.documentElement.setAttribute("data-theme", t);
-        } catch (e) {}
-      })();
-    </script>
-
-    <title>Tanushh Lath — I build, lead, compete, and keep asking better questions.</title>
-    <meta
-      name="description"
-      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
-    />
-    <link rel="canonical" href="https://tanushhlath.com/" />
-
-    <meta property="og:title" content="Tanushh Lath" />
-    <meta
-      property="og:description"
-      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
-    />
-    <meta property="og:url" content="https://tanushhlath.com/" />
-    <meta property="og:site_name" content="Tanushh Lath" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://tanushhlath.com/og-image.svg" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Tanushh Lath" />
-    <meta
-      name="twitter:description"
-      content="I'm a Grade 11 student interested in AI, computer science, entrepreneurship, and ideas that can create real-world impact. I spend my time building projects, taking on leadership opportunities, competing, and exploring what technology can do for people."
-    />
-    <meta name="twitter:image" content="https://tanushhlath.com/og-image.svg" />
+    <!-- Without JavaScript, scroll reveals would stay hidden: show everything. -->
+    <noscript>
+      <style>
+        [data-reveal] {
+          opacity: 1 !important;
+          transform: none !important;
+          clip-path: none !important;
+          filter: none !important;
+        }
+      </style>
+    </noscript>
   </head>
-  <body class="bg-ink text-paper antialiased selection:bg-azure selection:text-paper">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

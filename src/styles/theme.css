@@ -1,0 +1,137 @@
+/*
+  THEME — the one file to edit when you want to change the site's colors.
+
+  Every color on the site comes from the tokens below. Components use them
+  through Tailwind classes (bg-ink, text-paper-dim, border-ink-line,
+  text-azure-soft, …) or directly as var(--color-…), so changing a value
+  here recolors every page at once. The class names are wired up in
+  src/index.css (`@theme inline`) — you never need to touch that part.
+
+  Two palettes:
+    :root                      dark mode — the default for every visitor
+    :root[data-theme="light"]  light mode — only when the visitor picks it
+  The site never follows the operating system's light/dark setting; the
+  choice is remembered from the theme toggle (localStorage "theme").
+  If you change --color-ink, also update the two theme-color values in
+  dev.html (#090B10 / #F4F1E9) so the first paint matches.
+
+  How the names read:
+    ink       backgrounds and surfaces ("the page")
+    paper     text ("what's printed on it")
+    azure     the electric-blue accent — dominant
+    lavender  secondary accent — supporting
+    ember     warm accent — rare, for small moments
+  A "-soft" accent is the text-safe version of that accent: use
+  text-azure-soft / text-lavender-soft / text-ember-soft for small text so it
+  stays readable (WCAG AA) in both modes.
+
+  These tokens are deliberately unlayered: Tailwind emits placeholder
+  copies of them in its own theme layer, and these must win over those.
+*/
+
+:root {
+  /* ---- Surfaces ---------------------------------------------------- */
+  --color-ink: #090b10; /* page background */
+  --color-ink-raised: #11141b; /* primary surface: cards, panels */
+  --color-ink-raised-2: #171b24; /* secondary surface: nested / hovered */
+  --color-ink-line: rgba(243, 240, 232, 0.1); /* hairlines, borders */
+  --color-ink-line-strong: rgba(243, 240, 232, 0.2);
+
+  /* ---- Text -------------------------------------------------------- */
+  --color-paper: #f3f0e8; /* primary text */
+  --color-paper-dim: #9ba0ac; /* secondary text */
+  --color-paper-faint: #858994; /* tertiary text — still ≥ 4.5:1 on every surface */
+
+  /* ---- Accents ----------------------------------------------------- */
+  --color-azure: #5d6cff; /* primary accent: links, active states, focus */
+  --color-azure-soft: #8b97ff; /* accent for text */
+  --color-azure-dim: rgba(93, 108, 255, 0.16); /* accent wash behind things */
+  --color-lavender: #a999ff; /* secondary accent */
+  --color-lavender-soft: #c4b9ff;
+  --color-ember: #ffb08f; /* warm accent — use rarely */
+  --color-ember-soft: #ffc6ae;
+  --color-on-accent: #ffffff; /* text on a solid azure background */
+  --color-accent-solid: #5263f5; /* solid buttons/badges with on-accent text — a touch deeper than azure so white text passes WCAG AA (4.7:1) */
+
+  /* ---- Interaction ------------------------------------------------- */
+  --color-selection: rgba(93, 108, 255, 0.5);
+  --color-selection-ink: #ffffff;
+  --color-focus: var(--color-azure-soft); /* keyboard focus ring */
+
+  /* ---- Atmosphere (the living background behind every page) --------
+     The per-route moods in styles/atmosphere.css are mixed from these
+     hues, so they follow the accents above automatically. The alpha
+     built into each hue is its strength in this mode. */
+  --atmo-blue: var(--color-azure);
+  --atmo-violet: var(--color-lavender);
+  --atmo-warm: var(--color-ember);
+  --atmo-sepia: #c9a27c; /* Story's archival warmth */
+  --atmo-light: rgba(243, 240, 232, 0.1); /* soft light bloom */
+  --atmo-edge: rgba(2, 3, 6, 0.55); /* vignette at the viewport edges */
+  --atmo-line: rgba(243, 240, 232, 0.045); /* grids, rulers, line-work */
+  --atmo-line-strong: rgba(243, 240, 232, 0.09);
+  --atmo-numeral: rgba(243, 240, 232, 0.03); /* giant background numerals */
+  --atmo-grain: 0.55; /* film-grain strength, 0–1 (0 turns it off) */
+
+  /* ---- Typography -------------------------------------------------- */
+  --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-fraunces: "Fraunces", ui-serif, Georgia, serif;
+
+  /* ---- CSS motion timing (JS motion lives in src/animations/tokens.ts) */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-cinematic: cubic-bezier(0.6, 0.02, 0.15, 1);
+  --dur-fast: 180ms;
+  --dur-base: 420ms;
+  --dur-slow: 720ms;
+  --dur-cinematic: 1100ms;
+
+  color-scheme: dark;
+}
+
+/* Light mode — a warm, editorial paper palette designed on its own terms,
+   not an inversion of dark. */
+:root[data-theme="light"] {
+  /* ---- Surfaces ---------------------------------------------------- */
+  --color-ink: #f4f1e9;
+  --color-ink-raised: #ece9e0;
+  --color-ink-raised-2: #e4dfd3;
+  --color-ink-line: rgba(17, 19, 24, 0.1);
+  --color-ink-line-strong: rgba(17, 19, 24, 0.18);
+
+  /* ---- Text -------------------------------------------------------- */
+  --color-paper: #111318;
+  --color-paper-dim: #666b76;
+  /* A warm grey, set apart from paper-dim by hue rather than by being
+     lighter: anything lighter would fall below AA contrast (4.5:1) on
+     the page and on cards. */
+  --color-paper-faint: #6b6963;
+
+  /* ---- Accents ----------------------------------------------------- */
+  --color-azure: #4e5dff;
+  --color-accent-solid: #4e5dff;
+  --color-azure-soft: #3b48d6;
+  --color-azure-dim: rgba(78, 93, 255, 0.1);
+  --color-lavender: #6f63c9;
+  --color-lavender-soft: #5b4dbf;
+  --color-ember: #e98f6e;
+  --color-ember-soft: #9e4e30;
+
+  /* ---- Interaction ------------------------------------------------- */
+  --color-selection: rgba(78, 93, 255, 0.2);
+  --color-selection-ink: var(--color-paper);
+
+  /* ---- Atmosphere — quieter blues, warmer paper, white light -------- */
+  --atmo-blue: color-mix(in srgb, transparent, var(--color-azure) 50%);
+  --atmo-violet: color-mix(in srgb, transparent, var(--color-lavender) 55%);
+  --atmo-sepia: #a0703f;
+  --atmo-light: rgba(255, 255, 255, 0.95);
+  --atmo-edge: rgba(122, 98, 64, 0.1);
+  --atmo-line: rgba(17, 19, 24, 0.05);
+  --atmo-line-strong: rgba(17, 19, 24, 0.1);
+  --atmo-numeral: rgba(17, 19, 24, 0.045);
+  --atmo-grain: 0.7;
+
+  color-scheme: light;
+}

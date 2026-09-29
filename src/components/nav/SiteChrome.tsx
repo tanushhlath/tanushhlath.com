@@ -1,275 +1,269 @@
-import Link from "@/lib/Link";
-import { usePathname, useRouter } from "@/lib/navigation";
-import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { navGroups, primaryNav } from "@/lib/nav";
-import { site } from "@/content/site";
-import { EASE_ENTER, EASE_STANDARD } from "@/lib/motion";
+import { useEffect, useId, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { prefersReducedMotion } from "@/animations";
+import { EasterEggDialog } from "@/components/easter-egg/EasterEgg";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-
-const HOLD_MS = 1400;
-const TAP_WINDOW_MS = 900;
+import { useModalLayer, useScrollLock } from "@/components/ui/dialog";
+import { usePathname } from "@/routing/navigation";
+import { useRouteReset } from "@/routing/routeReset";
+import { MenuOverlay } from "./MenuOverlay";
+import { menuKeyFor } from "./menuModel";
+import { SectionIndicator } from "./SectionIndicator";
+import { Wordmark } from "./Wordmark";
 
 /**
- * Global chrome: wordmark (also the one Easter egg — hold ~1.4s on desktop
- * or tap 3x on mobile), a theme toggle, a menu toggle expanding into a
- * grouped overlay with a Back control, and a quiet "02 / 05 · Story"
- * position indicator so a visitor always knows roughly where they are
- * among the five primary routes without a permanent sidebar.
+ * GLOBAL CHROME — the fixed top bar every page shares, the full-screen
+ * menu it opens, and the Easter egg dialog behind the wordmark.
+ *
+ *   TANUSHH (Home)                  01 / 04 · Story   [☾ Dark]   [Menu ☰]
+ *
+ * Top bar: transparent at the very top of a page; after ~12px of scroll a
+ * translucent, blurred surface with a hairline and a soft shadow fades in
+ * (a data attribute set from one passive scroll listener + rAF — no React
+ * state). On the first load of Home it arrives as step 6 of the hero's
+ * entrance (after the name and statement); everywhere else, and on
+ * client-side navigation, it's simply there. It carries data-vt="chrome"
+ * so route transitions leave it still (styles/transitions.css).
+ *
+ * Menu: see MenuOverlay. While it's open the whole chrome — the bar
+ * (wordmark, theme, Close) plus the menu — is one modal dialog labelled
+ * "Menu": focus is trapped inside exactly that element, the page behind
+ * is inert and can't scroll (its scroll position is kept), Esc, Close
+ * and the Back control close it and return focus to the Menu button, and
+ * any navigation (including re-opening the current page) closes it at
+ * once so the route transition takes over.
+ *
+ * Easter egg: three quick clicks/taps on the wordmark (see Wordmark,
+ * EasterEggDialog). Styles: src/styles/chrome.css, easter-egg.css.
  */
+
+/** Scroll distance (px) after which the bar gets its surface. */
+const ELEVATE_AT = 12;
+/**
+ * The wordmark's first click starts the trip Home (or re-opens Home) and
+ * the third opens the Easter egg; on a slow device that navigation can
+ * land just after the egg opened. For this long it doesn't close the egg.
+ */
+const EGG_GRACE_MS = 1200;
+/** Page regions made inert while the menu is open. */
+const MENU_INERT = ["#main", "#site-footer"] as const;
+/** …and while the Easter egg is open (the top bar too). */
+const EGG_INERT = ["#main", "#site-footer", "[data-chrome-root]"] as const;
+/** Accessible name of the open menu (interface word, not content). */
+const MENU_LABEL = "Menu";
+
 export function SiteChrome() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
-  const [secretOpen, setSecretOpen] = useState(false);
+  const menuId = useId().replace(/[^\w-]/g, "") + "-menu";
 
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const suppressClick = useRef(false);
-  const tapTimes = useRef<number[]>([]);
+  const chromeRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuFocusRef = useRef<HTMLAnchorElement>(null);
+  const wordmarkRef = useRef<HTMLAnchorElement>(null);
+  const eggRef = useRef<HTMLDivElement>(null);
+  const eggFocusRef = useRef<HTMLInputElement>(null);
+  const restoreMenuFocus = useRef(false);
+  const restoreEggFocus = useRef(false);
 
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    setOpen(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [eggOpen, setEggOpen] = useState(false);
+  // Bumping these remounts the AnimatePresence around a layer, which drops
+  // it instantly (no exit animation) — used when a navigation closes it.
+  const [menuGen, setMenuGen] = useState(0);
+  const [eggGen, setEggGen] = useState(0);
+  const [eggGrace, setEggGrace] = useState(false);
+
+  // Home's first load: the bar enters as step 6 of the hero sequence.
+  const [entrance] = useState(() => (pathname === "/" ? "pending" : "none"));
+
+  // Any page change closes both layers instantly.
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
+    if (menuOpen) {
+      setMenuOpen(false);
+      setMenuGen((g) => g + 1);
+    }
+    if (eggOpen && !eggGrace) {
+      setEggOpen(false);
+      setEggGen((g) => g + 1);
+    }
   }
 
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  // …and so does re-opening the current page from a link (menu item, Home, the egg's link).
+  useRouteReset(() => {
+    setMenuOpen(false);
+    setMenuGen((g) => g + 1);
+    if (eggGrace) return;
+    setEggOpen(false);
+    setEggGen((g) => g + 1);
+  });
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpen(false);
-        setSecretOpen(false);
+    if (!eggGrace) return;
+    const timer = window.setTimeout(() => setEggGrace(false), EGG_GRACE_MS);
+    return () => window.clearTimeout(timer);
+  }, [eggGrace]);
+
+  // Focus returns by hand (below): only when the visitor closes a layer, never after a navigation.
+  useModalLayer(chromeRef, menuOpen, { initialFocus: menuFocusRef, inert: MENU_INERT, restoreFocus: false });
+  useModalLayer(eggRef, eggOpen, { initialFocus: eggFocusRef, inert: EGG_INERT, restoreFocus: false });
+  useScrollLock(menuOpen || eggOpen);
+
+  // Esc closes whichever layer is open and hands focus back to its opener.
+  useEffect(() => {
+    if (!menuOpen && !eggOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      if (eggOpen) {
+        restoreEggFocus.current = true;
+        setEggOpen(false);
+      } else {
+        restoreMenuFocus.current = true;
+        setMenuOpen(false);
       }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen, eggOpen]);
+
+  // Focus goes back to the Menu button / the wordmark after a visitor closes a layer
+  // (not after a navigation — the ScrollManager moves focus to the new page).
+  useEffect(() => {
+    if (menuOpen || !restoreMenuFocus.current) return;
+    restoreMenuFocus.current = false;
+    menuButtonRef.current?.focus({ preventScroll: true });
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (eggOpen || !restoreEggFocus.current) return;
+    restoreEggFocus.current = false;
+    wordmarkRef.current?.focus({ preventScroll: true });
+  }, [eggOpen]);
+
+  // Surface after the first few pixels of scroll.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    let frame = 0;
+    let elevated: boolean | null = null;
+    const update = () => {
+      frame = 0;
+      const next = window.scrollY > ELEVATE_AT;
+      if (next === elevated) return;
+      elevated = next;
+      bar.toggleAttribute("data-elevated", next);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
+  // Home entrance: prerendered hidden (data-entrance="pending"), played on hydration.
   useEffect(() => {
-    if (!secretOpen) return;
-    const t = setTimeout(() => setSecretOpen(false), 4600);
-    return () => clearTimeout(t);
-  }, [secretOpen]);
+    const bar = barRef.current;
+    if (!bar || bar.dataset.entrance !== "pending") return;
+    bar.dataset.entrance = prefersReducedMotion() ? "none" : "play";
+  }, []);
 
-  const currentIndex = primaryNav.findIndex((n) =>
-    n.href === "/" ? pathname === "/" : pathname?.startsWith(n.href)
-  );
-  const current = currentIndex >= 0 ? primaryNav[currentIndex] : null;
+  const toggleMenu = () => {
+    if (menuOpen) restoreMenuFocus.current = true;
+    setMenuOpen(!menuOpen);
+  };
 
-  function startHold() {
-    holdTimer.current = setTimeout(() => {
-      suppressClick.current = true;
-      setSecretOpen(true);
-    }, HOLD_MS);
-  }
-  function cancelHold() {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-  }
-  function onWordmarkClick(e: React.MouseEvent) {
-    if (suppressClick.current) {
-      e.preventDefault();
-      suppressClick.current = false;
-      return;
-    }
-    const now = Date.now();
-    tapTimes.current = [...tapTimes.current, now].filter((t) => now - t < TAP_WINDOW_MS);
-    if (tapTimes.current.length >= 3) {
-      e.preventDefault();
-      tapTimes.current = [];
-      setSecretOpen(true);
-    }
-  }
+  const closeMenu = () => {
+    restoreMenuFocus.current = true;
+    setMenuOpen(false);
+  };
 
-  function handleBack() {
-    setOpen(false);
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/");
-    }
-  }
+  const openEgg = () => {
+    setMenuOpen(false);
+    setEggOpen(true);
+    setEggGrace(true);
+  };
+
+  const closeEgg = () => {
+    restoreEggFocus.current = true;
+    setEggOpen(false);
+  };
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 sm:px-8 py-5 pointer-events-none">
-        <div className="pointer-events-auto relative">
-          <Link
-            href="/"
-            onMouseDown={startHold}
-            onMouseUp={cancelHold}
-            onMouseLeave={cancelHold}
-            onTouchStart={startHold}
-            onTouchEnd={cancelHold}
-            onClick={onWordmarkClick}
-            data-cursor="view"
-            data-cursor-label="Home"
-            className="group/mark select-none font-display text-lg tracking-tight text-paper transition-colors duration-200 hover:text-azure-soft"
-          >
-            {site.shortName}
-            <span className="ml-2 text-[10px] font-sans font-normal uppercase tracking-[0.2em] text-paper-faint opacity-0 transition-opacity duration-200 group-hover/mark:opacity-100">
-              Home
-            </span>
-          </Link>
-
-          {secretOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.3, ease: EASE_ENTER }}
-              className="absolute left-0 top-full mt-3 w-64 rounded-2xl border border-azure-soft/40 bg-ink-raised p-4 shadow-2xl"
-              role="status"
-            >
-              <p className="text-xs uppercase tracking-[0.18em] text-azure-soft">
-                You found something
-              </p>
-              <p className="mt-2 text-sm text-paper-dim">{site.secretNote}</p>
-              <p className="mt-2 text-sm text-paper-faint">:)</p>
-            </motion.div>
-          )}
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-3">
-          {current && !open && (
-            <span className="hidden items-baseline gap-2 sm:flex">
-              <span className="font-mono text-[11px] tabular-nums text-paper-faint">
-                {String(currentIndex + 1).padStart(2, "0")} / {String(primaryNav.length).padStart(2, "0")}
-              </span>
-              <span className="text-xs uppercase tracking-[0.18em] text-paper-dim">
-                {current.label}
-              </span>
-            </span>
-          )}
-          <ThemeToggle />
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={open ? "Close menu" : "Open menu"}
-            data-cursor="view"
-            data-cursor-label={open ? "Close" : "Menu"}
-            className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-ink-line bg-ink-raised/80 backdrop-blur-sm transition-colors duration-200 hover:border-azure-soft cursor-pointer"
-          >
-            <span className="relative flex h-3.5 w-5 flex-col justify-between">
-              <span
-                className={`h-px w-full bg-paper transition-transform duration-300 ${
-                  open ? "translate-y-[6.5px] rotate-45" : ""
-                }`}
-              />
-              <span
-                className={`h-px w-full bg-paper transition-opacity duration-200 ${
-                  open ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <span
-                className={`h-px w-full bg-paper transition-transform duration-300 ${
-                  open ? "-translate-y-[6.5px] -rotate-45" : ""
-                }`}
-              />
-            </span>
-          </button>
-        </div>
-      </header>
-
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-40 bg-ink"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, ease: EASE_STANDARD }}
+      {/* The focus trap's element is the dialog: while the menu is open, bar + menu are one modal. */}
+      <div
+        ref={chromeRef}
+        className="chrome"
+        data-chrome-root=""
+        role={menuOpen ? "dialog" : undefined}
+        aria-modal={menuOpen ? true : undefined}
+        aria-label={menuOpen ? MENU_LABEL : undefined}
+      >
+        <header
+          ref={barRef}
+          className="chrome-bar"
+          data-vt="chrome"
+          data-entrance={entrance}
+          data-menu-open={menuOpen ? "" : undefined}
         >
-          <nav
-            className="h-full w-full overflow-y-auto px-6 sm:px-12 pt-28 pb-16"
-            aria-label="Site sections"
-          >
-            <div className="mx-auto max-w-5xl">
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: EASE_ENTER }}
-                className="mb-4 flex flex-wrap items-center gap-4 border-b border-ink-line pb-6"
-              >
-                <Link
-                  href="/"
-                  data-cursor="view"
-                  data-cursor-label="Go"
-                  className={`font-display text-2xl transition-colors duration-200 ${
-                    pathname === "/" ? "text-azure-soft" : "text-paper hover:text-azure-soft"
-                  }`}
-                >
-                  Home
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  data-cursor="view"
-                  data-cursor-label="Back"
-                  className="ml-auto flex items-center gap-2 text-sm uppercase tracking-[0.18em] text-paper-faint transition-colors duration-200 hover:text-azure-soft cursor-pointer"
-                >
-                  <span aria-hidden>←</span> Back
-                </button>
-              </motion.div>
-
-              <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
-                {navGroups.map((group, gi) => {
-                  const isDeeper = group.title === "Discover";
-                  return (
-                    <motion.div
-                      key={group.title}
-                      initial={{ opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.45, ease: EASE_ENTER, delay: 0.06 + gi * 0.06 }}
-                      className={isDeeper ? "lg:border-l lg:border-dashed lg:border-ink-line lg:pl-8" : ""}
-                    >
-                      <p className="mb-4 text-xs uppercase tracking-[0.2em] text-paper-dim">
-                        {isDeeper ? "Go deeper" : "The five routes"}
-                      </p>
-                      <ul className="space-y-3">
-                        {group.items.map((item, ii) => {
-                          const active = pathname?.startsWith(item.href);
-                          return (
-                            <li key={item.href}>
-                              <Link
-                                href={item.href}
-                                data-cursor="view"
-                                data-cursor-label="Go"
-                                className={`group flex items-baseline gap-3 font-display leading-tight transition-colors duration-200 ${
-                                  isDeeper ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
-                                } ${active ? "text-azure-soft" : "text-paper hover:text-azure-soft"}`}
-                              >
-                                {!isDeeper && (
-                                  <span className="font-mono text-sm text-paper-faint">
-                                    {String(ii + 1).padStart(2, "0")}
-                                  </span>
-                                )}
-                                <span>
-                                  {item.label}
-                                  <span className="mt-1 block font-sans text-sm font-normal normal-case tracking-normal text-paper-faint group-hover:text-paper-dim">
-                                    {item.hint}
-                                  </span>
-                                </span>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-16 border-t border-ink-line pt-8 text-sm text-paper-faint">
-                <p>{site.location}</p>
-              </div>
+          <div className="chrome-bar__surface" aria-hidden="true" />
+          <div className="chrome-bar__inner">
+            <div className="chrome-bar__start">
+              <Wordmark ref={wordmarkRef} onSecret={openEgg} />
             </div>
-          </nav>
-        </motion.div>
-      )}
+            <div className="chrome-bar__end">
+              <SectionIndicator pathname={pathname} />
+              <ThemeToggle showLabel className="chrome-theme" />
+              <button
+                ref={menuButtonRef}
+                type="button"
+                className="menu-toggle"
+                aria-expanded={menuOpen}
+                aria-haspopup="dialog"
+                aria-controls={menuOpen ? menuId : undefined}
+                onClick={toggleMenu}
+                data-cursor={menuOpen ? "close" : "view"}
+                data-cursor-label={menuOpen ? undefined : "Menu"}
+              >
+                <span className="menu-toggle__label" aria-hidden="true">
+                  <span className="menu-toggle__word">Menu</span>
+                  <span className="menu-toggle__word">Close</span>
+                </span>
+                <span className="menu-toggle__icon" aria-hidden="true">
+                  <span className="menu-toggle__line" />
+                  <span className="menu-toggle__line" />
+                  <span className="menu-toggle__line" />
+                </span>
+                <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <AnimatePresence key={menuGen}>
+          {menuOpen && (
+            <MenuOverlay
+              key="menu"
+              id={menuId}
+              pathname={pathname}
+              currentKey={menuKeyFor(pathname)}
+              onClose={closeMenu}
+              focusRef={menuFocusRef}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence key={eggGen}>
+        {eggOpen && <EasterEggDialog key="egg" ref={eggRef} inputRef={eggFocusRef} onClose={closeEgg} />}
+      </AnimatePresence>
     </>
   );
 }

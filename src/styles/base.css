@@ -1,0 +1,250 @@
+/*
+  PAGE COLUMN — one set of edges for the whole site. Every page's outer
+  container is min(100% - 2 × --page-gutter, --page-max) wide and centred;
+  full-width bars (top bar, footer) use padding-inline: var(--page-inline)
+  so their contents line up with that same column at every width.
+*/
+:root {
+  --page-gutter: clamp(16px, 4.2vw, 56px);
+  --page-max: 1360px;
+  --page-inline: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
+}
+
+/*
+  BASE — global element styles shared by every page: the document shell,
+  text selection, keyboard focus, theme switching, the custom-cursor
+  visibility rules and reduced motion. (Anchor offsets under the fixed
+  header live with the scroll rules in styles/transitions.css.)
+
+  Colors come from styles/theme.css. Most rules sit in Tailwind's `base`
+  layer so a utility class on an element always wins over them; the few
+  that must beat utilities are deliberately left unlayered and say why.
+*/
+
+@layer base {
+  html {
+    height: 100%;
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    /* Its own stacking context, so the fixed atmosphere (z-index -100,
+       see styles/atmosphere.css) paints above the page color and below
+       everything else — no z-index needed on main, header or footer. */
+    isolation: isolate;
+    min-height: 100%;
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100svh;
+    flex-direction: column;
+  }
+
+  /* Borders default to the theme hairline instead of currentColor. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-ink-line);
+  }
+
+  ::selection {
+    background-color: var(--color-selection);
+    color: var(--color-selection-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+}
+
+/* A very faint grid, opt-in per section rather than global — a functional
+   texture, not a decorative one. (`bg-grid-faint`) */
+@utility bg-grid-faint {
+  background-image:
+    linear-gradient(var(--color-ink-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-ink-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme switching (components/theme/ThemeToggle.tsx)                  */
+/* ------------------------------------------------------------------ */
+
+/* The wash: the new theme spreads out as a circle from the toggle.
+   ThemeToggle puts `vt-theme` on <html> and the circle's origin and
+   final radius in --vt-x / --vt-y / --vt-r for the length of the view
+   transition. Route transitions (styles/transitions.css) never run while
+   the class is present. */
+html.vt-theme * {
+  /* One snapshot of the whole page, so every part of it is inside the
+     circle — including elements that normally morph on their own. */
+  view-transition-name: none !important;
+}
+
+html.vt-theme::view-transition-old(root),
+html.vt-theme::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.vt-theme::view-transition-new(root) {
+  animation: theme-wash 460ms var(--ease-cinematic) both;
+}
+
+@keyframes theme-wash {
+  from {
+    clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 0%));
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 0%));
+  }
+}
+
+/* Fallback when View Transitions aren't available (and under reduced
+   motion): colors crossfade instead of snapping. ThemeToggle keeps the
+   class on for the length of the fade only, so it never interferes with
+   ordinary hover and motion transitions. Unlayered + !important so it
+   briefly outranks every component's own transition list. The toggle's
+   icon keeps its own morph, and the atmosphere shortens its own glide
+   (styles/atmosphere.css). */
+html.theme-transitioning,
+html.theme-transitioning :not(.atmo, .atmo *, .theme-toggle__icon, .theme-toggle__icon *),
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 360ms var(--ease-standard),
+    border-color 360ms var(--ease-standard),
+    color 360ms var(--ease-standard),
+    fill 360ms var(--ease-standard),
+    stroke 360ms var(--ease-standard),
+    box-shadow 360ms var(--ease-standard) !important;
+}
+
+/* The toggle's sun ↔ moon icon. Its state is read straight from
+   html[data-theme] — not from React — so the prerendered button already
+   shows the right icon on first paint, in either theme. */
+.theme-toggle__icon {
+  overflow: visible;
+  transform: rotate(-40deg);
+  transition: transform 520ms var(--ease-standard);
+}
+
+.theme-toggle__body {
+  transform: scale(1.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 520ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.theme-toggle__bite {
+  transform: translate(0, 0);
+  transition: transform 360ms var(--ease-standard) 80ms;
+}
+
+.theme-toggle__rays {
+  opacity: 0;
+  transform: rotate(-30deg) scale(0.55);
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  transition:
+    opacity 240ms var(--ease-standard),
+    transform 520ms var(--ease-standard);
+}
+
+:root[data-theme="light"] .theme-toggle__icon {
+  transform: rotate(0deg);
+}
+
+:root[data-theme="light"] .theme-toggle__body {
+  transform: scale(1);
+}
+
+:root[data-theme="light"] .theme-toggle__bite {
+  transform: translate(10px, -6px);
+  transition-delay: 0ms;
+}
+
+:root[data-theme="light"] .theme-toggle__rays {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  transition-delay: 120ms, 80ms;
+}
+
+/* Visible label ("Dark" / "Light"), when the toggle shows one. */
+.theme-toggle__label [data-theme-label="light"],
+:root[data-theme="light"] .theme-toggle__label [data-theme-label="dark"] {
+  display: none;
+}
+
+:root[data-theme="light"] .theme-toggle__label [data-theme-label="light"] {
+  display: inline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom cursor (components/misc/Cursor.tsx)                          */
+/* ------------------------------------------------------------------ */
+
+/* Fine pointers only. The component always mounts; whether it shows is
+   decided here, off the body class its effect toggles. Unlayered so the
+   native cursor stays hidden even on elements with a cursor-* utility. */
+.cursor-dot {
+  opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.has-custom-cursor,
+  body.has-custom-cursor :is(a, button, [role="button"], [data-cursor], label, summary, select) {
+    cursor: none;
+  }
+
+  /* Text fields keep their caret cursor — the dot alone can't show where
+     the text insertion point will land. */
+  body.has-custom-cursor :is(input:not([type="range"], [type="checkbox"], [type="radio"]), textarea, [contenteditable="true"]) {
+    cursor: text;
+  }
+
+  body.has-custom-cursor .cursor-dot {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion                                                      */
+/* ------------------------------------------------------------------ */
+
+/* Everything still works; it just stops moving. Components that animate
+   from JS check the same preference (see src/animations). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

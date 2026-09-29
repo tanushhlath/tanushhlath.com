@@ -1,0 +1,1357 @@
+/*
+  DETAIL — /work/<id>/ (every project and event).
+  Components: src/components/detail/*. Imported from src/index.css.
+
+  Every class is prefixed `dt-` (scoped under .dt-page where it touches
+  shared parts). Unlayered, like work.css, so the few page-specific
+  tweaks of shared primitives win over styles/ui.css.
+
+  Contents
+    1. Page shell + tokens
+    2. Back control
+    3. Hero (ambient light, ghost numeral, text, facts, visual, frame, seal)
+    4. Recognition mark
+    5. Sections (rows, pairs, content types, process steps)
+    6. Media band + blocks
+    7. Connections
+    8. Pager
+    9. Responsive
+   10. Reduced motion
+*/
+
+/* ================================================================== */
+/* 1. Page shell + tokens                                              */
+/* ================================================================== */
+
+.dt-page {
+  --dt-gutter: var(--page-gutter);
+  --dt-max: var(--page-max);
+  --dt-top: calc(var(--chrome-h, 68px) + 1.5rem);
+  --dt-radius: 22px;
+  --dt-label-w: 13.5rem;
+  --dt-col-gap: clamp(1.75rem, 3.4vw, 3.5rem);
+  --dt-hair: var(--color-ink-line);
+  --dt-hair-strong: var(--color-ink-line-strong);
+  --dt-glass: color-mix(in srgb, var(--color-ink) 72%, transparent);
+  --dt-ease: var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+  --dt-ease-std: var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  position: relative;
+  /* The ghost numeral and the ambient light never cause sideways scroll
+     (clip, unlike hidden, keeps position: sticky working). */
+  overflow-x: clip;
+}
+
+.dt-shell {
+  width: min(100% - 2 * var(--dt-gutter), var(--dt-max));
+  margin-inline: auto;
+}
+
+.dt-page :where(h1, h2, h3, p, ol, ul, dl, dd, figure, blockquote) {
+  margin: 0;
+}
+.dt-page :where(ol, ul) {
+  list-style: none;
+  padding: 0;
+}
+:where(.dt-page) a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ================================================================== */
+/* 2. Back control                                                     */
+/* ================================================================== */
+
+.dt-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  max-width: 100%;
+  min-height: 44px;
+  color: var(--color-paper);
+  border-radius: 999px;
+}
+.dt-back__icon {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  overflow: hidden;
+  border: 1px solid var(--dt-hair-strong);
+  border-radius: 999px;
+  background: var(--dt-glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 1.05rem;
+  transition:
+    border-color 0.3s var(--dt-ease-std),
+    background-color 0.3s var(--dt-ease-std);
+}
+.dt-back__glyph {
+  display: block;
+  transition: transform 0.4s var(--dt-ease-std);
+}
+.dt-back:hover .dt-back__icon,
+.dt-back:focus-visible .dt-back__icon {
+  border-color: color-mix(in srgb, var(--color-azure) 70%, transparent);
+  background: color-mix(in srgb, var(--color-azure) 16%, var(--dt-glass));
+}
+.dt-back:hover .dt-back__glyph,
+.dt-back:focus-visible .dt-back__glyph {
+  transform: translateX(-3px);
+}
+.dt-back__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.dt-back__prefix {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.dt-back__path {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.dt-back__seg {
+  flex: none;
+}
+.dt-back__seg:last-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dt-back__seg + .dt-back__seg::before {
+  content: "/";
+  margin-inline: 0.5em;
+  color: var(--color-paper-faint);
+}
+
+.dt-back--end {
+  padding: 0.55rem 1.5rem 0.55rem 0.55rem;
+  border: 1px solid var(--dt-hair-strong);
+  background: color-mix(in srgb, var(--color-ink-raised) 55%, transparent);
+  transition:
+    border-color 0.3s var(--dt-ease-std),
+    background-color 0.3s var(--dt-ease-std);
+}
+.dt-back--end:hover,
+.dt-back--end:focus-visible {
+  border-color: color-mix(in srgb, var(--color-azure) 55%, transparent);
+  background: color-mix(in srgb, var(--color-azure) 10%, var(--color-ink-raised));
+}
+.dt-back--end .dt-back__path {
+  font-size: 1.05rem;
+}
+
+/* ================================================================== */
+/* 3. Hero                                                             */
+/* ================================================================== */
+
+.dt-hero {
+  position: relative;
+  isolation: isolate;
+  padding-top: calc(var(--chrome-h, 68px) + clamp(0.75rem, 2.4vw, 2rem));
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+.dt-hero__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.dt-hero__bar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Background plane: the cover's own light, blurred and still. */
+.dt-hero__ambient {
+  position: absolute;
+  z-index: -1;
+  top: -6%;
+  right: -8%;
+  width: min(92vw, 64rem);
+  height: 112%;
+  pointer-events: none;
+  opacity: 0.34;
+  -webkit-mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+}
+.dt-hero__ambient img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(72px) saturate(1.35);
+  transform: scale(1.1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+:root[data-theme="light"] .dt-hero__ambient {
+  opacity: 0.26;
+}
+
+/* A giant year (or the record type, when undated) far behind the text. */
+.dt-hero__ghost {
+  position: absolute;
+  z-index: 0;
+  top: calc(var(--chrome-h, 68px) + 0.5rem);
+  right: calc(var(--dt-gutter) * 0.25);
+  pointer-events: none;
+  user-select: none;
+}
+.dt-hero__ghost span {
+  display: block;
+  font-size: clamp(4.5rem, 13vw, 11rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-paper) 12%, transparent);
+  white-space: nowrap;
+}
+.dt-hero__ghost span[data-numeric] {
+  font-size: clamp(7rem, 22vw, 20rem);
+}
+
+.dt-hero__text {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+  min-width: 0;
+  max-width: 46rem;
+}
+.dt-hero__kicker-sep {
+  margin-inline: 0.55em;
+  opacity: 0.45;
+}
+.dt-hero__title {
+  font-weight: 340;
+  font-size: clamp(2.6rem, 6vw, 5.4rem);
+  line-height: 0.97;
+  letter-spacing: -0.035em;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.dt-hero[data-title="medium"] .dt-hero__title {
+  font-size: clamp(2.35rem, 5vw, 4.4rem);
+}
+.dt-hero[data-title="long"] .dt-hero__title {
+  font-size: clamp(2.05rem, 4vw, 3.6rem);
+  line-height: 1.02;
+}
+.dt-hero__summary {
+  max-width: 36em;
+  font-size: clamp(1.08rem, 1.45vw, 1.28rem);
+  line-height: 1.55;
+  color: var(--color-paper-dim);
+  text-wrap: pretty;
+}
+
+.dt-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem 2.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--dt-hair);
+}
+.dt-facts__item {
+  min-width: 0;
+}
+.dt-facts__item dt {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.dt-facts__item dd {
+  margin-top: 0.3rem;
+  font-size: 0.98rem;
+  color: var(--color-paper);
+}
+
+.dt-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+.dt-hero__count {
+  margin-left: 0.55em;
+  font-size: 0.78em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+/* Midground: the frame (tips back in 3D as the hero scrolls away). */
+.dt-hero__visual {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  transform-origin: 50% 0%;
+}
+.dt-hero__tilt {
+  position: relative;
+  width: var(--dt-frame-w, min(100%, 32rem));
+  max-width: 100%;
+  border-radius: var(--dt-radius);
+}
+
+.dt-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--dt-radius);
+  background: var(--color-ink-raised);
+  box-shadow: var(--depth-shadow-lg);
+}
+.dt-frame--art {
+  aspect-ratio: 4 / 3;
+}
+.dt-frame--plate {
+  aspect-ratio: 4 / 5;
+}
+/* A photo is shown whole (certificates and letters keep their edges): the
+   frame takes the photo's proportions and the photo is contained edge to
+   edge. Where the frame is wider than the photo, the photo sits centred
+   on this plate. */
+.dt-frame--photo {
+  aspect-ratio: var(--dt-frame-ratio, 4 / 3);
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--color-azure-dim), transparent 70%),
+    var(--color-ink-raised);
+}
+/* The plate is lit by the photo itself: a soft, still wash of its colours. */
+.dt-frame__glow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  opacity: 0.4;
+  pointer-events: none;
+}
+.dt-frame__glow img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(26px) saturate(1.2);
+  transform: scale(1.2);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+:root[data-theme="light"] .dt-frame__glow {
+  opacity: 0.55;
+}
+.dt-frame--button {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: zoom-in;
+}
+/* The photo layer: whole at rest; a slow scroll-linked push-in (DetailHero)
+   once the hero is on its way out. */
+.dt-frame__depth {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+/* The photo itself, centred at no more than its size limit. Where it sits
+   on the plate, a soft shadow sets it down (drop-shadow follows the drawn
+   picture, not its letterboxed box). */
+.dt-frame__photo {
+  transition: transform 1.1s var(--dt-ease);
+}
+.dt-frame__photo .protected-media {
+  filter: drop-shadow(0 14px 28px rgb(2 3 6 / 0.35));
+}
+.dt-frame--button:hover .dt-frame__photo,
+.dt-frame--button:focus-visible .dt-frame__photo {
+  transform: scale(1.025);
+}
+.dt-frame__edge {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-paper) 10%, transparent);
+  pointer-events: none;
+}
+/* Tucked into the top corner: a certificate's signatures and a photo's
+   subject sit low, and the recognition seal hangs from the lower edge. */
+.dt-frame__hint {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 999px;
+  background: var(--dt-glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--color-paper);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.92);
+  transition:
+    opacity 0.35s var(--dt-ease-std),
+    transform 0.35s var(--dt-ease-std);
+}
+.dt-frame__hint svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.dt-frame--button:hover .dt-frame__hint,
+.dt-frame--button:focus-visible .dt-frame__hint {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .dt-frame__hint {
+    opacity: 0.92;
+    transform: none;
+  }
+}
+.dt-frame--button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 4px;
+}
+
+/* Foreground: the recognition seal floats in front of the frame. It hangs
+   from the frame's lower edge, overlapping only its rounded corner, so a
+   certificate's text stays readable. The visual keeps room for it below. */
+.dt-hero__seal {
+  position: absolute;
+  z-index: 4;
+  left: clamp(-2.25rem, -2.6vw, -0.75rem);
+  top: calc(100% - 1rem);
+  max-width: min(19rem, 86%);
+}
+.dt-hero[data-seal] .dt-hero__visual {
+  padding-bottom: clamp(4.75rem, 7vw, 5.75rem);
+}
+
+/* ================================================================== */
+/* 4. Recognition mark                                                 */
+/* ================================================================== */
+
+.dt-rec__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-azure-soft);
+}
+.dt-rec__year {
+  letter-spacing: 0.08em;
+  color: var(--color-paper-faint);
+}
+.dt-rec__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35em;
+  font-weight: 360;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+}
+.dt-rec__num {
+  font-size: 1.85em;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 0.8;
+  color: var(--color-azure-soft);
+}
+.dt-rec__suffix {
+  margin-left: 0.04em;
+  font-size: 0.42em;
+  font-style: normal;
+  vertical-align: 0.95em;
+}
+.dt-rec[data-level="minor"] .dt-rec__num {
+  color: var(--color-lavender);
+}
+
+.dt-rec--seal {
+  padding: 0.95rem 1.2rem 1.1rem;
+  border: 1px solid var(--dt-hair-strong);
+  border-radius: 18px;
+  background: var(--dt-glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow: var(--depth-shadow-md);
+}
+.dt-rec--seal .dt-rec__result {
+  margin-top: 0.55rem;
+  font-size: clamp(1.45rem, 2.1vw, 1.9rem);
+}
+
+.dt-rec--display .dt-rec__result {
+  margin-top: 0.75rem;
+  font-size: clamp(2.5rem, 6.4vw, 5.2rem);
+}
+.dt-rec--display .dt-rec__rest {
+  text-wrap: balance;
+}
+.dt-rec__detail {
+  margin-top: 1rem;
+  max-width: 34em;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-paper-dim);
+}
+
+/* Compact note: an award whose result is the page title. The year sits in
+   a double ring (a medal, not a headline), beside the label and a link to
+   where the award is filed among the others. */
+.dt-rec--note {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.1rem, 2.6vw, 1.75rem);
+}
+.dt-rec__medal {
+  order: -1;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(4.75rem, 7vw, 5.75rem);
+  aspect-ratio: 1;
+  /* The outer ring (outline + offset) sits on the column edge, not past it. */
+  margin: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-azure) 60%, transparent);
+  border-radius: 50%;
+  outline: 1px solid color-mix(in srgb, var(--color-azure) 22%, transparent);
+  outline-offset: 5px;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--color-azure) 18%, transparent), transparent 72%);
+  font-size: clamp(1.25rem, 1.9vw, 1.55rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--color-azure-soft);
+}
+.dt-rec[data-level="minor"] .dt-rec__medal {
+  border-color: color-mix(in srgb, var(--color-lavender) 60%, transparent);
+  outline-color: color-mix(in srgb, var(--color-lavender) 22%, transparent);
+  color: var(--color-lavender);
+}
+.dt-rec__note-text {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.dt-rec__note-text .dt-rec__detail {
+  margin-top: 0.1rem;
+}
+.dt-page .dt-rec__filed {
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+  font-weight: 500;
+  color: var(--color-paper);
+}
+.dt-page .dt-rec__filed:hover,
+.dt-page .dt-rec__filed:focus-visible {
+  color: var(--color-azure-soft);
+}
+
+/* ================================================================== */
+/* 5. Sections                                                         */
+/* ================================================================== */
+
+.dt-body {
+  padding-bottom: clamp(0.5rem, 2vw, 1.5rem);
+}
+.dt-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.dt-sec {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem;
+  padding-block: clamp(2.25rem, 5vw, 4rem);
+  border-top: 1px solid var(--dt-hair);
+}
+.dt-sec__label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+}
+.dt-sec__num {
+  flex: none;
+  font-size: clamp(1.7rem, 2.6vw, 2.4rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-azure-soft);
+}
+.dt-sec__title {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+.dt-sec__rule {
+  display: none;
+}
+.dt-sec__body {
+  min-width: 0;
+}
+
+/* Two sections side by side. */
+.dt-pair {
+  display: grid;
+  gap: clamp(2.25rem, 5vw, 3rem);
+  padding-block: clamp(2.25rem, 5vw, 4rem);
+  border-top: 1px solid var(--dt-hair);
+}
+.dt-pair__item {
+  min-width: 0;
+}
+.dt-pair__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+
+/* Content types */
+.dt-lead {
+  max-width: 34em;
+  font-size: clamp(1.22rem, 2.1vw, 1.7rem);
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: var(--color-paper);
+  text-wrap: pretty;
+}
+.dt-text {
+  max-width: 40em;
+  font-size: clamp(1rem, 1.15vw, 1.08rem);
+  line-height: 1.75;
+  color: var(--color-paper-dim);
+  text-wrap: pretty;
+}
+.dt-text--large {
+  font-size: clamp(1.06rem, 1.45vw, 1.22rem);
+  line-height: 1.7;
+  color: var(--color-paper);
+}
+/* "What got in the way": a marked paragraph. In one column it carries its
+   own accent bar; beside the two-column section rule (min-width: 900px)
+   the rule itself takes the accent instead, so there is only one line. */
+.dt-text--flag {
+  padding-left: 1.2rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-azure) 55%, transparent);
+}
+.dt-statement {
+  font-size: clamp(2.3rem, 5.6vw, 4.4rem);
+  font-weight: 340;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-paper);
+  text-wrap: balance;
+}
+.dt-statement--idea {
+  max-width: 22em;
+  font-size: clamp(1.55rem, 3.2vw, 2.6rem);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.dt-insight {
+  position: relative;
+  max-width: 28em;
+  padding-left: clamp(1.8rem, 3vw, 2.8rem);
+  font-size: clamp(1.32rem, 2.5vw, 2rem);
+  font-style: italic;
+  font-weight: 330;
+  line-height: 1.35;
+  color: var(--color-paper);
+  text-wrap: pretty;
+}
+.dt-insight__mark {
+  position: absolute;
+  top: -0.12em;
+  left: 0;
+  font-size: 2.3em;
+  font-style: normal;
+  line-height: 1;
+  color: var(--color-azure-soft);
+}
+
+.dt-actions {
+  display: grid;
+  max-width: 46rem;
+}
+.dt-actions__item {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 1rem;
+  padding-block: 1.05rem;
+  border-top: 1px solid var(--dt-hair);
+}
+.dt-actions__item:first-child {
+  padding-top: 0.2rem;
+  border-top: 0;
+}
+.dt-actions__num {
+  font-size: 1.3rem;
+  font-style: italic;
+  line-height: 1.25;
+  color: var(--color-azure-soft);
+}
+.dt-actions__text {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-paper);
+}
+
+.dt-outcome {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.dt-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.dt-linklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.75rem;
+}
+.dt-linklist__link {
+  font-size: 1.1rem;
+}
+
+/* Process: numbered steps on one line, joined by a rule drawn by scroll. */
+.dt-steps {
+  --dt-steps-gap: clamp(1.25rem, 3vw, 2.5rem);
+  position: relative;
+}
+.dt-steps__line {
+  display: none;
+}
+.dt-steps__list {
+  display: grid;
+  gap: 1.5rem;
+}
+.dt-steps__item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.dt-steps__dot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--dt-hair-strong);
+  border-radius: 999px;
+  background: var(--color-ink-raised);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--color-azure-soft);
+}
+.dt-steps__text {
+  max-width: 24em;
+  padding-top: 0.7rem;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--color-paper);
+}
+
+/* ================================================================== */
+/* 6. Media band + blocks                                              */
+/* ================================================================== */
+
+.dt-media {
+  position: relative;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem);
+  border-top: 1px solid var(--dt-hair);
+}
+/* A soft pool of light behind the photos, edge to edge. */
+.dt-media::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(50% - 50vw);
+  pointer-events: none;
+  background: radial-gradient(70% 60% at 50% 45%, color-mix(in srgb, var(--color-azure) 8%, transparent), transparent 72%);
+}
+
+/* Below the two-column stage, the footage label and its caption come before
+   the player, so a note like "practice footage, not the competition" is read
+   before the clip starts, not after it. */
+@media (max-width: 899.98px) {
+  .dt-media .media-stage__stage {
+    gap: 1.25rem;
+  }
+  .dt-media .media-stage__side {
+    display: contents;
+  }
+  .dt-media .media-stage__side > .media-label:first-child,
+  .dt-media .media-stage__side > .media-note {
+    order: -1;
+  }
+}
+
+.dt-blocks {
+  padding-block: clamp(2.25rem, 5vw, 3.5rem);
+  border-top: 1px solid var(--dt-hair);
+}
+
+/* Content-block styles live in src/styles/ui.css (shared by every page). */
+
+/* ================================================================== */
+/* 7. Connections                                                      */
+/* ================================================================== */
+
+.dt-conn {
+  position: relative;
+  padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+.dt-conn::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  border-top: 1px solid var(--dt-hair);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink-raised) 55%, transparent), transparent 85%);
+}
+.dt-conn__row {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+}
+.dt-conn__lead p {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+
+.dt-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.dt-skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.55rem 1.05rem;
+  border: 1px solid var(--dt-hair-strong);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  color: var(--color-paper);
+  transition:
+    border-color 0.3s var(--dt-ease-std),
+    background-color 0.3s var(--dt-ease-std);
+}
+.dt-skill__arrow {
+  color: var(--color-paper-faint);
+  transition:
+    transform 0.35s var(--dt-ease-std),
+    color 0.3s var(--dt-ease-std);
+}
+.dt-skill:hover,
+.dt-skill:focus-visible {
+  border-color: color-mix(in srgb, var(--color-azure) 65%, transparent);
+  background: color-mix(in srgb, var(--color-azure) 10%, transparent);
+}
+.dt-skill:hover .dt-skill__arrow,
+.dt-skill:focus-visible .dt-skill__arrow {
+  transform: translateX(3px);
+  color: var(--color-azure-soft);
+}
+
+.dt-conn__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 0.85rem;
+}
+.dt-conn__grid > li {
+  min-width: 0;
+}
+.dt-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+  padding: 0.6rem 1.15rem 0.6rem 0.6rem;
+  border: 1px solid var(--dt-hair);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-ink-raised) 70%, transparent);
+  transition:
+    border-color 0.35s var(--dt-ease-std),
+    background-color 0.35s var(--dt-ease-std),
+    transform 0.45s var(--dt-ease-std),
+    box-shadow 0.45s var(--dt-ease-std);
+}
+.dt-card:hover,
+.dt-card:focus-visible {
+  border-color: color-mix(in srgb, var(--color-azure) 45%, transparent);
+  background: var(--color-ink-raised);
+  box-shadow: var(--depth-shadow-md);
+  transform: translateY(-2px);
+}
+.dt-card__cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.dt-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.dt-card__meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+.dt-card__title {
+  font-size: 1.08rem;
+  line-height: 1.22;
+  color: var(--color-paper);
+}
+.dt-card__result {
+  font-size: 0.82rem;
+  color: var(--color-azure-soft);
+}
+.dt-card__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-paper-dim);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.dt-card__arrow {
+  color: var(--color-paper-faint);
+  transition:
+    transform 0.35s var(--dt-ease-std),
+    color 0.3s var(--dt-ease-std);
+}
+.dt-card:hover .dt-card__arrow,
+.dt-card:focus-visible .dt-card__arrow {
+  transform: translateX(3px);
+  color: var(--color-azure-soft);
+}
+.dt-card--story {
+  grid-template-columns: 4.25rem minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 1rem 1.15rem;
+}
+.dt-card__year {
+  font-size: 1.55rem;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--color-azure-soft);
+}
+.dt-card--story .dt-card__arrow {
+  align-self: center;
+}
+
+/* ================================================================== */
+/* 8. Pager                                                            */
+/* ================================================================== */
+
+.dt-pager {
+  padding-block: clamp(3rem, 7vw, 5rem) clamp(1.5rem, 4vw, 3rem);
+  border-top: 1px solid var(--dt-hair);
+}
+.dt-pager__grid {
+  display: grid;
+  gap: 1rem;
+}
+.dt-pager__cell {
+  min-width: 0;
+}
+.dt-pager__link {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  min-height: clamp(12rem, 22vw, 17rem);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  overflow: hidden;
+  border: 1px solid var(--dt-hair);
+  border-radius: var(--dt-radius);
+  color: var(--color-paper);
+  transition: border-color 0.4s var(--dt-ease-std);
+}
+.dt-pager__link[data-dir="next"] {
+  justify-content: flex-end;
+  text-align: right;
+}
+.dt-pager__link:hover,
+.dt-pager__link:focus-visible {
+  border-color: color-mix(in srgb, var(--color-azure) 45%, transparent);
+}
+.dt-pager__cover {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.28;
+  transition: opacity 0.6s var(--dt-ease-std);
+}
+/* A photo backdrop is light and colour, not a picture to read: screenshots
+   and certificates are blurred past legibility (overscanned so the soft
+   edges stay outside the card), and only the opacity changes on hover. */
+.dt-pager__cover[data-photo] {
+  inset: -2rem;
+  filter: blur(14px) saturate(0.9);
+}
+.dt-pager__link:hover .dt-pager__cover,
+.dt-pager__link:focus-visible .dt-pager__cover {
+  opacity: 0.5;
+}
+.dt-pager__veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-ink) 96%, transparent) 16%,
+      color-mix(in srgb, var(--color-ink) 70%, transparent) 62%,
+      color-mix(in srgb, var(--color-ink) 25%, transparent)
+    ),
+    linear-gradient(
+      var(--dt-veil-side, to right),
+      color-mix(in srgb, var(--color-ink) 55%, transparent),
+      transparent 70%
+    );
+}
+.dt-pager__link[data-dir="next"] .dt-pager__veil {
+  --dt-veil-side: to left;
+}
+.dt-pager__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 26rem;
+}
+.dt-pager__link[data-dir="next"] .dt-pager__body {
+  align-items: flex-end;
+}
+.dt-pager__dir {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-azure-soft);
+}
+.dt-pager__title {
+  font-size: clamp(1.4rem, 2.5vw, 2.05rem);
+  font-weight: 360;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.dt-pager__meta {
+  font-size: 0.85rem;
+  color: var(--color-paper-dim);
+}
+.dt-pager__back {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+/* ================================================================== */
+/* 9. Responsive                                                       */
+/* ================================================================== */
+
+/* Tablet and up */
+@media (min-width: 720px) {
+  .dt-pager__grid[data-count="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dt-steps__line {
+    display: block;
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    right: calc((100% - (var(--dt-steps) - 1) * var(--dt-steps-gap)) / var(--dt-steps) - 1.5rem);
+    height: 1px;
+    background: var(--dt-hair-strong);
+  }
+  .dt-steps__line-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--color-azure), var(--color-lavender));
+    transform-origin: left center;
+  }
+  .dt-steps__list {
+    grid-template-columns: repeat(var(--dt-steps), minmax(0, 1fr));
+    gap: var(--dt-steps-gap);
+  }
+  .dt-steps__item {
+    flex-direction: column;
+  }
+  .dt-steps__text {
+    padding-top: 0;
+  }
+}
+
+/* Two-column rows: the label column stays in view while the text passes. */
+@media (min-width: 900px) {
+  .dt-sec {
+    grid-template-columns: var(--dt-label-w) 1px minmax(0, 1fr);
+    column-gap: var(--dt-col-gap);
+  }
+  .dt-sec__head {
+    position: sticky;
+    top: var(--dt-top);
+    align-self: start;
+  }
+  .dt-sec__label {
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .dt-sec__rule {
+    position: relative;
+    display: block;
+    width: 1px;
+    background: var(--dt-hair);
+  }
+  .dt-sec__rule-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--color-azure), var(--color-lavender));
+    transform-origin: 50% 0%;
+    opacity: 0.9;
+  }
+  /* One vertical line per section: the flagged paragraph drops its own bar
+     and the section rule carries the accent. */
+  .dt-sec[data-variant="flag"] .dt-sec__rule {
+    background: color-mix(in srgb, var(--color-azure) 45%, transparent);
+  }
+  .dt-sec[data-variant="flag"] .dt-text--flag {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .dt-pair {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    column-gap: clamp(2.5rem, 6vw, 6rem);
+  }
+  .dt-pair__item + .dt-pair__item {
+    padding-left: clamp(1.5rem, 3vw, 3rem);
+    border-left: 1px solid var(--dt-hair);
+  }
+
+  .dt-conn__row {
+    grid-template-columns: var(--dt-label-w) minmax(0, 1fr);
+    column-gap: calc(2 * var(--dt-col-gap) + 1px);
+  }
+  .dt-conn__lead p {
+    padding-top: 1rem;
+  }
+  .dt-conn__row--skills .dt-conn__lead p {
+    padding-top: 0.85rem;
+  }
+
+  /* Blocks line up with the section text; photos and footage keep the full width. */
+  .dt-blocks {
+    padding-left: calc(var(--dt-label-w) + 2 * var(--dt-col-gap) + 1px);
+  }
+}
+
+/* Desktop hero: text left, frame right. */
+@media (min-width: 1024px) {
+  .dt-hero__grid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(2.5rem, 5vw, 5.5rem);
+    row-gap: clamp(1.5rem, 3vw, 2.5rem);
+    min-height: min(calc(100svh - var(--chrome-h, 68px) - 5rem), 46rem);
+  }
+  .dt-hero__bar {
+    grid-column: 1 / -1;
+  }
+  .dt-hero__text,
+  .dt-hero__visual {
+    align-self: center;
+  }
+  .dt-hero__visual {
+    padding-bottom: 1.5rem;
+  }
+  .dt-hero[data-visual="plate"] .dt-hero__grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  }
+}
+
+/* Below desktop the hero stacks: the text and the visual share the page
+   column edge to edge (the facts rule and the frame line up on both
+   sides). The frame spans the column and caps its height instead — a
+   photo narrower than the plate sits centred on it, whole and sharp. */
+@media (max-width: 1023.98px) {
+  .dt-hero__text {
+    max-width: none;
+  }
+  .dt-hero__visual {
+    margin-top: 0.5rem;
+    padding-bottom: 1.25rem;
+  }
+  .dt-hero__ambient {
+    top: 20%;
+    right: -20%;
+    width: 120vw;
+    height: 80%;
+  }
+  .dt-hero__seal {
+    left: 0.9rem;
+  }
+  .dt-hero__tilt {
+    width: 100%;
+  }
+  .dt-frame--photo {
+    max-height: min(64svh, calc(var(--dt-frame-cap, 40rem) / var(--dt-frame-ratio, 1.3333)));
+  }
+  /* Artwork and the typographic plate have no fixed proportions: a wide band
+     reads better than a tall tile here. The artwork scales to fit (centred),
+     so the band can cap its height and still span the column. */
+  .dt-frame--art {
+    aspect-ratio: 16 / 9;
+    max-height: min(56svh, 28rem);
+  }
+  .dt-frame--plate {
+    aspect-ratio: 12 / 5;
+  }
+}
+
+/* Phones */
+@media (max-width: 639.98px) {
+  .dt-hero__ghost {
+    top: calc(var(--chrome-h, 60px) + 2.5rem);
+    right: -0.5rem;
+  }
+  .dt-hero__ghost span[data-numeric] {
+    font-size: 8.5rem;
+  }
+  .dt-hero__ghost span:not([data-numeric]) {
+    font-size: 4.25rem;
+  }
+  .dt-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 1.25rem;
+  }
+  .dt-hero__actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .dt-frame--art {
+    aspect-ratio: 4 / 3;
+  }
+  .dt-frame--plate {
+    aspect-ratio: 16 / 10;
+  }
+  .dt-hero__seal {
+    left: 0.75rem;
+    right: auto;
+    max-width: calc(100% - 1.5rem);
+  }
+  .dt-rec--seal {
+    padding: 0.8rem 1rem 0.9rem;
+  }
+  .dt-card {
+    grid-template-columns: 5.25rem minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    padding-right: 0.9rem;
+  }
+  .dt-card--story {
+    grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+  }
+  .dt-back--bar .dt-back__path {
+    font-size: 0.9rem;
+  }
+  .dt-back--end {
+    max-width: 100%;
+  }
+  .dt-pager__link {
+    min-height: 11rem;
+  }
+}
+
+/* ================================================================== */
+/* 10. Reduced motion                                                  */
+/* ================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-back__icon,
+  .dt-back__glyph,
+  .dt-back--end,
+  .dt-frame__photo,
+  .dt-frame__hint,
+  .dt-skill,
+  .dt-skill__arrow,
+  .dt-card,
+  .dt-card__arrow,
+  .dt-pager__link,
+  .dt-pager__cover {
+    transition: none;
+  }
+  .dt-card:hover,
+  .dt-card:focus-visible,
+  .dt-frame--button:hover .dt-frame__photo,
+  .dt-frame--button:focus-visible .dt-frame__photo {
+    transform: none;
+  }
+}

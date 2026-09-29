@@ -1,133 +1,97 @@
-import Image from "@/lib/Image";
-import Link from "@/lib/Link";
-import { Meta } from "@/lib/Meta";
-import { pageMeta } from "@/pageMeta";
-import { Reveal } from "@/components/motion/Reveal";
-import { Kicker } from "@/components/ui/Kicker";
-import { PersonalCollage } from "@/components/me/PersonalCollage";
 import { InterestsGrid } from "@/components/care/InterestsGrid";
+import { MeBio } from "@/components/me/MeBio";
+import { MeHero } from "@/components/me/MeHero";
+import { MeOnward } from "@/components/me/MeOnward";
+import { PersonalCollage } from "@/components/me/PersonalCollage";
 import { SkillsView } from "@/components/skills/SkillsView";
-import { site, personalDetails, interests, skills } from "@/lib/content";
+import { SectionHeader } from "@/components/ui";
+import { interests, meCopy, personalDetails, skills } from "@/lib/content";
 
-export default function MePage() {
+/**
+ * ME — who is this person? (Story answers "how did he get here?")
+ * A portrait-led personal editorial:
+ *
+ *   #who-i-am          portrait stage + profile ledger, then the biography
+ *                      as a spread (standfirst | body)
+ *   #care-about        an index of what he cares about + a reading panel
+ *                      (rows: #interest-<id>, which also selects it)
+ *   #personal-details  a hole-free mosaic of small answers, each card kind
+ *                      with its own interaction (cards: #fact-<id>; a deep
+ *                      link highlights the card it lands on)
+ *   #skills            "Proof, not percentages" — disclosures that open
+ *                      onto the evidence (rows: #skill-<id>)
+ *   #me-onward         a signature, Story / Beyond, and contact
+ *
+ * Copy: src/content/site.ts, pages.ts (pages.me, meCopy), interests.ts,
+ * personal.ts, skills.ts. Styles: src/styles/me.css. <title>/meta come
+ * from App's <Meta/>; the atmosphere turns warm on /me/ by itself.
+ */
+export default function Me() {
+  const care = meCopy.careAbout;
+  const personal = meCopy.personal;
+  const skillCopy = meCopy.skills;
+
   return (
-    <>
-      <Meta title={pageMeta.me.title} description={pageMeta.me.description} />
-      <section className="px-5 sm:px-8 pt-36 pb-16 sm:pt-44">
-        <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-end">
-          <Reveal>
-            <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border border-ink-line">
-              {site.photo && (
-                <Image
-                  src={site.photo.src}
-                  alt={site.photo.alt}
-                  fill
-                  sizes="(min-width: 1024px) 400px, 80vw"
-                  className="object-cover"
-                />
-              )}
-            </div>
-          </Reveal>
-          <div>
-            <Reveal>
-              <Kicker>Who I am</Kicker>
-            </Reveal>
-            <Reveal delay={0.06}>
-              <h1 className="mt-4 font-display text-balance text-[clamp(2.2rem,6vw,4rem)] leading-[0.98] text-paper">
-                {site.tagline}
-              </h1>
-            </Reveal>
-          </div>
+    <div className="me-page">
+      <section id={meCopy.intro.id} className="me-intro" aria-labelledby="me-title">
+        <MeHero />
+        <MeBio />
+      </section>
+
+      <section id={care.id} className="me-section me-care" aria-labelledby="me-care-title">
+        <div className="me-container">
+          <SectionHeader
+            title={care.kicker}
+            headingId="me-care-title"
+            emphasis={lastWord(care.kicker, 2)}
+            intro={care.intro}
+            size="lg"
+            className="me-section__header"
+          />
+          <InterestsGrid interests={interests} />
         </div>
       </section>
 
-      <section className="px-5 sm:px-8 py-16">
-        <div className="mx-auto max-w-3xl space-y-6">
-          {site.bioLong.map((p, i) => (
-            <Reveal key={i} delay={i * 0.06}>
-              <p className="text-lg leading-relaxed text-paper-dim">{p}</p>
-            </Reveal>
-          ))}
+      <section id={personal.id} className="me-section me-personal" aria-labelledby="me-personal-title">
+        <div className="me-container">
+          <SectionHeader
+            title={personal.kicker}
+            headingId="me-personal-title"
+            emphasis={lastWord(personal.kicker)}
+            size="lg"
+            className="me-section__header"
+          />
+          <PersonalCollage details={personalDetails} />
         </div>
       </section>
 
-      <section className="border-t border-ink-line px-5 sm:px-8 py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl">
-          <Reveal>
-            <Kicker>Defining things</Kicker>
-          </Reveal>
-          <ul className="mt-8 flex flex-wrap gap-3">
-            {site.definingThings.map((t, i) => (
-              <Reveal key={t} delay={i * 0.04} as="li">
-                <span className="inline-block rounded-full border border-ink-line px-5 py-2.5 font-display text-lg text-paper">
-                  {t}
-                </span>
-              </Reveal>
-            ))}
-          </ul>
+      <section id={skillCopy.id} className="me-section me-skills-section" aria-labelledby="me-skills-title">
+        <div className="me-container">
+          <SectionHeader
+            kicker={skillCopy.kicker}
+            title={skillCopy.heading}
+            headingId="me-skills-title"
+            emphasis={firstWord(skillCopy.heading)}
+            intro={skillCopy.intro}
+            size="lg"
+            className="me-section__header"
+          />
+          <SkillsView skills={skills} />
         </div>
       </section>
 
-      <section id="care-about" className="scroll-mt-24 border-t border-ink-line px-5 sm:px-8 py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl">
-          <Reveal>
-            <Kicker>What I care about</Kicker>
-            <p className="mt-4 max-w-xl text-paper-dim">
-              Not a generic interests list — click anything below for why it actually holds my attention.
-            </p>
-          </Reveal>
-          <div className="mt-10">
-            <InterestsGrid interests={interests} />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-ink-line px-5 sm:px-8 py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl">
-          <Reveal>
-            <Kicker>A few things about me</Kicker>
-          </Reveal>
-          <div className="mt-8">
-            <PersonalCollage details={personalDetails} />
-          </div>
-        </div>
-      </section>
-
-      <section id="skills" className="scroll-mt-24 border-t border-ink-line px-5 sm:px-8 py-16 sm:py-20">
-        <div className="mx-auto max-w-3xl">
-          <Reveal>
-            <Kicker>Skills</Kicker>
-            <p className="mt-4 max-w-xl text-paper-dim">
-              Proof, not percentages. Open a skill and see exactly where it came from.
-            </p>
-          </Reveal>
-          <div className="mt-10">
-            <SkillsView skills={skills} />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-ink-line px-5 sm:px-8 py-20 text-center">
-        <Reveal>
-          <p className="font-display text-2xl sm:text-3xl text-paper">
-            Want the longer version?
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/story"
-              className="inline-flex items-center gap-2 rounded-full bg-azure px-6 py-3 text-sm font-medium text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-azure-soft"
-            >
-              Read my story →
-            </Link>
-            <Link
-              href="/beyond"
-              className="inline-flex items-center gap-2 rounded-full border border-ink-line px-6 py-3 text-sm text-paper transition-colors duration-200 hover:border-azure-soft hover:text-azure-soft"
-            >
-              See what&rsquo;s happening now →
-            </Link>
-          </div>
-        </Reveal>
-      </section>
-    </>
+      <MeOnward />
+    </div>
   );
+}
+
+/** The heading's first word, e.g. "Proof" — set in italic. */
+function firstWord(text: string): string | undefined {
+  return text.split(/\s+/)[0] || undefined;
+}
+
+/** The heading's `nth`-from-last word, e.g. "me" / "care". */
+function lastWord(text: string, nth = 1): string | undefined {
+  const words = text.split(/\s+/);
+  return words[words.length - nth] || undefined;
 }

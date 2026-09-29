@@ -1,0 +1,330 @@
+/*
+  ROUTE TRANSITIONS + SCROLL TARGETS
+  Owner: routing (src/routing/transitions.ts, src/routing/ScrollManager.tsx).
+
+  Page changes run inside the View Transitions API. While one runs, <html>
+  carries:
+    data-nav-from / data-nav-to   route families: home, story, work, work-item,
+                                  me, beyond, archive, explore, not-found
+    data-nav-type                 "push" (another page) or "reset" (the current
+                                  page re-opened from its own link)
+  and the rules below pick an animation per destination — each one short
+  (≈300–600 ms), each one different in character:
+
+    → home        the new page expands from the centre
+    → story       a slow curtain rises from below (warm, archival)
+    → work        a scale-through: we move forward through the old page
+    → work-item   shared cover morphs card → hero, the content rises in
+    work-item → work   the reverse: the detail sinks away, the index settles back
+    → me          a warm, soft crossfade
+    → beyond      a gentle forward drift
+    → archive     a quick, plain crossfade (functional)
+    everything else  crossfade + rise
+
+  Every rule is scoped to `:root[data-nav-to]:not(.vt-theme)`, so the theme
+  toggle's own circular wash (html.vt-theme, styles/base.css — which also
+  switches every view-transition-name off while it runs) is never affected. Reduced
+  motion: the JS never starts a route transition, and the media query at
+  the end removes any animation regardless.
+
+  Timing knobs are the custom properties right below.
+*/
+
+:root {
+  --route-fast: 280ms;
+  --route-base: 460ms;
+  --route-slow: 580ms;
+  --route-ease: var(--ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  --route-ease-enter: var(--ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+  --route-ease-cinematic: var(--ease-cinematic, cubic-bezier(0.6, 0.02, 0.15, 1));
+  --route-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll targets                                                      */
+/* ------------------------------------------------------------------ */
+
+/* Anything linked by #id lands just below the fixed top bar. Zero
+   specificity, so a component can set its own offset. */
+:where([id]) {
+  scroll-margin-top: 7rem;
+}
+
+/* After a page change, focus moves to <main> (for keyboard and
+   screen-reader users) — no focus ring around the whole page. */
+#main:focus {
+  outline: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Layers that must not move with the page                            */
+/* ------------------------------------------------------------------ */
+
+/* The top bar (data-vt="chrome") stays put and simply updates. */
+:root[data-nav-to]:not(.vt-theme) [data-vt="chrome"] {
+  view-transition-name: site-chrome;
+}
+:root[data-nav-to]:not(.vt-theme)::view-transition-group(site-chrome) {
+  animation: none;
+}
+:root[data-nav-to]:not(.vt-theme)::view-transition-old(site-chrome) {
+  display: none;
+}
+:root[data-nav-to]:not(.vt-theme)::view-transition-new(site-chrome) {
+  animation: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared elements (MediaCover vtName = workTransitionName(id))        */
+/* ------------------------------------------------------------------ */
+
+:root[data-nav-to]:not(.vt-theme)::view-transition-group(*) {
+  animation-duration: var(--route-slow);
+  animation-timing-function: var(--route-ease-cinematic);
+}
+:root[data-nav-to]:not(.vt-theme)::view-transition-old(*),
+:root[data-nav-to]:not(.vt-theme)::view-transition-new(*) {
+  animation-duration: var(--route-slow);
+}
+
+/* ------------------------------------------------------------------ */
+/* The page itself — default: crossfade + rise                         */
+/* ------------------------------------------------------------------ */
+
+:root[data-nav-to]:not(.vt-theme)::view-transition-old(root),
+:root[data-nav-to]:not(.vt-theme)::view-transition-new(root) {
+  /* Layers are moved/clipped independently, so they compose normally
+     (the UA's plus-lighter blend is only right for aligned crossfades). */
+  mix-blend-mode: normal;
+  transform-origin: 50% 50%;
+}
+
+:root[data-nav-to]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out var(--route-fast) var(--route-ease-exit) both,
+    route-lift-out var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-to]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in var(--route-base) var(--route-ease-enter) 60ms both,
+    route-rise-in var(--route-base) var(--route-ease-enter) 60ms both;
+}
+
+/* → home: expand from the centre. */
+:root[data-nav-to="home"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 320ms var(--route-ease-exit) both,
+    route-recede var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-to="home"]:not(.vt-theme)::view-transition-new(root) {
+  animation: route-expand-in var(--route-slow) var(--route-ease-cinematic) both;
+}
+
+/* → story: a slow curtain rising from below, over a warm backdrop. */
+:root[data-nav-to="story"]:not(.vt-theme)::view-transition-image-pair(root) {
+  background: color-mix(in oklab, var(--color-ember) 5%, var(--color-ink));
+}
+:root[data-nav-to="story"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 600ms var(--route-ease) both,
+    route-drift-up 600ms var(--route-ease-cinematic) both;
+}
+:root[data-nav-to="story"]:not(.vt-theme)::view-transition-new(root) {
+  animation: route-curtain-in 600ms var(--route-ease-cinematic) both;
+}
+
+/* → work: scale-through — the old page comes towards us and dissolves,
+   the new one settles into place from slightly behind. */
+:root[data-nav-to="work"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 300ms var(--route-ease-exit) both,
+    route-scale-out var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-to="work"]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in var(--route-base) var(--route-ease-enter) 40ms both,
+    route-scale-in 520ms var(--route-ease-enter) 40ms both;
+}
+
+/* work-item → work: the reverse depth — the detail sinks away and the
+   index settles back from slightly in front. */
+:root[data-nav-from="work-item"][data-nav-to="work"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 300ms var(--route-ease-exit) both,
+    route-sink-out var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-from="work-item"][data-nav-to="work"]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in var(--route-base) var(--route-ease-enter) 40ms both,
+    route-settle-in 520ms var(--route-ease-enter) 40ms both;
+}
+
+/* → work-item: the shared cover morphs (above); the page content rises in
+   behind it while the old page recedes. */
+:root[data-nav-to="work-item"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 260ms var(--route-ease-exit) both,
+    route-recede var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-to="work-item"]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in 420ms var(--route-ease-enter) 100ms both,
+    route-rise-in-far 520ms var(--route-ease-enter) 100ms both;
+}
+
+/* → me: a warm, soft crossfade. */
+:root[data-nav-to="me"]:not(.vt-theme)::view-transition-image-pair(root) {
+  background: color-mix(in oklab, var(--color-ember) 8%, var(--color-ink));
+}
+:root[data-nav-to="me"]:not(.vt-theme)::view-transition-old(root) {
+  animation: route-fade-out 420ms var(--route-ease) both;
+}
+:root[data-nav-to="me"]:not(.vt-theme)::view-transition-new(root) {
+  animation: route-soften-in 560ms var(--route-ease-enter) 60ms both;
+}
+
+/* → beyond: a gentle drift forward. */
+:root[data-nav-to="beyond"]:not(.vt-theme)::view-transition-old(root) {
+  animation:
+    route-fade-out 300ms var(--route-ease-exit) both,
+    route-drift-out-x var(--route-base) var(--route-ease) both;
+}
+:root[data-nav-to="beyond"]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in var(--route-base) var(--route-ease-enter) 60ms both,
+    route-drift-in-x 520ms var(--route-ease-enter) 60ms both;
+}
+
+/* → archive: quick and plain — it's a tool. */
+:root[data-nav-to="archive"]:not(.vt-theme)::view-transition-old(root) {
+  animation: route-fade-out 240ms var(--route-ease-exit) both;
+}
+:root[data-nav-to="archive"]:not(.vt-theme)::view-transition-new(root) {
+  animation: route-fade-in 360ms var(--route-ease) both;
+}
+
+/* Re-opening the current page: a short fade + rise, whatever the page. */
+:root[data-nav-to][data-nav-type="reset"]:not(.vt-theme)::view-transition-old(root) {
+  animation: route-fade-out 220ms var(--route-ease-exit) both;
+}
+:root[data-nav-to][data-nav-type="reset"]:not(.vt-theme)::view-transition-new(root) {
+  animation:
+    route-fade-in 380ms var(--route-ease-enter) 40ms both,
+    route-rise-in-near 380ms var(--route-ease-enter) 40ms both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Keyframes (transform / opacity / clip-path only)                    */
+/* ------------------------------------------------------------------ */
+
+@keyframes route-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes route-lift-out {
+  to {
+    transform: translateY(-12px);
+  }
+}
+@keyframes route-rise-in {
+  from {
+    transform: translateY(18px);
+  }
+}
+@keyframes route-rise-in-near {
+  from {
+    transform: translateY(12px);
+  }
+}
+@keyframes route-rise-in-far {
+  from {
+    transform: translateY(28px);
+  }
+}
+@keyframes route-recede {
+  to {
+    transform: scale(0.975);
+  }
+}
+@keyframes route-scale-out {
+  to {
+    transform: scale(1.045);
+  }
+}
+@keyframes route-scale-in {
+  from {
+    transform: scale(0.965);
+  }
+}
+@keyframes route-sink-out {
+  to {
+    transform: translateY(24px) scale(0.985);
+  }
+}
+@keyframes route-settle-in {
+  from {
+    transform: scale(1.03);
+  }
+}
+@keyframes route-drift-up {
+  to {
+    transform: translateY(-4%);
+  }
+}
+@keyframes route-curtain-in {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes route-expand-in {
+  from {
+    opacity: 0.35;
+    clip-path: inset(24% 28% round 32px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+@keyframes route-soften-in {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+}
+@keyframes route-drift-out-x {
+  to {
+    transform: translateX(-2%);
+  }
+}
+@keyframes route-drift-in-x {
+  from {
+    transform: translateX(3%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-nav-to]::view-transition-group(*),
+  :root[data-nav-to]::view-transition-old(*),
+  :root[data-nav-to]::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Deep links with UI state (/work/#did, /beyond/#lab, /explore/#proud…):
+   panels whose content depends on the fragment carry [data-hash-panel] and
+   stay invisible until the app has applied the fragment (App.tsx removes
+   html[data-hash-pending] a frame or two after hydration), so a shared link
+   never flashes the default tab first. */
+html[data-hash-pending] [data-hash-panel] {
+  visibility: hidden;
+}

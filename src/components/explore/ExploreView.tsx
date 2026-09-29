@@ -1,183 +1,190 @@
-import { useState } from "react";
-import Link from "@/lib/Link";
-import { useRouter } from "@/lib/navigation";
-import { motion } from "framer-motion";
-import { ExploreLensKey, getLens, getRandomArchiveEntry } from "@/lib/content";
-import { ProjectCard } from "@/components/work/ProjectCard";
-import { ExperienceRow } from "@/components/do/ExperienceCard";
-import { Magnetic } from "@/components/ui/Magnetic";
-import { cn } from "@/lib/cn";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { DUR, EASE, useHydrated, useReducedMotionSafe } from "@/animations";
+import { useAtmosphere } from "@/components/atmosphere/useAtmosphere";
+import { Magnetic, PageHero } from "@/components/ui";
+import { exploreCopy, getSurprisePool, pages, type ExploreLensKey } from "@/lib/content";
+import { useHashState } from "@/routing/useHashState";
+import { ExploreResults } from "./ExploreResults";
+import { LensDeck } from "./LensDeck";
+import { parseLens, serializeLens, surpriseKey } from "./exploreModel";
+import { SurprisePanel, type SurpriseDraw } from "./SurprisePanel";
 
-const lenses: { key: ExploreLensKey; label: string }[] = [
-  { key: "built", label: "Show me what I've built" },
-  { key: "grown", label: "Show me how I've grown" },
-  { key: "tried", label: "Show me what I've tried" },
-  { key: "care", label: "Show me what I care about" },
-  { key: "proud", label: "Show me what I'm proud of" },
-];
+/** Finds not to repeat for a while (the pool has ~70, so repeats stay rare). */
+const RECENT_LIMIT = 10;
 
+/**
+ * Becomes true one frame after hydration. Until then a lens arriving from
+ * the URL (/explore/#proud) applies instantly, like a page load.
+ */
+function useSettled(): boolean {
+  const hydrated = useHydrated();
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!hydrated) return;
+    const id = requestAnimationFrame(() => setSettled(true));
+    return () => cancelAnimationFrame(id);
+  }, [hydrated]);
+  return settled;
+}
+
+/**
+ * The lens the results show. Once the page has settled it follows the
+ * lens one step behind: choosing a door commits the deck on its own, so
+ * the door starts to open on the very next frame, and the results (dozens
+ * of cards to render, lay out and measure) assemble in a transition right
+ * after instead of holding that first frame back. Until then — a deep
+ * link applying on load — both change together, instantly.
+ */
+function useResultsLens(lens: ExploreLensKey | null, settled: boolean): ExploreLensKey | null {
+  const [shown, setShown] = useState(lens);
+  if (!settled && shown !== lens) setShown(lens);
+  useEffect(() => {
+    if (!settled || shown === lens) return;
+    startTransition(() => setShown(lens));
+  }, [settled, lens, shown]);
+  return settled ? shown : lens;
+}
+
+/**
+ * EXPLORE — "A different way in". Pick a lens and the site assembles a
+ * path through everything that fits it (lens in the fragment:
+ * /explore/#built … #proud). The room's light shifts with the lens
+ * (useAtmosphere), the chosen door opens, the results arrive from all
+ * sides and rearrange when you switch. Or let the archive surprise you.
+ */
 export function ExploreView() {
-  const [active, setActive] = useState<ExploreLensKey>("built");
-  const router = useRouter();
-  const result = getLens(active);
+  const [lens, setLens] = useHashState<ExploreLensKey | null>(parseLens, serializeLens, null);
+  useAtmosphere(lens ? `explore-${lens}` : null);
+  const settled = useSettled();
+  const resultsLens = useResultsLens(lens, settled);
+  const reduced = useReducedMotionSafe();
+  const copy = pages.explore;
 
-  function surpriseMe() {
-    const entry = getRandomArchiveEntry();
-    if (entry?.href) router.push(entry.href);
-  }
+  const deckRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+
+  const select = useCallback((next: ExploreLensKey) => setLens(next), [setLens]);
+
+  const switchFromFooter = useCallback(
+    (next: ExploreLensKey) => {
+      setLens(next);
+      requestAnimationFrame(() =>
+        deckRef.current?.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" })
+      );
+    },
+    [setLens, reduced]
+  );
+
+  /* ---- Surprise me ------------------------------------------------ */
+
+  const [draws, setDraws] = useState<SurpriseDraw[]>([]);
+  const recent = useRef<string[]>([]);
+  /** Where to bring the find into view after the next draw ("start" from the footer, "nearest" from the hero). */
+  const scrollToPanel = useRef<{ block: ScrollLogicalPosition; afterOpen: boolean } | null>(null);
+
+  const draw = useCallback(() => {
+    // Random, but only here in the click handler — never during render.
+    const pool = getSurprisePool();
+    if (pool.length === 0) return;
+    const last = recent.current[recent.current.length - 1];
+    const avoid = new Set(recent.current.slice(-RECENT_LIMIT));
+    let candidates = pool.filter((entry) => !avoid.has(surpriseKey(entry)));
+    if (candidates.length === 0) candidates = pool.filter((entry) => surpriseKey(entry) !== last);
+    if (candidates.length === 0) candidates = pool;
+    const entry = candidates[Math.floor(Math.random() * candidates.length)];
+    recent.current = [...recent.current, surpriseKey(entry)].slice(-RECENT_LIMIT);
+    setDraws((previous) => [...previous, { entry, n: (previous[previous.length - 1]?.n ?? 0) + 1 }].slice(-3));
+  }, []);
+
+  const surpriseFromHero = useCallback(() => {
+    // Make sure the whole find (with its Open / Another buttons) is on screen once the drawer has opened.
+    scrollToPanel.current = { block: "nearest", afterOpen: draws.length === 0 };
+    draw();
+  }, [draw, draws.length]);
+
+  const surpriseFromFooter = useCallback(() => {
+    scrollToPanel.current = { block: "start", afterOpen: false };
+    draw();
+  }, [draw]);
+
+  const closeSurprise = useCallback(() => {
+    setDraws([]);
+    triggerRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  const latest = draws[draws.length - 1]?.n;
+  useEffect(() => {
+    const request = scrollToPanel.current;
+    if (latest === undefined || !request) return;
+    scrollToPanel.current = null;
+    // A freshly opened drawer grows from zero height; measure it once it has.
+    const delay = request.afterOpen ? (reduced ? DUR.fast : DUR.slow) * 1000 + 60 : 0;
+    const id = window.setTimeout(
+      () => panelRef.current?.scrollIntoView({ block: request.block, behavior: reduced ? "auto" : "smooth" }),
+      delay
+    );
+    return () => window.clearTimeout(id);
+  }, [latest, reduced]);
 
   return (
-    <div>
-      <div className="flex flex-col gap-3">
-        {lenses.map((l) => (
-          <button
-            key={l.key}
-            type="button"
-            onClick={() => setActive(l.key)}
-            data-cursor="view"
-            data-cursor-label="Show"
-            className={cn(
-              "group flex items-center gap-4 border-b py-3 text-left transition-colors duration-150 cursor-pointer",
-              active === l.key ? "border-azure-soft" : "border-ink-line hover:border-ink-line-strong"
-            )}
-          >
-            <span
-              className={cn(
-                "font-display text-xl sm:text-2xl transition-colors duration-150",
-                active === l.key ? "text-azure-soft" : "text-paper group-hover:text-paper"
-              )}
-            >
-              {l.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-8">
+    <div className="explore-page" data-lens={lens ?? "none"}>
+      <PageHero
+        variant="centered"
+        className="ex-hero"
+        kicker={copy.kicker}
+        kickerTone="lavender"
+        title={copy.heading ?? copy.title}
+        emphasis="different"
+        intro={copy.intro}
+      >
         <Magnetic>
           <button
+            ref={triggerRef}
             type="button"
-            onClick={surpriseMe}
+            className="ex-trigger"
+            onClick={surpriseFromHero}
+            aria-controls={draws.length > 0 ? "surprise" : undefined}
+            aria-expanded={draws.length > 0}
             data-cursor="view"
-            data-cursor-label="Go"
-            className="rounded-full border border-ember/40 px-5 py-2.5 text-sm text-ember transition-colors duration-150 hover:bg-ember/10 cursor-pointer"
+            data-cursor-label={exploreCopy.surprise.label}
           >
-            Surprise me ↗
+            <span className="ex-spark" aria-hidden="true" />
+            {/* Stays "Surprise me": the open panel has its own "Another surprise". */}
+            <span>{exploreCopy.surprise.label}</span>
           </button>
         </Magnetic>
+      </PageHero>
+
+      <SurprisePanel draws={draws} onAnother={draw} onClose={closeSurprise} reduced={reduced} panelRef={panelRef} />
+
+      {/* The deck and the results follow the lens in the URL: hidden on a
+          deep link (/explore/#care) until it has applied — see App.tsx. */}
+      <div ref={deckRef} id="explore-lenses" className="ex-shell ex-deck-shell" data-hash-panel="">
+        <LensDeck active={lens} onSelect={select} animate={settled} reduced={reduced} />
       </div>
 
-        <motion.div
-          key={active}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mt-12"
-        >
-          <p className="max-w-lg font-display text-2xl text-paper-dim">{result.headline}</p>
-
-          {result.projects && result.projects.length > 0 && (
-            <div className="mt-8">
-              <p className="text-xs uppercase tracking-[0.18em] text-paper-faint">Projects</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {result.projects.map((p) => (
-                  <ProjectCard key={p.id} project={p} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {result.timelineEvents && result.timelineEvents.length > 0 && (
-            <div className="mt-12">
-              <p className="text-xs uppercase tracking-[0.18em] text-paper-faint">Turning points</p>
-              <div className="mt-4 space-y-4">
-                {result.timelineEvents.map((t) => (
-                  <Link
-                    key={t.id}
-                    href={`/story#${t.id}`}
-                    data-cursor="view"
-                    data-cursor-label="Read"
-                    className="group block border-b border-ink-line py-4"
-                  >
-                    <span className="text-sm text-azure-soft">{t.year}</span>
-                    <p className="font-display text-xl text-paper group-hover:text-azure-soft transition-colors">
-                      {t.title}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {result.experiences && result.experiences.length > 0 && (
-            <div className="mt-12">
-              <p className="text-xs uppercase tracking-[0.18em] text-paper-faint">Experiences</p>
-              <div className="mt-2">
-                {result.experiences.map((e) => (
-                  <ExperienceRow key={e.id} experience={e} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {result.achievements && result.achievements.length > 0 && (
-            <div className="mt-12">
-              <p className="text-xs uppercase tracking-[0.18em] text-paper-faint">Achievements</p>
-              <div className="mt-4 space-y-4">
-                {result.achievements.map((a) => (
-                  <Link
-                    key={a.id}
-                    href={`/work?tab=recognized#${a.slug}`}
-                    data-cursor="view"
-                    data-cursor-label="Read"
-                    className="group block border-b border-ink-line py-4"
-                  >
-                    <span className="text-sm text-azure-soft">{a.dateLabel ?? a.year}</span>
-                    <p className="font-display text-xl text-paper group-hover:text-azure-soft transition-colors">
-                      {a.title}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {result.interests && result.interests.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-3">
-              {result.interests.map((i) => (
-                <Link
-                  key={i.id}
-                  href="/me#care-about"
-                  data-cursor="view"
-                  data-cursor-label="See"
-                  className="rounded-full border border-ink-line px-5 py-2.5 text-paper transition-colors duration-150 hover:border-azure-soft hover:text-azure-soft"
-                >
-                  {i.title}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {result.labIdeas && result.labIdeas.length > 0 && (
-            <div className="mt-12">
-              <p className="text-xs uppercase tracking-[0.18em] text-paper-faint">Lab</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {result.labIdeas.map((idea) => (
-                  <Link
-                    key={idea.id}
-                    href="/beyond?tab=lab"
-                    data-cursor="view"
-                    data-cursor-label="See"
-                    className="block rounded-2xl border border-dashed border-ink-line p-5 hover:border-azure-soft/50 transition-colors"
-                  >
-                    <p className="font-display text-lg text-paper">{idea.title}</p>
-                    <p className="mt-1 text-sm text-paper-dim">{idea.summary}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </motion.div>
+      <AnimatePresence initial={false}>
+        {resultsLens && (
+          <motion.div
+            key="results"
+            className="ex-shell ex-results-shell"
+            data-hash-panel=""
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: settled ? DUR.fast : 0 } }}
+            exit={{ opacity: 0, transition: { duration: DUR.fast, ease: EASE.exit } }}
+          >
+            <ExploreResults
+              lensKey={resultsLens}
+              animate={settled}
+              reduced={reduced}
+              onSwitch={switchFromFooter}
+              onSurprise={surpriseFromFooter}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

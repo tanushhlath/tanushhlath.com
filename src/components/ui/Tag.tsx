@@ -1,25 +1,54 @@
+import type { ReactNode } from "react";
+import type { Importance } from "@/types/content";
+import { importanceLabels } from "@/lib/content";
 import { cn } from "@/lib/cn";
 
-export function Tag({ children, className }: { children: React.ReactNode; className?: string }) {
+export type TagTone = "default" | "accent" | "lavender" | "ember" | "quiet" | "solid";
+
+export interface TagProps {
+  children: ReactNode;
+  className?: string;
+  /** Colour/weight of the chip. Default "default" (hairline, dim text). */
+  tone?: TagTone;
+  /** Small leading dot — for status-like tags ("Building", "Live"). */
+  dot?: boolean;
+  title?: string;
+}
+
+/** A small rounded label: category, year, status, tool. Not interactive. */
+export function Tag({ children, className, tone = "default", dot = false, title }: TagProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border border-ink-line px-3 py-1 text-xs text-paper-dim",
-        className
-      )}
-    >
+    <span className={cn("tag", tone !== "default" && `tag--${tone}`, className)} title={title}>
+      {dot && <span className="tag__dot" aria-hidden="true" />}
       {children}
     </span>
   );
 }
 
-const tierStyles: Record<string, string> = {
-  featured: "border-azure-soft/50 text-azure-soft",
-  significant: "border-ink-line-strong text-paper",
-  archive: "border-ink-line text-paper-faint",
+const tierTone: Record<Importance, TagTone> = {
+  featured: "accent",
+  significant: "default",
+  archive: "quiet",
 };
 
-export function TierTag({ tier }: { tier: "featured" | "significant" | "archive" }) {
-  const label = tier === "featured" ? "Featured" : tier === "significant" ? "Significant" : "Archive";
-  return <Tag className={tierStyles[tier]}>{label}</Tag>;
+export interface TierTagProps {
+  /** The record's `importance`. */
+  tier: Importance;
+  className?: string;
+  /** Override the label from src/content/taxonomy.ts (importanceLabels). */
+  label?: string;
+}
+
+/** Importance chip — "Featured" / "Significant" / "Archive". */
+export function TierTag({ tier, className, label }: TierTagProps) {
+  return (
+    <Tag
+      tone={tierTone[tier]}
+      dot={tier === "featured"}
+      className={cn(tier === "significant" && "tag--strong", className)}
+      title={importanceLabels[tier].description}
+    >
+      {label ?? importanceLabels[tier].label}
+    </Tag>
+  );
 }

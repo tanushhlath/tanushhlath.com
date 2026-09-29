@@ -4,12 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "node scripts/restore-dev-index.mjs",
+    "predev": "node scripts/restore-dev-index.mjs && node scripts/media-manifest.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/restore-dev-index.mjs",
-    "build": "vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/copy-dist-to-root.mjs",
+    "prebuild": "node scripts/restore-dev-index.mjs && node scripts/media-manifest.mjs",
+    "build": "vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/audit-links.mjs && node scripts/audit-seo.mjs && node scripts/copy-dist-to-root.mjs",
     "start": "serve dist -p 3000",
-    "lint": "eslint"
+    "check": "tsc --noEmit -p . && eslint . && node scripts/audit-links.mjs && node scripts/audit-seo.mjs",
+    "lint": "eslint",
+    "media": "node scripts/media-manifest.mjs",
+    "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-icons.ps1 && node scripts/optimize-png.mjs public/images/branding public/images/profile/headshot-640.png && node scripts/build-ico.mjs",
+    "easter-egg": "node scripts/encrypt-easter-egg.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -32,7 +36,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8.68.0",
-    "vite": "^8.2.2",
-    "vite-plugin-singlefile": "^2.3.3"
+    "vite": "^8.2.2"
   }
 }

@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -10,15 +8,27 @@
 !.yarn/releases
 !.yarn/versions
 
+# build output (npm run build mirrors dist/ onto the repo root, and THAT
+# root copy is what GitHub Pages serves, so it stays tracked)
+/dist
+/dist-ssr
+/.vite
+
+# private source media: the unencrypted Easter egg video lives here and
+# must never be committed or deployed (public/media/easter-egg/ holds the
+# encrypted copy — see scripts/encrypt-easter-egg.mjs)
+/private-media
+# original source photos/videos as exported (unstripped metadata, withheld
+# photos, the plain Easter egg video) — never commit or publish these
+/Portfolio Media/
+
 # testing
 /coverage
 
-# build output
-/dist
-/dist-ssr
-
 # misc
 .DS_Store
+Thumbs.db
+desktop.ini
 *.pem
 
 # debug
@@ -27,7 +37,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # typescript

@@ -3,10 +3,23 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
-      "runtimeArgs": ["node_modules/vite/bin/vite.js"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js"
+      ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "preview-build",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/serve/build/main.js",
+        "dist",
+        "-l",
+        "3200"
+      ],
+      "port": 3200
     }
   ]
 }

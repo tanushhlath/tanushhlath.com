@@ -1,0 +1,123 @@
+{
+  "events": {
+    "acer-tests-awards": [
+      { "file": "1.png", "kind": "image", "width": 798, "height": 429, "variants": [{"width":160,"file":"_w/1-160.6139c547.jpg"},{"width":320,"file":"_w/1-320.6139c547.jpg"},{"width":480,"file":"_w/1-480.6139c547.jpg"},{"width":640,"file":"_w/1-640.6139c547.jpg"},{"width":798,"file":"_w/1-798.6139c547.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 664, "height": 294, "variants": [{"width":160,"file":"_w/2-160.ebf44ab5.jpg"},{"width":320,"file":"_w/2-320.ebf44ab5.jpg"},{"width":480,"file":"_w/2-480.ebf44ab5.jpg"},{"width":664,"file":"_w/2-664.ebf44ab5.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 665, "height": 315, "variants": [{"width":160,"file":"_w/3-160.df699454.jpg"},{"width":320,"file":"_w/3-320.df699454.jpg"},{"width":480,"file":"_w/3-480.df699454.jpg"},{"width":665,"file":"_w/3-665.df699454.jpg"}] }
+    ],
+    "ai-intensive-google-kaggle": [
+      { "file": "1.png", "kind": "image", "width": 566, "height": 349, "variants": [{"width":160,"file":"_w/1-160.0b0b33ae.jpg"},{"width":320,"file":"_w/1-320.0b0b33ae.jpg"},{"width":480,"file":"_w/1-480.0b0b33ae.jpg"},{"width":566,"file":"_w/1-566.0b0b33ae.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 409, "height": 349, "variants": [{"width":160,"file":"_w/2-160.4669ebbb.jpg"},{"width":320,"file":"_w/2-320.4669ebbb.jpg"},{"width":409,"file":"_w/2-409.4669ebbb.jpg"}] }
+    ],
+    "aiyyo-essay-writing": [
+      { "file": "1.png", "kind": "image", "width": 414, "height": 561, "variants": [{"width":160,"file":"_w/1-160.8fde9d51.jpg"},{"width":320,"file":"_w/1-320.8fde9d51.jpg"},{"width":414,"file":"_w/1-414.8fde9d51.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 611, "height": 563, "variants": [{"width":160,"file":"_w/2-160.6f517c36.jpg"},{"width":320,"file":"_w/2-320.6f517c36.jpg"},{"width":480,"file":"_w/2-480.6f517c36.jpg"},{"width":611,"file":"_w/2-611.6f517c36.jpg"}] }
+    ],
+    "bits-pilani-bootcamp": [
+      { "file": "1.png", "kind": "image", "width": 494, "height": 349, "variants": [{"width":160,"file":"_w/1-160.cb4902e5.jpg"},{"width":320,"file":"_w/1-320.cb4902e5.jpg"},{"width":494,"file":"_w/1-494.cb4902e5.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 258, "height": 497, "variants": [{"width":160,"file":"_w/2-160.1268eb79.jpg"},{"width":258,"file":"_w/2-258.1268eb79.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 377, "height": 297, "variants": [{"width":160,"file":"_w/3-160.bbf72ab2.jpg"},{"width":320,"file":"_w/3-320.bbf72ab2.jpg"},{"width":377,"file":"_w/3-377.bbf72ab2.jpg"}] }
+    ],
+    "camp-yellow-mathematics": [
+      { "file": "1.png", "kind": "image", "width": 523, "height": 357, "variants": [{"width":160,"file":"_w/1-160.bf2e34d6.jpg"},{"width":320,"file":"_w/1-320.bf2e34d6.jpg"},{"width":523,"file":"_w/1-523.bf2e34d6.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 390, "height": 148, "variants": [{"width":160,"file":"_w/2-160.e696f460.jpg"},{"width":320,"file":"_w/2-320.e696f460.jpg"},{"width":390,"file":"_w/2-390.e696f460.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 439, "height": 357, "variants": [{"width":160,"file":"_w/3-160.f6ce959d.jpg"},{"width":320,"file":"_w/3-320.f6ce959d.jpg"},{"width":439,"file":"_w/3-439.f6ce959d.jpg"}] },
+      { "file": "4.png", "kind": "image", "width": 636, "height": 70, "variants": [{"width":160,"file":"_w/4-160.2b786f0e.jpg"},{"width":320,"file":"_w/4-320.2b786f0e.jpg"},{"width":480,"file":"_w/4-480.2b786f0e.jpg"},{"width":636,"file":"_w/4-636.2b786f0e.jpg"}] },
+      { "file": "5.png", "kind": "image", "width": 635, "height": 78, "variants": [{"width":160,"file":"_w/5-160.68082f04.jpg"},{"width":320,"file":"_w/5-320.68082f04.jpg"},{"width":480,"file":"_w/5-480.68082f04.jpg"},{"width":635,"file":"_w/5-635.68082f04.jpg"}] }
+    ],
+    "design-thinking-toi-samsung": [
+      { "file": "1.png", "kind": "image", "width": 633, "height": 351, "variants": [{"width":160,"file":"_w/1-160.fa511317.jpg"},{"width":320,"file":"_w/1-320.fa511317.jpg"},{"width":480,"file":"_w/1-480.fa511317.jpg"},{"width":633,"file":"_w/1-633.fa511317.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 392, "height": 484, "variants": [{"width":160,"file":"_w/3-160.6466bcd4.jpg"},{"width":320,"file":"_w/3-320.6466bcd4.jpg"},{"width":392,"file":"_w/3-392.6466bcd4.jpg"}] }
+    ],
+    "digital-horizons": [
+      { "file": "1.png", "kind": "image", "width": 681, "height": 125, "variants": [{"width":160,"file":"_w/1-160.c1da7659.jpg"},{"width":320,"file":"_w/1-320.c1da7659.jpg"},{"width":480,"file":"_w/1-480.c1da7659.jpg"},{"width":681,"file":"_w/1-681.c1da7659.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 449, "height": 377, "variants": [{"width":160,"file":"_w/2-160.fea63df2.jpg"},{"width":320,"file":"_w/2-320.fea63df2.jpg"},{"width":449,"file":"_w/2-449.fea63df2.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 278, "height": 501, "variants": [{"width":160,"file":"_w/3-160.abae5b4e.jpg"},{"width":278,"file":"_w/3-278.abae5b4e.jpg"}] }
+    ],
+    "harmony-equestrian": [
+      { "file": "2.png", "kind": "image", "width": 390, "height": 305, "variants": [{"width":160,"file":"_w/2-160.3e872e48.jpg"},{"width":320,"file":"_w/2-320.3e872e48.jpg"},{"width":390,"file":"_w/2-390.3e872e48.jpg"}] }
+    ],
+    "indiana-university-finance-workshop": [
+      { "file": "2.png", "kind": "image", "width": 550, "height": 387, "variants": [{"width":160,"file":"_w/2-160.37dc915f.jpg"},{"width":320,"file":"_w/2-320.37dc915f.jpg"},{"width":550,"file":"_w/2-550.37dc915f.jpg"}] }
+    ],
+    "innoventure": [
+      { "file": "2.png", "kind": "image", "width": 401, "height": 284, "variants": [{"width":160,"file":"_w/2-160.07231a4c.jpg"},{"width":320,"file":"_w/2-320.07231a4c.jpg"},{"width":401,"file":"_w/2-401.07231a4c.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 467, "height": 331, "variants": [{"width":160,"file":"_w/3-160.6ba3b7f2.jpg"},{"width":320,"file":"_w/3-320.6ba3b7f2.jpg"},{"width":467,"file":"_w/3-467.6ba3b7f2.jpg"}] },
+      { "file": "4.png", "kind": "image", "width": 190, "height": 394, "variants": [{"width":160,"file":"_w/4-160.cf2687e4.jpg"},{"width":190,"file":"_w/4-190.cf2687e4.jpg"}] }
+    ],
+    "inter-house-horse-riding": [
+      { "file": "1.mp4", "kind": "video", "width": 540, "height": 960 },
+      { "file": "2.mp4", "kind": "video", "width": 360, "height": 640 },
+      { "file": "3.mp4", "kind": "video", "width": 360, "height": 640 },
+      { "file": "4.png", "kind": "image", "width": 893, "height": 502, "variants": [{"width":160,"file":"_w/4-160.1f011b66.jpg"},{"width":320,"file":"_w/4-320.1f011b66.jpg"},{"width":480,"file":"_w/4-480.1f011b66.jpg"},{"width":640,"file":"_w/4-640.1f011b66.jpg"},{"width":893,"file":"_w/4-893.1f011b66.jpg"}] }
+    ],
+    "inter-school-horse-riding": [
+      { "file": "1.png", "kind": "image", "width": 512, "height": 321, "variants": [{"width":160,"file":"_w/1-160.cf840f4e.jpg"},{"width":320,"file":"_w/1-320.cf840f4e.jpg"},{"width":512,"file":"_w/1-512.cf840f4e.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 454, "height": 331, "variants": [{"width":160,"file":"_w/2-160.d0a7daa2.jpg"},{"width":320,"file":"_w/2-320.d0a7daa2.jpg"},{"width":454,"file":"_w/2-454.d0a7daa2.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 481, "height": 321, "variants": [{"width":160,"file":"_w/3-160.e380a226.jpg"},{"width":320,"file":"_w/3-320.e380a226.jpg"},{"width":481,"file":"_w/3-481.e380a226.jpg"}] }
+    ],
+    "janak-equestrian": [
+      { "file": "1.png", "kind": "image", "width": 833, "height": 338, "variants": [{"width":160,"file":"_w/1-160.a230db1f.jpg"},{"width":320,"file":"_w/1-320.a230db1f.jpg"},{"width":480,"file":"_w/1-480.a230db1f.jpg"},{"width":640,"file":"_w/1-640.a230db1f.jpg"},{"width":833,"file":"_w/1-833.a230db1f.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 444, "height": 334, "variants": [{"width":160,"file":"_w/2-160.11adcb13.jpg"},{"width":320,"file":"_w/2-320.11adcb13.jpg"},{"width":444,"file":"_w/2-444.11adcb13.jpg"}] }
+    ],
+    "junior-make-a-thon": [
+      { "file": "2.png", "kind": "image", "width": 295, "height": 384, "variants": [{"width":160,"file":"_w/2-160.9251038c.jpg"},{"width":295,"file":"_w/2-295.9251038c.jpg"}] }
+    ],
+    "masters-union-ai-hackathon": [
+      { "file": "1.png", "kind": "image", "width": 387, "height": 234, "variants": [{"width":160,"file":"_w/1-160.7a542028.jpg"},{"width":320,"file":"_w/1-320.7a542028.jpg"},{"width":387,"file":"_w/1-387.7a542028.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 320, "height": 319, "variants": [{"width":160,"file":"_w/2-160.80e0a1c1.jpg"},{"width":320,"file":"_w/2-320.80e0a1c1.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 707, "height": 239, "variants": [{"width":160,"file":"_w/3-160.a0e5be93.jpg"},{"width":320,"file":"_w/3-320.a0e5be93.jpg"},{"width":480,"file":"_w/3-480.a0e5be93.jpg"},{"width":707,"file":"_w/3-707.a0e5be93.jpg"}] }
+    ],
+    "masters-union-startup-league": [
+      { "file": "1.png", "kind": "image", "width": 371, "height": 450, "variants": [{"width":160,"file":"_w/1-160.edc7a51a.jpg"},{"width":371,"file":"_w/1-371.edc7a51a.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 555, "height": 336, "variants": [{"width":160,"file":"_w/2-160.d52644ad.jpg"},{"width":320,"file":"_w/2-320.d52644ad.jpg"},{"width":555,"file":"_w/2-555.d52644ad.jpg"}] }
+    ],
+    "other-sports-inter-house": [
+      { "file": "1.png", "kind": "image", "width": 372, "height": 226, "variants": [{"width":160,"file":"_w/1-160.9444dfeb.jpg"},{"width":372,"file":"_w/1-372.9444dfeb.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 319, "height": 136, "variants": [{"width":160,"file":"_w/2-160.5fc1abe8.jpg"},{"width":319,"file":"_w/2-319.5fc1abe8.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 291, "height": 202, "variants": [{"width":160,"file":"_w/3-160.460c39b8.jpg"},{"width":291,"file":"_w/3-291.460c39b8.jpg"}] },
+      { "file": "4.png", "kind": "image", "width": 466, "height": 125, "variants": [{"width":160,"file":"_w/4-160.46d370ae.jpg"},{"width":320,"file":"_w/4-320.46d370ae.jpg"},{"width":466,"file":"_w/4-466.46d370ae.jpg"}] },
+      { "file": "5.png", "kind": "image", "width": 381, "height": 228, "variants": [{"width":160,"file":"_w/5-160.828423ca.jpg"},{"width":320,"file":"_w/5-320.828423ca.jpg"},{"width":381,"file":"_w/5-381.828423ca.jpg"}] },
+      { "file": "6.png", "kind": "image", "width": 693, "height": 331, "variants": [{"width":160,"file":"_w/6-160.0607d0b6.jpg"},{"width":320,"file":"_w/6-320.0607d0b6.jpg"},{"width":480,"file":"_w/6-480.0607d0b6.jpg"},{"width":693,"file":"_w/6-693.0607d0b6.jpg"}] },
+      { "file": "7.png", "kind": "image", "width": 226, "height": 197, "variants": [{"width":160,"file":"_w/7-160.65cafa79.jpg"},{"width":226,"file":"_w/7-226.65cafa79.jpg"}] }
+    ],
+    "pathways-got-talent": [
+      { "file": "1.png", "kind": "image", "width": 490, "height": 329, "variants": [{"width":160,"file":"_w/1-160.0e25d083.jpg"},{"width":320,"file":"_w/1-320.0e25d083.jpg"},{"width":490,"file":"_w/1-490.0e25d083.jpg"}] }
+    ],
+    "public-speaking": [
+      { "file": "1.png", "kind": "image", "width": 392, "height": 246, "variants": [{"width":160,"file":"_w/1-160.6435d261.jpg"},{"width":320,"file":"_w/1-320.6435d261.jpg"},{"width":392,"file":"_w/1-392.6435d261.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 285, "height": 215, "variants": [{"width":160,"file":"_w/3-160.5a1887cd.jpg"},{"width":285,"file":"_w/3-285.5a1887cd.jpg"}] },
+      { "file": "4.png", "kind": "image", "width": 392, "height": 295, "variants": [{"width":160,"file":"_w/4-160.bc62f573.jpg"},{"width":320,"file":"_w/4-320.bc62f573.jpg"},{"width":392,"file":"_w/4-392.bc62f573.jpg"}] }
+    ],
+    "reading-programme": [
+      { "file": "1.png", "kind": "image", "width": 581, "height": 260, "variants": [{"width":160,"file":"_w/1-160.cfd1ebca.jpg"},{"width":320,"file":"_w/1-320.cfd1ebca.jpg"},{"width":480,"file":"_w/1-480.cfd1ebca.jpg"},{"width":581,"file":"_w/1-581.cfd1ebca.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 501, "height": 345, "variants": [{"width":160,"file":"_w/2-160.2313bcad.jpg"},{"width":320,"file":"_w/2-320.2313bcad.jpg"},{"width":501,"file":"_w/2-501.2313bcad.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 491, "height": 345, "variants": [{"width":160,"file":"_w/3-160.eaec84f0.jpg"},{"width":320,"file":"_w/3-320.eaec84f0.jpg"},{"width":491,"file":"_w/3-491.eaec84f0.jpg"}] }
+    ],
+    "round-square": [
+      { "file": "1.png", "kind": "image", "width": 374, "height": 347, "variants": [{"width":160,"file":"_w/1-160.5224f121.jpg"},{"width":374,"file":"_w/1-374.5224f121.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 576, "height": 314, "variants": [{"width":160,"file":"_w/2-160.9c855791.jpg"},{"width":320,"file":"_w/2-320.9c855791.jpg"},{"width":480,"file":"_w/2-480.9c855791.jpg"},{"width":576,"file":"_w/2-576.9c855791.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 531, "height": 295, "variants": [{"width":160,"file":"_w/3-160.7a7b4feb.jpg"},{"width":320,"file":"_w/3-320.7a7b4feb.jpg"},{"width":531,"file":"_w/3-531.7a7b4feb.jpg"}] }
+    ],
+    "school-news": [
+      { "file": "1.png", "kind": "image", "width": 719, "height": 441, "variants": [{"width":160,"file":"_w/1-160.52fce10f.jpg"},{"width":320,"file":"_w/1-320.52fce10f.jpg"},{"width":480,"file":"_w/1-480.52fce10f.jpg"},{"width":719,"file":"_w/1-719.52fce10f.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 672, "height": 158, "variants": [{"width":160,"file":"_w/2-160.5d304850.jpg"},{"width":320,"file":"_w/2-320.5d304850.jpg"},{"width":480,"file":"_w/2-480.5d304850.jpg"},{"width":672,"file":"_w/2-672.5d304850.jpg"}] }
+    ],
+    "shistech-theatre": [
+      { "file": "2.png", "kind": "image", "width": 631, "height": 217, "variants": [{"width":160,"file":"_w/2-160.df4ee9cb.jpg"},{"width":320,"file":"_w/2-320.df4ee9cb.jpg"},{"width":480,"file":"_w/2-480.df4ee9cb.jpg"},{"width":631,"file":"_w/2-631.df4ee9cb.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 510, "height": 393, "variants": [{"width":160,"file":"_w/3-160.ed7345ab.jpg"},{"width":320,"file":"_w/3-320.ed7345ab.jpg"},{"width":510,"file":"_w/3-510.ed7345ab.jpg"}] }
+    ],
+    "world-scholars-cup": [
+      { "file": "1.png", "kind": "image", "width": 444, "height": 315, "variants": [{"width":160,"file":"_w/1-160.e502ae24.jpg"},{"width":320,"file":"_w/1-320.e502ae24.jpg"},{"width":444,"file":"_w/1-444.e502ae24.jpg"}] },
+      { "file": "2.png", "kind": "image", "width": 376, "height": 279, "variants": [{"width":160,"file":"_w/2-160.22422ff2.jpg"},{"width":376,"file":"_w/2-376.22422ff2.jpg"}] },
+      { "file": "3.png", "kind": "image", "width": 449, "height": 317, "variants": [{"width":160,"file":"_w/3-160.55534f53.jpg"},{"width":320,"file":"_w/3-320.55534f53.jpg"},{"width":449,"file":"_w/3-449.55534f53.jpg"}] }
+    ]
+  },
+  "projects": {},
+  "site": {
+    "images/profile": [
+      { "file": "headshot-640.png", "kind": "image", "width": 640, "height": 479, "variants": [{"width":160,"file":"_w/headshot-640-160.b1177301.jpg"},{"width":320,"file":"_w/headshot-640-320.b1177301.jpg"},{"width":480,"file":"_w/headshot-640-480.b1177301.jpg"},{"width":640,"file":"_w/headshot-640-640.b1177301.jpg"}] },
+      { "file": "headshot.png", "kind": "image", "width": 1196, "height": 896, "variants": [{"width":160,"file":"_w/headshot-160.a8dd1f66.jpg"},{"width":320,"file":"_w/headshot-320.a8dd1f66.jpg"},{"width":480,"file":"_w/headshot-480.a8dd1f66.jpg"},{"width":640,"file":"_w/headshot-640.a8dd1f66.jpg"},{"width":960,"file":"_w/headshot-960.a8dd1f66.jpg"},{"width":1196,"file":"_w/headshot-1196.a8dd1f66.jpg"}] }
+    ]
+  }
+}

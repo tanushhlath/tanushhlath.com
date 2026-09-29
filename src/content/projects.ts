@@ -1,29 +1,34 @@
-import { Project } from "@/types/content";
+import type { Project } from "@/types/content";
 
 /**
- * WHAT I BUILD
+ * BUILT — PROJECTS
  *
- * One record per project. `tier` controls visual weight everywhere this
- * project is shown ("featured" gets the big immersive treatment on /build
- * and the homepage; "significant" gets a normal card; "archive" only shows
- * up in the filtered archive grid).
+ * One record per thing I made. `id` is also the URL: /work/<id>/.
  *
- * `relatedSkills` / `relatedExperiences` / `relatedAchievements` are how
- * this project shows up as "evidence" on the Skills page and gets cross-
- * linked from Achievements and Experiences — set them once here and every
- * other page picks it up automatically.
+ * `importance` sets visual weight wherever the project appears:
+ *   featured    → the large, immersive treatment on Work and Home
+ *   significant → a full card
+ *   archive     → compact
+ *
+ * `category` is one of the Built filters in `taxonomy.ts`.
+ *
+ * Relationships are ids: `relatedSkills` (skills.ts), `relatedEvents`
+ * (events/), `relatedStory` (story.ts). Set a link once here and the
+ * Skills proof lists, Story, Explore and the detail pages all pick it up.
+ *
+ * Photos go in public/media/projects/<id>/ (1.png, 2.png…) and are found
+ * automatically; add a `media` field only to reorder/caption/hide them.
+ * `detailsToAdd` is a private note to yourself and is never shown.
  */
 export const projects: Project[] = [
   {
-    id: "proj-01",
-    slug: "wizmo",
+    id: "wizmo",
     title: "Wizmo — AI Parent Assistant",
     year: 2025,
     dateLabel: "2025 — 2026",
-    category: "AI / Conversational Technology",
+    category: "ai",
     status: "shipped",
-    tier: "featured",
-    themes: ["building", "exploring"],
+    importance: "featured",
     summary:
       "An AI-powered Parent Assistant chatbot designed to make school information easier for parents to access.",
     problem:
@@ -41,10 +46,9 @@ export const projects: Project[] = [
     challenges:
       "Making responses accurate and useful across different ways users might phrase the same question was one of the main challenges.",
     outcome:
-      "A working chatbot prototype that was tested with users and used to explore the practical application of conversational AI in a school environment.",
+      "A working chatbot prototype, developed as a significant independent technology project, that was tested with users and used to explore the practical application of conversational AI in a school environment.",
     impact:
       "The project gave me practical experience in building, testing and improving an AI system around real user needs.",
-    recognition: "Developed as a significant independent technology project.",
     lessons:
       "Building useful AI is not just about getting a model to answer; it is about understanding users, handling ambiguity and continuously testing the experience.",
     tools: ["Botpress"],
@@ -54,20 +58,20 @@ export const projects: Project[] = [
         url: "https://cdn.botpress.cloud/webchat/v3.7/shareable.html?configUrl=https://files.bpcontent.cloud/2025/04/22/13/20250422133400-RBQXWW2E.json",
       },
     ],
-    relatedSkills: ["skill-product", "skill-frontend", "skill-systems-thinking"],
-    relatedExperiences: ["exp-hack-01"],
-    relatedAchievements: ["ach-03"],
+    relatedSkills: ["product-thinking", "frontend-development", "systems-thinking"],
+    relatedEvents: ["masters-union-ai-hackathon", "ai-intensive-google-kaggle"],
+    relatedStory: ["building-with-ai"],
+    detailsToAdd:
+      "Screenshots of the chatbot (put them in public/media/projects/wizmo/); roughly how many people tested it; whether the Botpress link still works.",
   },
   {
-    id: "proj-02",
-    slug: "digital-opportunity",
+    id: "digital-opportunity",
     title: "Digital Skills & Opportunity Initiative",
     year: 2026,
     dateLabel: "Planning — 2026",
-    category: "Social Impact / Digital Literacy",
+    category: "social-impact",
     status: "concept",
-    tier: "featured",
-    themes: ["leading", "building", "exploring"],
+    importance: "featured",
     summary:
       "An initiative to help students from rural communities develop practical digital and AI skills and gain access to real work opportunities.",
     problem:
@@ -88,36 +92,39 @@ export const projects: Project[] = [
     impact:
       "The long-term goal is to improve digital literacy, employability, income opportunities and access to skilled work.",
     tools: ["Smartphones", "Computers", "AI tools", "Digital platforms"],
-    relatedSkills: ["skill-leadership", "skill-systems-thinking"],
-    relatedExperiences: ["exp-hack-01", "exp-school-08"],
-    relatedAchievements: ["ach-04"],
+    relatedSkills: ["leadership", "systems-thinking"],
+    relatedEvents: ["masters-union-startup-league", "digital-horizons"],
+    relatedStory: ["building-for-impact"],
+    detailsToAdd:
+      "Update status/outcome once the first cohort starts: start date, number of students, what the training covered, and where participants went next.",
   },
   {
-    id: "proj-03",
-    slug: "ib-league-website",
+    id: "ib-league-website",
     title: "IB League — Website Development",
     year: 2025,
-    category: "Web Development",
+    category: "web",
     status: "shipped",
-    tier: "significant",
-    themes: ["building", "creating"],
+    importance: "significant",
     summary: "A web-development project connected to the IB League initiative.",
     concept: "Contributing to the development of a website for the IB League.",
     role: "Website development contributor.",
-    relatedSkills: ["skill-frontend", "skill-design"],
+    relatedSkills: ["frontend-development", "design"],
+    detailsToAdd:
+      "What the IB League is; which parts of the site you built; tools used; a link if the site is live; screenshots for public/media/projects/ib-league-website/.",
   },
   {
-    id: "proj-04",
-    slug: "passion-project-research",
+    id: "passion-project-research",
     title: "Passion Project & Research",
-    year: 2025,
-    category: "Research / School Project",
+    year: 2024,
+    dateLabel: "2023 & 2024",
+    category: "research",
     status: "in-progress",
-    tier: "significant",
-    themes: ["exploring", "creating"],
+    importance: "significant",
     summary: "Independent academic exploration combining research with an area of personal interest.",
     concept: "A school-based passion project and research process.",
     role: "Student researcher / project creator.",
-    relatedSkills: ["skill-writing", "skill-systems-thinking"],
+    relatedSkills: ["writing", "systems-thinking"],
+    detailsToAdd:
+      "The topic of each year's passion project (2023 and 2024), what the research involved, and what you produced at the end.",
   },
 ];

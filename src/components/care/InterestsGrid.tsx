@@ -1,88 +1,190 @@
-import { useState } from "react";
-import Link from "@/lib/Link";
-import { motion } from "framer-motion";
-import { Interest } from "@/types/content";
-import { resolveExperiences, resolveProjects } from "@/lib/content";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { DUR, EASE, Reveal, Stagger, StaggerItem, useReducedMotionSafe } from "@/animations";
+import { MediaCover } from "@/components/media";
+import { ArrowLink } from "@/components/ui";
+import { moveRovingFocus } from "@/components/ui/rovingFocus";
+import Link from "@/routing/Link";
+import { cn } from "@/lib/cn";
+import { detailCopy } from "@/lib/content";
+import { normalizeHref } from "@/routing/paths";
+import type { Interest } from "@/types/content";
+import { interestLinks, pad2 } from "@/components/me/meModel";
+import { useHashChoice } from "@/components/me/useHashChoice";
 
+/**
+ * WHAT I CARE ABOUT — an index, not a tag cloud.
+ *
+ * Left: every interest as a numbered line, grouped under its category
+ * (a vertical tab list: click, or ↑/↓/Home/End). Right (below on phones):
+ * one reading panel for the selected interest — why it holds his
+ * attention, the work it connects to (its `relatedProjects` /
+ * `relatedEvents`), and its explicit `link` (Horse Riding → the
+ * Inter-House Horse Riding event, as content requires).
+ *
+ * The panel's content is displaced in the direction you moved through the
+ * list (down the list → the new note rises from below; up → it drops in).
+ * The active line draws a lead toward the panel. Deep links:
+ * /me/#interest-<id> selects that interest after mount.
+ */
 export function InterestsGrid({ interests }: { interests: Interest[] }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const active = interests.find((i) => i.id === activeId);
-  const evidence = active
-    ? {
-        projects: resolveProjects(active.relatedProjects),
-        experiences: resolveExperiences(active.relatedExperiences),
-      }
-    : null;
+  const baseId = useId();
+  const reduced = useReducedMotionSafe();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [direction, setDirection] = useState(1);
+  const [activeId, choose] = useHashChoice(
+    "interest-",
+    (id) => interests.some((i) => i.id === id),
+    interests[0]?.id ?? ""
+  );
 
-  const categories = Array.from(new Set(interests.map((i) => i.category)));
+  if (interests.length === 0) return null;
+  const activeIndex = Math.max(
+    0,
+    interests.findIndex((i) => i.id === activeId)
+  );
+  const active = interests[activeIndex];
+
+  const tabId = (id: string) => `${baseId}-tab-${id}`;
+  const panelId = `${baseId}-panel`;
+
+  const select = (interest: Interest, index: number, fromPointer: boolean) => {
+    // Direction of travel through the list, for the panel's displacement.
+    setDirection(index >= activeIndex ? 1 : -1);
+    choose(interest.id);
+    // Phones: the panel sits under the list — bring it into view after a tap.
+    if (fromPointer && typeof window !== "undefined" && window.matchMedia("(max-width: 63.99rem)").matches) {
+      window.requestAnimationFrame(() =>
+        panelRef.current?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" })
+      );
+    }
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    const target = moveRovingFocus(event, "[role='tab']");
+    if (!target) return;
+    const id = target.dataset.interest;
+    const index = interests.findIndex((i) => i.id === id);
+    if (index >= 0) select(interests[index], index, false);
+  };
+
+  const links = interestLinks({ projects: active.relatedProjects, events: active.relatedEvents });
+  const primaryHref = active.link ? normalizeHref(active.link.href) : undefined;
+  // The explicit link is the main way on; don't repeat it as a chip.
+  const connected = links.filter((l) => l.href !== primaryHref);
+
+  const variants: Variants = {
+    enter: (dir: number) => ({ opacity: 0, y: reduced ? 0 : dir * 28 }),
+    center: { opacity: 1, y: 0, transition: { duration: DUR.base, ease: EASE.enter } },
+    exit: (dir: number) => ({
+      opacity: 0,
+      y: reduced ? 0 : dir * -20,
+      transition: { duration: DUR.fast, ease: EASE.exit },
+    }),
+  };
 
   return (
-    <div>
-      {categories.map((category) => (
-        <div key={category} className="mb-12">
-          <p className="mb-4 text-xs uppercase tracking-[0.2em] text-paper-dim">{category}</p>
-          <div className="flex flex-wrap gap-3">
-            {interests
-              .filter((i) => i.category === category)
-              .map((interest) => (
-                <button
-                  key={interest.id}
-                  type="button"
-                  onClick={() => setActiveId(interest.id)}
-                  className="rounded-full border border-ink-line px-5 py-2.5 text-paper transition-colors duration-150 hover:border-azure-soft hover:text-azure-soft cursor-pointer"
-                >
-                  {interest.title}
-                </button>
-              ))}
-          </div>
-        </div>
-      ))}
-
-      {active && (
-          <motion.div
-            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/80 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={() => setActiveId(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg rounded-3xl border border-ink-line bg-ink-raised p-8"
+    <div className="me-care__layout">
+      <Stagger
+        as="ol"
+        variant="split-left"
+        gap={0.05}
+        className="me-care__index"
+        role="tablist"
+        aria-orientation="vertical"
+        onKeyDown={onKeyDown}
+      >
+        {interests.map((interest, i) => {
+          const selected = interest.id === active.id;
+          const firstOfGroup = i === 0 || interests[i - 1].category !== interest.category;
+          return (
+            <StaggerItem
+              as="li"
+              key={interest.id}
+              id={`interest-${interest.id}`}
+              role="presentation"
+              className={cn("me-care__entry", firstOfGroup && "me-care__entry--first")}
             >
-              <p className="text-xs uppercase tracking-[0.2em] text-azure-soft">
-                {active.category}
-              </p>
-              <h3 className="mt-3 font-display text-2xl sm:text-3xl text-paper">{active.title}</h3>
-              <p className="mt-4 text-paper-dim">{active.note}</p>
+              <span className="me-care__group" aria-hidden={!firstOfGroup}>
+                {firstOfGroup ? interest.category : ""}
+              </span>
+              <button
+                type="button"
+                role="tab"
+                id={tabId(interest.id)}
+                data-interest={interest.id}
+                aria-selected={selected}
+                aria-controls={panelId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => select(interest, i, true)}
+                className="me-care__tab"
+                data-cursor="read"
+                data-cursor-label="Why"
+              >
+                <span className="me-care__num" aria-hidden="true">
+                  {pad2(i)}
+                </span>
+                <span className="me-care__title font-display">{interest.title}</span>
+                <span className="me-care__lead" aria-hidden="true" />
+              </button>
+            </StaggerItem>
+          );
+        })}
+      </Stagger>
 
-              {evidence && (evidence.projects.length > 0 || evidence.experiences.length > 0) && (
-                <div className="mt-6 flex flex-wrap gap-4 border-t border-ink-line pt-4 text-sm">
-                  {evidence.projects.map((p) => (
-                    <Link key={p.id} href={`/work/${p.slug}`} className="text-azure-soft hover:text-azure">
-                      See: {p.title} →
-                    </Link>
-                  ))}
-                  {evidence.experiences.map((e) => (
-                    <Link key={e.id} href={`/work/${e.slug}`} className="text-azure-soft hover:text-azure">
-                      See: {e.title} →
-                    </Link>
-                  ))}
+      <Reveal variant="split-right" delay={0.1} className="me-care__stage">
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="tabpanel"
+          aria-labelledby={tabId(active.id)}
+          tabIndex={0}
+          className="me-care__panel"
+        >
+          <span className="me-care__panel-num font-display" aria-hidden="true">
+            {pad2(activeIndex)}
+          </span>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={active.id}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="me-care__panel-body"
+            >
+              <p className="me-care__panel-kicker">{active.category}</p>
+              <h3 className="me-care__panel-title font-display">{active.title}</h3>
+              <p className="me-care__note">{active.note}</p>
+
+              {connected.length > 0 && (
+                <div className="me-care__connected">
+                  <p className="me-care__connected-label">{detailCopy.related.heading}</p>
+                  <ul className="me-care__chips">
+                    {connected.map((item) => (
+                      <li key={item.id}>
+                        <Link href={item.href} className="me-care__chip" data-cursor="view">
+                          <span className="me-care__chip-cover" aria-hidden="true">
+                            <MediaCover image={item.cover} title={item.title} interactive={false} />
+                          </span>
+                          <span className="me-care__chip-title">{item.title}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={() => setActiveId(null)}
-                className="mt-6 text-sm text-paper-faint hover:text-paper transition-colors cursor-pointer"
-              >
-                Close
-              </button>
+              {active.link && (
+                <ArrowLink href={active.link.href} variant="pill" cursorLabel="Open" className="me-care__more">
+                  {active.link.label}
+                </ArrowLink>
+              )}
             </motion.div>
-          </motion.div>
-        )}
+          </AnimatePresence>
+        </div>
+      </Reveal>
     </div>
   );
 }

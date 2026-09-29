@@ -1,0 +1,15 @@
+{
+  "v": 1,
+  "iterations": 310000,
+  "salt": "v6RNM9sui1+zHyX/d3i8tA==",
+  "verifier": {
+    "iv": "zKNUEoeGxpiwpDSf",
+    "data": "huet9USYpODnk9ZYHJEw6Hc/kdCOq4ygvaC8qHujRT0A1+zFuA=="
+  },
+  "video": {
+    "iv": "SjmOJyFRzGEO4/1+",
+    "file": "egg.bin",
+    "type": "video/mp4",
+    "bytes": 677106
+  }
+}

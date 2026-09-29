@@ -1,0 +1,1588 @@
+/*
+  CHROME — the parts of the site every page shares:
+    1. Tokens               bar height, shadow (side edges: the page column, base.css)
+    2. Top bar              components/nav/SiteChrome.tsx
+    3. Wordmark             components/nav/Wordmark.tsx (Home + Easter egg trigger)
+    4. Section indicator    components/nav/SectionIndicator.tsx
+    5. Theme + Menu buttons
+    6. Menu overlay         components/nav/MenuOverlay.tsx
+    7. Menu previews        components/nav/MenuPreview.tsx
+    8. Footer               components/nav/Footer.tsx
+    9. Cursor               components/misc/Cursor.tsx (visibility rules: base.css)
+
+  Colors come from styles/theme.css tokens, timing from --ease-* / --motion-*.
+  Unlayered on purpose: these class names are only used by the chrome
+  components, and a few rules must beat Tailwind utilities on the theme
+  toggle (its label and padding on small screens).
+*/
+
+/* ================================================================== */
+/* 1. Tokens                                                           */
+/* ================================================================== */
+
+:root {
+  --chrome-h: 60px;
+  --chrome-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 16px 36px -24px rgba(2, 3, 6, 0.85);
+  /* Home's first load: how long after hydration the bar arrives (step 6 of the hero). */
+  --chrome-enter-delay: 540ms; /* Home entrance: after the statement (0.3 s), before the CTA (0.6 s) — REQUIREMENTS §7 */
+}
+
+:root[data-theme="light"] {
+  --chrome-shadow: 0 1px 0 rgba(60, 48, 30, 0.04), 0 16px 32px -26px rgba(60, 48, 30, 0.4);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --chrome-h: 68px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --chrome-h: 76px;
+  }
+}
+
+/* ================================================================== */
+/* 2. Top bar                                                          */
+/* ================================================================== */
+
+/* While a dialog locks scrolling, the page's scrollbar disappears; the bar
+   keeps the width it had (dialog.ts sets --scrollbar-compensation), so its
+   contents stay on the page column and never shift. Its surface still
+   reaches the window's edge. */
+.chrome-bar {
+  position: fixed;
+  inset: 0 var(--scrollbar-compensation, 0px) auto 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Once it has a surface, the bar is solid to the pointer too. */
+.chrome-bar[data-elevated]:not([data-menu-open]) {
+  pointer-events: auto;
+}
+
+.chrome-bar__surface {
+  position: absolute;
+  inset: 0 calc(-1 * var(--scrollbar-compensation, 0px)) 0 0;
+  background: color-mix(in srgb, transparent, var(--color-ink) 74%);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  backdrop-filter: blur(16px) saturate(1.35);
+  border-bottom: 1px solid var(--color-ink-line);
+  box-shadow: var(--chrome-shadow);
+  opacity: 0;
+  transition: opacity 360ms var(--ease-standard);
+}
+
+.chrome-bar[data-elevated] .chrome-bar__surface {
+  opacity: 1;
+}
+
+/* The menu is its own surface. */
+.chrome-bar[data-menu-open] .chrome-bar__surface {
+  opacity: 0;
+  transition-duration: 160ms;
+}
+
+.chrome-bar__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--chrome-h);
+  /* The page column (base.css): the wordmark and the Menu button sit on
+     the same left and right edges as every page's content. */
+  padding-left: max(var(--page-inline), env(safe-area-inset-left));
+  padding-right: max(var(--page-inline), env(safe-area-inset-right));
+}
+
+.chrome-bar__start,
+.chrome-bar__end {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.chrome-bar__end {
+  gap: 8px;
+  /* The controls keep their size so the Menu button always ends on the
+     column's right edge; only the wordmark side may give way. */
+  flex: none;
+}
+
+@media (min-width: 768px) {
+  .chrome-bar__end {
+    gap: 10px;
+  }
+}
+
+/* Home's first load: prerendered hidden, played on hydration (SiteChrome),
+   with the same no-JS / slow-JS fail-safe as every reveal (motion.css). */
+.chrome-bar[data-entrance="pending"] :is(.chrome-bar__start, .chrome-bar__end) {
+  opacity: 0;
+  transform: translate3d(0, -12px, 0);
+  pointer-events: none;
+}
+
+html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-bar__start, .chrome-bar__end) {
+  animation: motion-failsafe var(--motion-dur-base, 550ms) var(--ease-standard) var(--motion-failsafe-delay, 2.5s) forwards;
+  pointer-events: auto;
+}
+
+.chrome-bar[data-entrance="play"] :is(.chrome-bar__start, .chrome-bar__end) {
+  transition:
+    opacity 700ms var(--ease-enter) var(--chrome-enter-delay),
+    transform 900ms var(--ease-enter) var(--chrome-enter-delay);
+}
+
+.chrome-bar[data-entrance="play"] .chrome-bar__end {
+  --chrome-enter-delay: 600ms;
+}
+
+/* ================================================================== */
+/* 3. Wordmark — "TANUSHH", always Home                                */
+/* ================================================================== */
+
+.wordmark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border-radius: 999px;
+  color: var(--color-paper);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 1024px) {
+  .wordmark {
+    font-size: 15px;
+  }
+}
+
+.wordmark__text {
+  padding-top: 1px;
+  transition: color 220ms var(--ease-standard);
+}
+
+.wordmark__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-azure);
+  box-shadow: 0 0 0 0 color-mix(in srgb, transparent, var(--color-azure) 40%);
+  transition:
+    transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 360ms var(--ease-standard);
+}
+
+.wordmark:hover .wordmark__text {
+  color: var(--color-azure-soft);
+}
+
+.wordmark:hover .wordmark__dot,
+.wordmark:focus-visible .wordmark__dot {
+  transform: scale(1.3);
+}
+
+/* Each quick click swells the dot a little — the only clue. */
+.wordmark[data-taps="1"] .wordmark__dot {
+  transform: scale(1.6);
+  box-shadow: 0 0 0 4px color-mix(in srgb, transparent, var(--color-azure) 22%);
+}
+
+.wordmark[data-taps="2"] .wordmark__dot {
+  transform: scale(2.1);
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, transparent, var(--color-azure) 16%),
+    0 0 22px color-mix(in srgb, transparent, var(--color-azure) 60%);
+}
+
+.wordmark__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--color-paper-faint);
+  opacity: 0;
+  transform: translate3d(-6px, 0, 0);
+  transition:
+    opacity 240ms var(--ease-standard),
+    transform 360ms var(--ease-standard);
+}
+
+.wordmark__hint-arrow {
+  letter-spacing: 0;
+}
+
+.wordmark:hover .wordmark__hint,
+.wordmark:focus-visible .wordmark__hint {
+  opacity: 1;
+  transform: none;
+}
+
+/* No hover on touch screens — and no room beside the controls in a very
+   narrow window (the hint takes its width even while it's invisible). */
+@media (hover: none), (max-width: 419.98px) {
+  .wordmark__hint {
+    display: none;
+  }
+}
+
+/* ================================================================== */
+/* 4. Section indicator — "01 / 04 · Story"                            */
+/* ================================================================== */
+
+.chrome-indicator {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .chrome-indicator {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    margin-right: 10px;
+    transition: opacity 240ms var(--ease-standard);
+  }
+}
+
+.chrome-indicator__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+
+.chrome-indicator__count {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-paper-faint);
+}
+
+.chrome-indicator__name {
+  font-weight: 600;
+  color: var(--color-paper);
+}
+
+.chrome-indicator__sub {
+  color: var(--color-paper-faint);
+  letter-spacing: 0.14em;
+}
+
+.chrome-indicator__sub::before {
+  content: "·";
+  margin-right: 9px;
+}
+
+.chrome-bar[data-menu-open] .chrome-indicator {
+  opacity: 0;
+}
+
+/* ================================================================== */
+/* 5. Theme + Menu buttons                                             */
+/* ================================================================== */
+
+/* The theme toggle matches the menu button's height; its "Dark/Light"
+   word only shows where there's room. */
+.chrome-theme {
+  height: 48px;
+  min-width: 48px;
+}
+
+@media (max-width: 1023.98px) {
+  .chrome-theme {
+    padding-inline: 0;
+  }
+
+  .chrome-theme .theme-toggle__label {
+    display: none;
+  }
+}
+
+.menu-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 16px 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-ink-line-strong);
+  background: color-mix(in srgb, transparent, var(--color-ink-raised) 72%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 200ms var(--ease-standard),
+    background-color 260ms var(--ease-standard),
+    color 260ms var(--ease-standard),
+    box-shadow 300ms var(--ease-standard),
+    scale 160ms var(--ease-standard);
+}
+
+.menu-toggle:hover {
+  border-color: color-mix(in srgb, transparent, var(--color-azure) 70%);
+  background: color-mix(in srgb, var(--color-ink-raised), var(--color-azure) 12%);
+  box-shadow:
+    0 0 0 4px var(--color-azure-dim),
+    0 12px 28px -16px color-mix(in srgb, transparent, var(--color-azure) 70%);
+}
+
+.menu-toggle:active {
+  scale: 0.95;
+}
+
+/* Open: an inverted pill that clearly reads "Close". */
+.menu-toggle[aria-expanded="true"] {
+  border-color: transparent;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: none;
+}
+
+.menu-toggle__label {
+  display: grid;
+  height: 12px;
+  overflow: hidden;
+}
+
+.menu-toggle__word {
+  grid-area: 1 / 1;
+  display: block;
+  line-height: 12px;
+  transition:
+    transform 440ms var(--ease-standard),
+    opacity 300ms var(--ease-standard);
+}
+
+.menu-toggle__word:nth-child(2),
+.menu-toggle[aria-expanded="true"] .menu-toggle__word:nth-child(1) {
+  opacity: 0;
+  transform: translate3d(0, 110%, 0);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__word:nth-child(1) {
+  transform: translate3d(0, -110%, 0);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__word:nth-child(2) {
+  opacity: 1;
+  transform: none;
+}
+
+.menu-toggle__icon {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 12px;
+}
+
+.menu-toggle__line {
+  position: absolute;
+  right: 0;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 460ms var(--ease-standard),
+    width 320ms var(--ease-standard),
+    opacity 200ms var(--ease-standard),
+    background-color 200ms var(--ease-standard);
+}
+
+.menu-toggle__line:nth-child(1) {
+  top: 0;
+  width: 100%;
+}
+
+.menu-toggle__line:nth-child(2) {
+  top: calc(50% - 0.75px);
+  width: 60%;
+  background: var(--color-azure-soft);
+}
+
+.menu-toggle__line:nth-child(3) {
+  bottom: 0;
+  width: 80%;
+}
+
+.menu-toggle:hover .menu-toggle__line {
+  width: 100%;
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line:nth-child(1) {
+  width: 100%;
+  transform: translate3d(0, 5.25px, 0) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle__line:nth-child(3) {
+  width: 100%;
+  transform: translate3d(0, -5.25px, 0) rotate(-45deg);
+}
+
+@media (max-width: 380px) {
+  .menu-toggle {
+    gap: 10px;
+    padding: 0 14px 0 16px;
+  }
+}
+
+/* ================================================================== */
+/* 6. Menu overlay                                                     */
+/* ================================================================== */
+
+/* The tint glides toward the hovered route's atmosphere. */
+@property --menu-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --menu-tint-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-blue) 22%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-violet) 10%);
+  transition:
+    --menu-tint 800ms var(--ease-standard),
+    --menu-tint-2 800ms var(--ease-standard);
+}
+
+.menu[data-tone="story"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-sepia) 22%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-warm) 8%);
+}
+
+.menu[data-tone="work"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-blue) 34%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+}
+
+.menu[data-tone="me"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-warm) 17%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-violet) 9%);
+}
+
+.menu[data-tone="beyond"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-violet) 28%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
+}
+
+.menu[data-tone="archive"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-light) 45%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-blue) 6%);
+}
+
+.menu[data-tone="explore"] {
+  --menu-tint: color-mix(in srgb, transparent, var(--atmo-violet) 22%);
+  --menu-tint-2: color-mix(in srgb, transparent, var(--atmo-blue) 18%);
+}
+
+.menu__tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 62% at 80% 30%, var(--menu-tint), transparent 70%),
+    radial-gradient(48% 52% at 6% 96%, var(--menu-tint-2), transparent 72%);
+}
+
+/* Faint editorial column rules. */
+.menu__rules {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(to right, var(--atmo-line) 1px, transparent 1px);
+  background-size: calc(100% / 6) 100%;
+  mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+}
+
+/* The hovered item's number, huge and barely there. */
+.menu__numeral {
+  position: absolute;
+  right: 3vw;
+  bottom: -0.2em;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-size: clamp(11rem, 36vw, 32rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.menu__numeral-digit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--atmo-line-strong);
+}
+
+/* On paper the outline reads darker; keep it a watermark. */
+:root[data-theme="light"] .menu__numeral-digit {
+  -webkit-text-stroke-color: color-mix(in srgb, transparent, var(--atmo-line-strong) 60%);
+}
+
+.menu__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* The page column (base.css), on the same edges as the top bar above it.
+   It is placed from the window's width minus the page scrollbar the scroll
+   lock hid (--scrollbar-compensation, as the bar does), never from this
+   scroller's width, so the menu's own scrollbar — when it overflows a
+   short window — can't shift it. */
+.menu__inner {
+  --menu-page-w: calc(100vw - var(--scrollbar-compensation, 0px));
+  --menu-inline: max(var(--page-gutter), (var(--menu-page-w) - var(--page-max)) / 2);
+  --menu-left: max(var(--menu-inline), env(safe-area-inset-left));
+  --menu-right: max(var(--menu-inline), env(safe-area-inset-right));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 3.5vh, 36px);
+  width: calc(var(--menu-page-w) - var(--menu-left) - var(--menu-right));
+  min-height: 100%;
+  margin-left: var(--menu-left);
+  padding: calc(var(--chrome-h) + 4px) 0 max(20px, env(safe-area-inset-bottom));
+}
+
+.menu__top {
+  display: flex;
+}
+
+.menu__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% + 10px);
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  margin-left: -10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-paper-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 200ms var(--ease-standard),
+    background-color 200ms var(--ease-standard);
+}
+
+.menu__back:hover {
+  color: var(--color-paper);
+  background: var(--color-azure-dim);
+}
+
+.menu__back-arrow {
+  display: inline-block;
+  font-size: 15px;
+  letter-spacing: 0;
+  transition: transform 320ms var(--ease-standard);
+}
+
+.menu__back:hover .menu__back-arrow,
+.menu__back:focus-visible .menu__back-arrow {
+  transform: translate3d(-4px, 0, 0);
+}
+
+/* It names the page you're on — a long record title stays on one line. */
+.menu__back-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu__back-page {
+  color: var(--color-paper);
+}
+
+.menu__grid {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  align-items: center;
+  gap: 32px;
+}
+
+.menu__aside {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .menu__grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: clamp(32px, 5vw, 96px);
+  }
+
+  .menu__aside {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* ---- Items ------------------------------------------------------- */
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-list--secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+  margin-top: clamp(14px, 3vh, 32px);
+  padding-top: clamp(12px, 2.4vh, 22px);
+  border-top: 1px solid var(--color-ink-line);
+}
+
+.menu-row {
+  display: block;
+}
+
+.menu-item {
+  /* The title's size, shared with its reveal mask (descender room below). */
+  --menu-title-size: clamp(2.3rem, 10vw, 3rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-radius: 14px;
+  color: var(--color-paper);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 380ms var(--ease-standard),
+    transform 480ms var(--ease-standard);
+}
+
+.menu-item:focus-visible {
+  outline-offset: 4px;
+}
+
+.menu-item__index {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-paper-faint);
+  transition: color 240ms var(--ease-standard);
+}
+
+.menu-item__home-mark {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.menu-item[data-size="md"] {
+  --menu-title-size: clamp(1.45rem, 6vw, 1.85rem);
+}
+
+.menu-item__mask {
+  display: block;
+  overflow: hidden;
+  /* Room for descenders (the y of Story, Beyond) inside the reveal mask.
+     Measured in title units — the mask's own font is the 16px UI size,
+     and Fraunces' "y" hangs ~0.13 title-em below the tight title box. */
+  padding-bottom: calc(var(--menu-title-size) * 0.22);
+  margin-bottom: calc(var(--menu-title-size) * -0.22);
+}
+
+.menu-item__title {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: var(--menu-title-size);
+  font-weight: 380;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  transition: color 280ms var(--ease-standard);
+}
+
+/* A hairline that draws itself under the dominant title. */
+.menu-item__title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.04em;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-azure);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 560ms var(--ease-standard);
+}
+
+.menu-item[data-active] .menu-item__title::after {
+  transform: scaleX(1);
+}
+
+.menu-item__desc {
+  grid-column: 2;
+  margin-top: 2px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--color-paper-dim);
+  transition:
+    opacity 320ms var(--ease-standard),
+    transform 440ms var(--ease-standard),
+    color 240ms var(--ease-standard);
+}
+
+/* You are here. */
+.menu-item[data-current] .menu-item__index {
+  color: var(--color-azure-soft);
+}
+
+/* Home has no number: its ring fills in — that is its whole marker. */
+.menu-item[data-current] .menu-item__home-mark {
+  background: currentColor;
+}
+
+.menu-item[data-current="page"] .menu-item__title {
+  color: var(--color-azure-soft);
+}
+
+/* Numbered items: "01 •" (a dot beside the number). */
+.menu-item[data-current="page"] .menu-item__index:not([data-mark="home"])::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+  box-shadow: 0 0 0 3px var(--color-azure-dim);
+}
+
+@media (min-width: 768px) {
+  .menu-item {
+    --menu-title-size: clamp(2.8rem, 7vw, 4.2rem);
+  }
+
+  .menu-item[data-size="md"] {
+    --menu-title-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  }
+
+  .menu-item__desc {
+    font-size: 14.5px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .menu-item {
+    --menu-title-size: clamp(3.4rem, 6.2vw, 6rem);
+    grid-template-columns: 3rem auto minmax(0, 1fr);
+    column-gap: 22px;
+    padding: 3px 0;
+  }
+
+  .menu-item__title {
+    line-height: 0.98;
+  }
+
+  .menu-item[data-size="md"] {
+    --menu-title-size: clamp(1.7rem, 2.3vw, 2.3rem);
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .menu-item[data-size="lg"] .menu-item__desc {
+    grid-column: 3;
+    align-self: center;
+    max-width: 24ch;
+    margin: 0;
+    font-size: 15px;
+  }
+}
+
+/* Hover-capable screens: a hovered/focused item becomes dominant — it
+   shifts, its description slides in, the others quieten. Touch screens
+   keep every description visible instead. */
+@media (hover: hover) {
+  .menu__nav[data-hovering] .menu-item:not([data-active]) {
+    opacity: 0.3;
+  }
+
+  .menu-item[data-active] {
+    transform: translate3d(10px, 0, 0);
+  }
+
+  .menu-item[data-active] .menu-item__index {
+    color: var(--color-paper);
+  }
+}
+
+@media (hover: hover) and (min-width: 1024px) {
+  .menu-item[data-size="lg"] .menu-item__desc {
+    opacity: 0;
+    transform: translate3d(-12px, 0, 0);
+  }
+
+  .menu-item[data-size="lg"][data-active] .menu-item__desc,
+  .menu__nav:not([data-hovering]) .menu-item[data-size="lg"][data-current] .menu-item__desc {
+    opacity: 1;
+    transform: none;
+  }
+
+  .menu-item[data-active] .menu-item__desc {
+    color: var(--color-paper);
+  }
+}
+
+/* ---- Contact line ------------------------------------------------ */
+
+.menu__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-ink-line);
+  font-size: 12.5px;
+  color: var(--color-paper-faint);
+}
+
+.menu__location {
+  margin: 0;
+}
+
+.menu__email {
+  color: var(--color-paper-dim);
+  text-decoration: none;
+  transition: color 200ms var(--ease-standard);
+}
+
+.menu__email:hover {
+  color: var(--color-azure-soft);
+}
+
+/* ================================================================== */
+/* 7. Menu previews                                                    */
+/* ================================================================== */
+
+.menu-preview {
+  position: relative;
+  width: min(100%, 340px);
+}
+
+/* Aspect ratio: inline, from FRAME_RATIO in MenuPreview.tsx (it also picks each photo's fit). */
+.menu-preview__frame {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 22px;
+  border: 1px solid var(--color-ink-line);
+  background: var(--color-ink-raised);
+  box-shadow: var(--depth-shadow-lg);
+}
+
+.menu-preview__card {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  clip-path: inset(9% 9% 9% 9% round 18px);
+  transform: scale(1.08);
+  transition:
+    opacity 420ms var(--ease-standard),
+    clip-path 640ms var(--ease-cinematic),
+    transform 1000ms var(--ease-enter);
+}
+
+.menu-preview__card[data-shown] {
+  z-index: 1;
+  opacity: 1;
+  clip-path: inset(0% 0% 0% 0% round 0px);
+  transform: scale(1);
+}
+
+.menu-preview__img {
+  background: var(--color-ink-raised-2);
+}
+
+/* A photo a portrait crop would cut into (a landscape certificate) sits
+   whole, lit by a blurred, frame-filling copy of itself. */
+.menu-preview__backdrop {
+  transform: scale(1.3);
+  filter: blur(26px) saturate(1.3) brightness(0.8);
+  opacity: 0.6;
+}
+
+:root[data-theme="light"] .menu-preview__backdrop {
+  filter: blur(26px) saturate(1.2);
+}
+
+.menu-preview__card[data-fit="contain"] {
+  background: var(--color-ink-raised);
+}
+
+.menu-preview__card[data-fit="contain"] .menu-preview__img {
+  inset: 8% 7%;
+  background: none;
+  filter: drop-shadow(0 16px 26px rgba(2, 3, 6, 0.4));
+}
+
+/* Nothing is laid over a whole photo, so it only needs the soft vignette. */
+.menu-preview__card[data-fit="contain"] .menu-preview__veil {
+  background: radial-gradient(120% 90% at 50% 0%, transparent 60%, rgba(2, 3, 6, 0.22));
+}
+
+.menu-preview__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(2, 3, 6, 0.42), transparent 45%),
+    radial-gradient(120% 90% at 50% 0%, transparent 60%, rgba(2, 3, 6, 0.25));
+}
+
+.menu-preview__type {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 28px;
+  background:
+    radial-gradient(120% 80% at 85% 0%, color-mix(in srgb, transparent, var(--color-azure) 18%), transparent 62%),
+    var(--color-ink-raised);
+}
+
+.menu-preview__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-azure-soft);
+}
+
+.menu-preview__name {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+}
+
+/* Home's card: a large outlined italic monogram fills the upper field. */
+.menu-preview__mono {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 10rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, transparent, var(--color-paper) 30%);
+  background: linear-gradient(160deg, color-mix(in srgb, transparent, var(--color-azure-soft) 22%), transparent 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.menu-preview__card[data-shown] .menu-preview__mono {
+  animation: menu-mono-in 900ms var(--ease-enter) both;
+}
+
+@keyframes menu-mono-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 14px, 0);
+  }
+}
+
+.menu-preview__line {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-paper-dim);
+}
+
+.menu-preview__big {
+  font-family: var(--font-display);
+  font-size: 6.5rem;
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  color: var(--color-paper);
+}
+
+.menu-preview__type--grid {
+  background:
+    linear-gradient(var(--atmo-line-strong) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, var(--atmo-line-strong) 1px, transparent 1px) 0 0 / 22px 22px,
+    var(--color-ink-raised);
+}
+
+.menu-preview__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-azure);
+  animation: menu-pulse 2.4s var(--ease-standard) infinite;
+}
+
+.menu-preview__card:not([data-shown]) .menu-preview__pulse {
+  animation: none;
+}
+
+@keyframes menu-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, transparent, var(--color-azure) 60%);
+  }
+  75%,
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+.menu-preview__type--lenses {
+  justify-content: center;
+  align-items: stretch;
+  gap: 12px;
+  background:
+    radial-gradient(90% 70% at 20% 100%, color-mix(in srgb, transparent, var(--color-lavender) 16%), transparent 65%),
+    radial-gradient(120% 80% at 85% 0%, color-mix(in srgb, transparent, var(--color-azure) 14%), transparent 62%),
+    var(--color-ink-raised);
+}
+
+.menu-preview__path {
+  position: absolute;
+  top: 16%;
+  bottom: 16%;
+  left: 50%;
+  border-left: 1px dashed var(--color-ink-line-strong);
+}
+
+.menu-preview__lens {
+  position: relative;
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--color-ink-line-strong);
+  background: var(--color-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-paper-dim);
+}
+
+/* A loose path of lenses, not a list. */
+.menu-preview__lens:nth-of-type(2) {
+  margin-left: 34%;
+}
+.menu-preview__lens:nth-of-type(3) {
+  margin-left: 8%;
+}
+.menu-preview__lens:nth-of-type(4) {
+  margin-left: 44%;
+  color: var(--color-paper);
+  border-color: color-mix(in srgb, transparent, var(--color-azure) 60%);
+}
+.menu-preview__lens:nth-of-type(5) {
+  margin-left: 18%;
+}
+
+.menu-preview__card[data-shown] .menu-preview__lens {
+  animation: menu-lens-in 640ms var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 140ms);
+}
+
+@keyframes menu-lens-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.menu-preview__captions {
+  position: relative;
+  min-height: 3.6em;
+  margin-top: 18px;
+}
+
+.menu-preview__caption {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.25;
+  color: var(--color-paper);
+  transition:
+    opacity 360ms var(--ease-standard),
+    transform 520ms var(--ease-standard);
+}
+
+.menu-preview__caption[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+.menu-preview__meta {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-paper-faint);
+}
+
+/* ================================================================== */
+/* 8. Footer                                                           */
+/* ================================================================== */
+
+.site-footer {
+  /* The watermark's size, and the space under the copyright row. */
+  --footer-mark-size: clamp(5.5rem, 23vw, 21rem);
+  --footer-pad-bottom: max(28px, env(safe-area-inset-bottom));
+  position: relative;
+  overflow: hidden;
+  margin-top: clamp(48px, 8vw, 104px);
+  padding: clamp(48px, 7vw, 88px) 0 var(--footer-pad-bottom);
+  border-top: 1px solid var(--color-ink-line);
+  font-size: 14px;
+  color: var(--color-paper-faint);
+}
+
+/* The giant, barely-there wordmark behind the last lines. Its strokes
+   never cross the smallest text (the copyright row): on phones it gets a
+   strip of its own below that row; wider, it fades out over it. (Its
+   vertical position is the Parallax drift's, set inline.) */
+.site-footer__mark {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 639.98px) {
+  .site-footer {
+    padding-bottom: calc(var(--footer-pad-bottom) + var(--footer-mark-size) * 0.8);
+  }
+}
+
+@media (min-width: 640px) {
+  .site-footer__mark {
+    -webkit-mask-image: linear-gradient(
+      to top,
+      transparent calc(var(--footer-pad-bottom) + 24px),
+      #000 calc(var(--footer-pad-bottom) + 72px)
+    );
+    mask-image: linear-gradient(
+      to top,
+      transparent calc(var(--footer-pad-bottom) + 24px),
+      #000 calc(var(--footer-pad-bottom) + 72px)
+    );
+  }
+}
+
+.site-footer__mark-inner {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--footer-mark-size);
+  font-weight: 300;
+  line-height: 0.8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--atmo-line-strong);
+}
+
+/* On paper the outline reads darker; keep it a watermark. */
+:root[data-theme="light"] .site-footer__mark-inner {
+  -webkit-text-stroke-color: color-mix(in srgb, transparent, var(--atmo-line-strong) 60%);
+}
+
+/* The page column (base.css): name, links and copyright line up with the
+   content above and with the top bar, at every width. */
+.site-footer__inner {
+  position: relative;
+  padding-inline: max(var(--page-inline), env(safe-area-inset-left)) max(var(--page-inline), env(safe-area-inset-right));
+}
+
+.site-footer__top {
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .site-footer__top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.site-footer__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+}
+
+.site-footer__line {
+  max-width: 36ch;
+  margin: 10px 0 0;
+  line-height: 1.55;
+  color: var(--color-paper-dim);
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
+}
+
+.site-footer__contact,
+.site-footer__pages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer__email,
+.site-footer__link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  min-height: 24px;
+  text-decoration: none;
+  transition: color 200ms var(--ease-standard);
+}
+
+.site-footer__email {
+  color: var(--color-paper);
+}
+
+.site-footer__link {
+  color: var(--color-paper-dim);
+}
+
+.site-footer__email:hover,
+.site-footer__link:hover {
+  color: var(--color-azure-soft);
+}
+
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 24px;
+  margin-top: clamp(40px, 6vw, 72px);
+  padding-top: 18px;
+  border-top: 1px solid var(--color-ink-line);
+  font-size: 12px;
+}
+
+.site-footer__copy,
+.site-footer__egg {
+  margin: 0;
+}
+
+/* The Easter egg hint: a tiny aside, not an instruction. */
+.site-footer__egg {
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  color: var(--color-paper-faint);
+}
+
+/* CopyEmail's "Copied" bubble: ui.css positions it; in the chrome it
+   sits flush-left (the email is left-aligned) and inverts to paper. */
+:is(.site-footer, .menu__meta) .copy-email__bubble {
+  left: 0;
+  translate: none;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  letter-spacing: 0.08em;
+}
+
+/* ================================================================== */
+/* 9. Cursor                                                           */
+/* ================================================================== */
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.cursor__dot,
+.cursor__ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.cursor__dot-shape {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  transition:
+    transform 220ms var(--ease-standard),
+    opacity 180ms var(--ease-standard),
+    background-color 200ms var(--ease-standard),
+    scale 140ms var(--ease-standard);
+}
+
+.cursor__ring-shape {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, transparent, var(--color-paper) 30%);
+  opacity: 0;
+  transform: scale(0.3);
+  transition:
+    transform 380ms var(--ease-standard),
+    opacity 240ms var(--ease-standard),
+    background-color 240ms var(--ease-standard),
+    border-color 240ms var(--ease-standard),
+    scale 160ms var(--ease-standard);
+}
+
+.cursor__label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-on-accent);
+  opacity: 0;
+  transition: opacity 180ms var(--ease-standard);
+}
+
+.cursor[data-hidden] :is(.cursor__dot-shape, .cursor__ring-shape) {
+  opacity: 0;
+}
+
+/* link — a plain link or button */
+.cursor[data-mode="link"] .cursor__dot-shape {
+  transform: scale(1.8);
+  background: var(--color-azure-soft);
+}
+
+.cursor[data-mode="link"] .cursor__ring-shape {
+  opacity: 0.7;
+  transform: scale(0.52);
+  border-color: color-mix(in srgb, transparent, var(--color-azure) 55%);
+}
+
+/* text fields keep the native caret */
+.cursor:is([data-mode="text"], [data-mode="none"]) :is(.cursor__dot-shape, .cursor__ring-shape) {
+  opacity: 0;
+}
+
+/* view / explore / read — a disc with a word */
+.cursor:is([data-mode="view"], [data-mode="explore"], [data-mode="read"]) .cursor__dot-shape {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.cursor:is([data-mode="view"], [data-mode="explore"], [data-mode="read"]) .cursor__ring-shape {
+  opacity: 1;
+  transform: scale(1);
+  border-color: transparent;
+  background: color-mix(in srgb, transparent, var(--color-azure) 90%);
+}
+
+.cursor:is([data-mode="view"], [data-mode="explore"], [data-mode="read"], [data-mode="back"], [data-mode="close"])
+  .cursor__label {
+  opacity: 1;
+}
+
+.cursor[data-mode="explore"] .cursor__ring-shape {
+  background: color-mix(in srgb, transparent, var(--color-lavender) 92%);
+}
+
+.cursor[data-mode="explore"] .cursor__label {
+  color: var(--color-ink);
+}
+
+.cursor[data-mode="read"] .cursor__ring-shape {
+  background: color-mix(in srgb, transparent, var(--color-paper) 92%);
+}
+
+.cursor[data-mode="read"] .cursor__label {
+  color: var(--color-ink);
+}
+
+/* back / close — an outlined ring with a glyph */
+.cursor:is([data-mode="back"], [data-mode="close"]) .cursor__dot-shape {
+  opacity: 0;
+}
+
+.cursor:is([data-mode="back"], [data-mode="close"]) .cursor__ring-shape {
+  opacity: 1;
+  transform: scale(0.72);
+  border-color: color-mix(in srgb, transparent, var(--color-paper) 55%);
+  background: color-mix(in srgb, transparent, var(--color-ink) 45%);
+}
+
+.cursor:is([data-mode="back"], [data-mode="close"]) .cursor__label {
+  color: var(--color-paper);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* pressed */
+.cursor[data-pressed] .cursor__ring-shape {
+  scale: 0.86;
+}
+
+.cursor[data-pressed] .cursor__dot-shape {
+  scale: 0.7;
+}
+
+/* ================================================================== */
+/* 10. Reduced motion — state changes stay, travel goes                */
+/* ================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-preview__card,
+  .menu-preview__card[data-shown] {
+    clip-path: none;
+    transform: none;
+    transition: opacity 200ms linear;
+  }
+
+  .menu-preview__card[data-shown] :is(.menu-preview__lens, .menu-preview__mono),
+  .menu-preview__pulse {
+    animation: none;
+  }
+
+  .menu-preview__caption {
+    transform: none;
+  }
+
+  .menu-item[data-active],
+  .menu-item[data-size="lg"] .menu-item__desc {
+    transform: none;
+  }
+
+  .menu-item__title::after {
+    transition-duration: 1ms;
+  }
+
+  .menu__back-arrow,
+  .wordmark__dot,
+  .wordmark__hint,
+  .menu-toggle__line,
+  .menu-toggle__word {
+    transition-duration: 1ms;
+  }
+}

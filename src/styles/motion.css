@@ -1,0 +1,346 @@
+/*
+  MOTION — CSS side of the motion system (src/animations/*).
+  Imported from src/index.css.
+
+  JS timing lives in src/animations/tokens.ts; the --motion-* properties
+  below mirror it for CSS transitions. Change a curve or a duration in both
+  places so CSS and JS motion keep feeling like one system.
+
+  Contents
+    1. Tokens            --motion-ease-*, --motion-dur-*, depth shadows
+    2. Reveal baseline   [data-reveal] fail-safe, focus safety, hit-testing
+    3. Component parts   TextReveal masks, MaskReveal frame, Tilt glare, Marquee
+    4. Depth utilities   perspective-*, preserve-3d, depth-*, depth-shadow-*, depth-lift
+    5. Reduced motion
+*/
+
+/* ================================================================== */
+/* 1. Tokens                                                           */
+/* ================================================================== */
+
+:root {
+  --motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1); /* EASE.enter — arrivals, reveals */
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1); /* EASE.standard — general UI */
+  --motion-ease-cinematic: cubic-bezier(0.6, 0.02, 0.15, 1); /* EASE.cinematic — big moments */
+  --motion-ease-exit: cubic-bezier(0.5, 0, 0.75, 0); /* EASE.exit — leaving */
+  --motion-ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1); /* EASE.snappy — micro feedback */
+
+  --motion-dur-micro: 180ms; /* DUR.micro — hover / press */
+  --motion-dur-fast: 300ms; /* DUR.fast — small UI changes */
+  --motion-dur-base: 550ms; /* DUR.base — standard reveal */
+  --motion-dur-slow: 800ms; /* DUR.slow — large media, wipes */
+  --motion-dur-cinematic: 1100ms; /* DUR.cinematic — hero moments */
+
+  /* Keep equal to FAILSAFE_MS in src/animations/boot.ts. */
+  --motion-failsafe-delay: 2.5s;
+
+  /* Apparent depth for .depth-1 … .depth-3 (inside a .preserve-3d parent with perspective). */
+  --depth-1: 12px;
+  --depth-2: 28px;
+  --depth-3: 56px;
+
+  /* Layered depth shadows: a tight contact shadow plus a long soft one. */
+  --depth-shadow-sm: 0 1px 2px rgba(2, 3, 6, 0.4), 0 8px 18px -10px rgba(2, 3, 6, 0.55);
+  --depth-shadow-md: 0 2px 4px rgba(2, 3, 6, 0.35), 0 22px 44px -22px rgba(2, 3, 6, 0.7);
+  --depth-shadow-lg: 0 4px 8px rgba(2, 3, 6, 0.3), 0 40px 80px -36px rgba(2, 3, 6, 0.8);
+
+  /* Tilt glare colour (its strength is motionSettings.tiltGlare). */
+  --tilt-glare-color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="light"] {
+  --depth-shadow-sm: 0 1px 2px rgba(40, 32, 20, 0.12), 0 8px 18px -10px rgba(40, 32, 20, 0.22);
+  --depth-shadow-md: 0 2px 4px rgba(40, 32, 20, 0.1), 0 22px 44px -22px rgba(40, 32, 20, 0.3);
+  --depth-shadow-lg: 0 4px 8px rgba(40, 32, 20, 0.08), 0 40px 80px -36px rgba(40, 32, 20, 0.36);
+  --tilt-glare-color: rgba(255, 255, 255, 0.75);
+}
+
+/* ================================================================== */
+/* 2. Reveal baseline                                                  */
+/* ================================================================== */
+
+/*
+  Every scroll reveal is prerendered in its hidden pose and tagged
+  [data-reveal] (value: "below" | "visible" | "above", or "" on inner
+  pieces). If the script never arrives, this one-shot animation shows
+  everything after a short delay; animations override the inline hidden
+  styles. src/animations/boot.ts sets html[data-motion-ready] the moment the
+  script runs, which switches it off. (Without JavaScript at all, the
+  <noscript> style in dev.html does the same instantly.)
+*/
+html:not([data-motion-ready]) [data-reveal] {
+  animation: motion-failsafe var(--motion-dur-base) var(--motion-ease-standard) var(--motion-failsafe-delay) forwards;
+}
+
+@keyframes motion-failsafe {
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+    filter: none;
+  }
+}
+
+/*
+  Sideways reveals (split-left/right, drift) wait up to ~80px off to the
+  side. That must never widen the page or add a horizontal scrollbar.
+  `clip` (unlike `hidden`) creates no scroll container, so position: sticky
+  keeps working.
+*/
+html,
+body {
+  overflow-x: clip;
+}
+
+/*
+  Hidden reveals don't take the pointer: nothing invisible can be clicked or
+  change the cursor. Only once the motion system is running, and only when
+  hidden really means invisible (reduced motion may keep content showing).
+*/
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion-ready] [data-reveal="below"],
+  html[data-motion-ready] [data-reveal="above"] {
+    pointer-events: none;
+  }
+}
+
+/*
+  Keyboard focus always lands on something visible. Tabbing scrolls the
+  focused element just into view — possibly still under the reveal line —
+  so a hidden reveal holding focus is shown at once.
+*/
+[data-reveal="below"]:focus-visible,
+[data-reveal="above"]:focus-visible {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+  filter: none !important;
+}
+/* Separate rule: a browser without :has() drops only this one. */
+[data-reveal="below"]:has(:focus-visible),
+[data-reveal="above"]:has(:focus-visible),
+[data-reveal="below"]:has(:focus-visible) [data-reveal=""],
+[data-reveal="above"]:has(:focus-visible) [data-reveal=""] {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+  filter: none !important;
+}
+
+/* ================================================================== */
+/* 3. Component parts                                                  */
+/* ================================================================== */
+
+@layer components {
+  /* ---- <TextReveal> ----------------------------------------------- */
+
+  /*
+    Each word (or line) slides inside its own clipping mask. The padding
+    gives descenders, accents and italic overhang room inside the clip; the
+    matching negative margin cancels it, so the heading's layout and
+    line-height are exactly what they'd be without the effect.
+  */
+  .text-reveal__mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding: 0.12em 0.1em 0.18em;
+    margin: -0.12em -0.1em -0.18em;
+  }
+
+  .text-reveal__line {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.12em 0.18em;
+    margin-block: -0.12em -0.18em;
+  }
+
+  .text-reveal__piece {
+    display: inline-block;
+  }
+
+  /* ---- <MaskReveal> ----------------------------------------------- */
+
+  /* Contains the settling zoom; isolation keeps rounded corners clipping in Safari. */
+  .mask-reveal {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .mask-reveal__content {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ---- <Tilt glare> ------------------------------------------------ */
+
+  .tilt-glare-host {
+    position: relative;
+  }
+
+  .tilt-glare {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .tilt-glare__light {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, var(--tilt-glare-color), transparent 42%);
+    opacity: 0;
+  }
+
+  /* ---- <Marquee> -------------------------------------------------- */
+
+  .marquee {
+    --marquee-duration: 40s;
+    --marquee-gap: 2.5rem;
+    display: flex;
+    gap: var(--marquee-gap);
+    overflow: hidden;
+    /* Soft fade at both ends so items drift in and out instead of being cut. */
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .marquee__track {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--marquee-gap);
+    min-width: 100%;
+    animation: marquee-travel var(--marquee-duration) linear infinite;
+  }
+
+  .marquee[data-direction="right"] .marquee__track {
+    animation-direction: reverse;
+  }
+
+  .marquee[data-running="false"] .marquee__track,
+  .marquee--pausable:hover .marquee__track,
+  .marquee--pausable:focus-within .marquee__track {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes marquee-travel {
+  to {
+    transform: translateX(calc(-100% - var(--marquee-gap)));
+  }
+}
+
+/* ================================================================== */
+/* 4. Depth utilities (Tailwind utilities: work with md:, hover:, group-hover:) */
+/* ================================================================== */
+
+/*
+  Depth recipe (selective — depth, not gimmicks):
+    <div class="perspective-1000">           the viewer's distance
+      <div class="preserve-3d">              a 3D stage
+        <img class="depth-1" …/>             sits 12px in front
+        <p class="depth-2">…</p>             sits 28px in front
+  depth-* use the `translate` property, so they combine with Framer Motion
+  transforms on the same element. Tailwind's own backface-hidden,
+  perspective-origin-* and rotate-x-* utilities work alongside these.
+*/
+
+@utility perspective-600 {
+  perspective: 600px;
+}
+
+@utility perspective-800 {
+  perspective: 800px;
+}
+
+@utility perspective-1000 {
+  perspective: 1000px;
+}
+
+@utility perspective-1400 {
+  perspective: 1400px;
+}
+
+@utility preserve-3d {
+  transform-style: preserve-3d;
+}
+
+@utility depth-1 {
+  translate: 0 0 var(--depth-1);
+}
+
+@utility depth-2 {
+  translate: 0 0 var(--depth-2);
+}
+
+@utility depth-3 {
+  translate: 0 0 var(--depth-3);
+}
+
+@utility depth-shadow-sm {
+  box-shadow: var(--depth-shadow-sm);
+}
+
+@utility depth-shadow-md {
+  box-shadow: var(--depth-shadow-md);
+}
+
+@utility depth-shadow-lg {
+  box-shadow: var(--depth-shadow-lg);
+}
+
+/* Tactile hover: the surface lifts a few px and its shadow deepens. */
+@utility depth-lift {
+  transition:
+    translate var(--motion-dur-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-dur-fast) var(--motion-ease-standard);
+
+  @media (hover: hover) {
+    &:hover {
+      translate: 0 -4px;
+      box-shadow: var(--depth-shadow-lg);
+    }
+  }
+
+  &:focus-visible {
+    box-shadow: var(--depth-shadow-lg);
+  }
+
+  /* Reduced motion: the shadow still deepens; nothing moves. */
+  @media (prefers-reduced-motion: reduce) {
+    &:hover {
+      translate: none;
+    }
+  }
+}
+
+/* ================================================================== */
+/* 5. Reduced motion                                                   */
+/* ================================================================== */
+
+/*
+  The JS side already turns reveals into short fades and switches off
+  parallax, tilt and pointer depth; .depth-lift handles its own case above.
+  Here: the marquee becomes a still, scrollable strip.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .marquee .marquee__track {
+    animation: none;
+  }
+
+  .marquee .marquee__track[aria-hidden="true"] {
+    display: none;
+  }
+}

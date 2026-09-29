@@ -1,0 +1,1470 @@
+/*
+  STORY — styles for src/pages/Story.tsx and src/components/story/*.
+
+  Colours: tokens from styles/theme.css only, so both themes follow.
+  Motion: reveals and scroll-linked values come from src/animations; this
+  file holds layout, resting looks, hover/focus states and the CSS side of
+  the scroll state (data-focus on moments, --open on chapter openers,
+  data-tone on chapters, the page wash).
+
+  Sections, top to bottom:
+    tokens ............ gutters, spine geometry, chapter tones
+    hero .............. the date-marker ruler (table of contents)
+    timeline .......... layout, page wash, spine
+    rail .............. sticky year marker (wide) / compact pill (phones)
+    chapter opener .... the date marker that opens into a chapter card
+    moment ............ year numeral, title, artifact, expand/collapse, links
+    quote ............. quote moments
+    onward ............ "where the story led" + Work / Me / Beyond doorways
+*/
+
+/* Registered so the page wash glides between chapter colours. Kept outside
+   the layer: @property is a global, top-level rule. */
+@property --st-wash-a {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --st-wash-b {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@layer components {
+  /* ================================================================ */
+  /* Tokens                                                            */
+  /* ================================================================ */
+
+  .story-page {
+    --st-max: var(--page-max);
+    --st-gutter: var(--page-gutter);
+    /* Spine: its x inside the flow column, and how far content sits from it. */
+    --st-spine-x: 0.375rem;
+    --st-spine-gap: 1.75rem;
+    /* Anchor landing: below the top bar and (on phones) the year pill. */
+    --st-top: calc(var(--chrome-h, 60px) + 4.5rem);
+    --st-ease: var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+    --st-ease-enter: var(--motion-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+    --st-tone: var(--color-azure);
+    --st-tone-2: var(--color-lavender);
+    --st-tone-text: var(--color-azure-soft);
+    position: relative;
+  }
+
+  @media (min-width: 64rem) {
+    .story-page {
+      --st-spine-gap: 3.25rem;
+      --st-top: calc(var(--chrome-h, 76px) + 2.25rem);
+    }
+  }
+
+  /* Chapter tones (repeat after six). Electric blue stays dominant; the
+     warm tones mark the beginning and the "leadership" turn only. */
+  .story-page [data-tone="1"] {
+    --st-tone: var(--atmo-sepia, #c9a27c);
+    --st-tone-2: var(--color-ember);
+    --st-tone-text: var(--color-ember-soft);
+  }
+  .story-page [data-tone="2"] {
+    --st-tone: var(--color-azure);
+    --st-tone-2: var(--atmo-sepia, #c9a27c);
+    --st-tone-text: var(--color-azure-soft);
+  }
+  .story-page [data-tone="3"] {
+    --st-tone: var(--color-lavender);
+    --st-tone-2: var(--color-azure);
+    --st-tone-text: var(--color-lavender-soft);
+  }
+  .story-page [data-tone="4"] {
+    --st-tone: var(--color-azure);
+    --st-tone-2: var(--color-lavender);
+    --st-tone-text: var(--color-azure-soft);
+  }
+  .story-page [data-tone="5"] {
+    --st-tone: var(--atmo-sepia, #c9a27c);
+    --st-tone-2: var(--color-azure);
+    --st-tone-text: var(--color-ember-soft);
+  }
+  .story-page [data-tone="6"] {
+    --st-tone: var(--color-lavender);
+    --st-tone-2: var(--color-ember);
+    --st-tone-text: var(--color-lavender-soft);
+  }
+
+  .story-page :is(.story-chapter, .story-moment, .story-quote) {
+    scroll-margin-top: var(--st-top);
+  }
+
+  /* ================================================================ */
+  /* Hero — the chapters as a ruler of date markers                    */
+  /* ================================================================ */
+
+  .story-hero {
+    padding-bottom: clamp(2rem, 5vh, 3.5rem);
+  }
+  .story-hero .page-hero__title {
+    max-width: 11ch;
+  }
+
+  .story-ruler {
+    margin-top: clamp(1rem, 3vw, 2rem);
+  }
+  .story-ruler__span {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 1.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-paper-faint);
+  }
+  .story-ruler__span-line {
+    width: clamp(2rem, 8vw, 5rem);
+    height: 1px;
+    background: linear-gradient(90deg, var(--color-ink-line-strong), var(--color-azure));
+  }
+
+  .story-ruler__track {
+    position: relative;
+  }
+  .story-ruler__line {
+    display: none;
+  }
+  .story-ruler__line-fill {
+    display: block;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--color-ink-line-strong),
+      color-mix(in srgb, transparent, var(--color-azure) 70%) 45%,
+      var(--color-ink-line-strong)
+    );
+  }
+  .story-ruler__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1.25rem;
+  }
+  .story-ruler__link {
+    position: relative;
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.55rem 0.25rem 0.55rem 1.5rem;
+    border-radius: 0.6rem;
+    color: var(--color-paper-dim);
+    text-decoration: none;
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-ruler__dot {
+    position: absolute;
+    left: 0.1rem;
+    top: 0.95rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--st-tone);
+    background: var(--color-ink);
+    box-shadow: 0 0 0 4px var(--color-ink);
+    transition:
+      background-color var(--motion-dur-fast, 300ms) var(--st-ease),
+      scale var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-ruler__num {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+    color: var(--st-tone-text);
+  }
+  .story-ruler__era {
+    font-size: clamp(1.02rem, 1.35vw, 1.22rem);
+    line-height: 1.15;
+    color: var(--color-paper);
+    text-wrap: balance;
+  }
+  .story-ruler__years {
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-paper-faint);
+  }
+  .story-ruler__link:hover,
+  .story-ruler__link:focus-visible {
+    color: var(--color-paper);
+  }
+  .story-ruler__link:hover .story-ruler__dot,
+  .story-ruler__link:focus-visible .story-ruler__dot {
+    background: var(--st-tone);
+    scale: 1.3;
+  }
+  .story-ruler__link:hover .story-ruler__era,
+  .story-ruler__link:focus-visible .story-ruler__era {
+    color: var(--st-tone-text);
+  }
+
+  @media (min-width: 48rem) {
+    .story-ruler__line {
+      display: block;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0.375rem;
+      height: 1px;
+    }
+    .story-ruler__list {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: clamp(0.75rem, 2vw, 1.75rem);
+    }
+    .story-ruler__link {
+      gap: 0.3rem;
+      padding: 1.75rem 0.25rem 0.5rem 0;
+    }
+    .story-ruler__dot {
+      left: 0;
+      top: 0;
+    }
+    .story-ruler__link:hover,
+    .story-ruler__link:focus-visible {
+      translate: 0 -2px;
+    }
+  }
+
+  /* ================================================================ */
+  /* Timeline — layout, page wash, spine                               */
+  /* ================================================================ */
+
+  .story-timeline {
+    position: relative;
+    padding: clamp(1.5rem, 4vw, 3.5rem) var(--st-gutter) clamp(6rem, 12vw, 9rem);
+    --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 11%);
+    --st-wash-b: color-mix(in srgb, transparent, var(--st-tone-2) 7%);
+    transition:
+      --st-wash-a 1.4s var(--st-ease),
+      --st-wash-b 1.4s var(--st-ease);
+  }
+  :root[data-theme="light"] .story-timeline {
+    --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 9%);
+    --st-wash-b: color-mix(in srgb, transparent, var(--st-tone-2) 5%);
+  }
+
+  /* The chapter's light, over the Story atmosphere and under the page. */
+  .story-wash {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 6% 24%, var(--st-wash-a), transparent 72%),
+      radial-gradient(48% 42% at 98% 92%, var(--st-wash-b), transparent 70%);
+    opacity: 0;
+    transition: opacity 1.2s var(--st-ease);
+  }
+  .story-timeline[data-live] .story-wash {
+    opacity: 1;
+  }
+
+  .story-timeline__inner {
+    max-width: var(--st-max);
+    margin-inline: auto;
+  }
+  @media (min-width: 64rem) {
+    .story-timeline__inner {
+      display: grid;
+      grid-template-columns: minmax(10.5rem, 13.5rem) minmax(0, 1fr);
+      column-gap: clamp(2rem, 4.5vw, 4.5rem);
+    }
+  }
+
+  .story-flow {
+    position: relative;
+    min-width: 0;
+    padding-left: var(--st-spine-gap);
+  }
+  .story-spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--st-spine-x);
+    width: 1px;
+    background: var(--color-ink-line);
+  }
+  .story-spine__fill {
+    position: absolute;
+    inset: 0;
+    display: block;
+    transform-origin: 50% 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, transparent, var(--color-azure) 15%),
+      var(--color-azure) 55%,
+      var(--color-azure-soft)
+    );
+  }
+  /* The story isn't finished: the line runs on, dashed. */
+  .story-flow__end {
+    position: absolute;
+    top: 100%;
+    left: var(--st-spine-x);
+    height: clamp(4rem, 9vw, 7rem);
+    border-left: 1px dashed var(--color-ink-line-strong);
+    mask-image: linear-gradient(to bottom, #000, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  }
+
+  /* ================================================================ */
+  /* Rail — the moving year marker                                     */
+  /* ================================================================ */
+
+  /* Phones and tablets: a compact pill that sticks under the top bar. */
+  .story-rail {
+    position: sticky;
+    top: calc(var(--chrome-h, 60px) + 0.6rem);
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    margin: 0 0 clamp(1.5rem, 5vw, 2.5rem);
+    pointer-events: none;
+  }
+  /* The band behind the pill: the top bar's surface carried down from the
+     bar's bottom edge, full width (the rail sits inside the page column,
+     so it reaches out by one gutter each side), then fading out below the
+     pill. Text scrolling up goes soft under one edge, then under the
+     surface — never in slivers around the capsule. */
+  .story-rail__band {
+    position: absolute;
+    z-index: -1;
+    top: calc(-0.6rem - 1px);
+    bottom: -1.75rem;
+    left: calc(-1 * var(--st-gutter));
+    right: calc(-1 * var(--st-gutter));
+    background: color-mix(in srgb, transparent, var(--color-ink) 80%);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
+    pointer-events: none;
+  }
+  /* Where the browser can tell, the band only shows while the pill is
+     stuck under the bar (elsewhere it's always there, which reads fine). */
+  @supports (container-type: scroll-state) {
+    .story-rail {
+      container-type: scroll-state;
+    }
+    .story-rail__band {
+      opacity: 0;
+      transition: opacity var(--motion-dur-fast, 300ms) var(--st-ease);
+    }
+    @container scroll-state(stuck: top) {
+      .story-rail__band {
+        opacity: 1;
+      }
+    }
+  }
+  .story-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    max-width: 100%;
+    padding: 0.5rem 1.05rem 0.6rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, transparent, var(--color-ink-raised) 84%);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line-strong),
+      var(--depth-shadow-sm);
+  }
+  .story-pill__year {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+    color: var(--color-paper);
+  }
+  .story-pill__sep {
+    flex: none;
+    width: 1px;
+    height: 1rem;
+    background: var(--color-ink-line-strong);
+  }
+  .story-pill__chapter {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--color-paper-dim);
+  }
+  .story-pill__num {
+    flex: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--st-tone-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .story-pill__era {
+    min-width: 0;
+    max-width: 13.5rem;
+  }
+  .story-pill__era .story-swap__item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .story-pill__progress {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 0.2rem;
+    height: 2px;
+    border-radius: 2px;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, var(--color-azure), var(--st-tone));
+  }
+
+  .story-rail__sticky {
+    display: none;
+  }
+
+  @media (min-width: 64rem) {
+    .story-rail {
+      position: relative;
+      top: auto;
+      display: block;
+      margin: 0;
+      pointer-events: auto;
+    }
+    .story-pill,
+    .story-rail__band {
+      display: none;
+    }
+    .story-rail__sticky {
+      display: block;
+      position: sticky;
+      top: calc(var(--chrome-h, 76px) + 2.5rem);
+      padding-top: 0.25rem;
+    }
+  }
+
+  .story-rail__count {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-paper-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .story-rail__total {
+    color: var(--color-paper-faint);
+    opacity: 0.7;
+  }
+  .story-rail__year {
+    display: flex;
+    margin-top: 0.7rem;
+    font-size: clamp(3.4rem, 5.2vw, 5rem);
+    font-weight: 320;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    color: var(--color-paper);
+  }
+  .story-rail__era {
+    display: grid;
+    margin-top: 0.55rem;
+    font-size: 1.12rem;
+    font-style: italic;
+    line-height: 1.2;
+    color: var(--st-tone-text);
+    transition: color 0.8s var(--st-ease);
+  }
+  .story-rail__era .story-swap__item {
+    white-space: normal;
+  }
+
+  .story-rail__nav {
+    position: relative;
+    margin-top: 2.25rem;
+    padding-left: 1.1rem;
+  }
+  .story-rail__track {
+    position: absolute;
+    top: 0.3rem;
+    bottom: 0.3rem;
+    left: 0;
+    width: 1px;
+    background: var(--color-ink-line);
+  }
+  .story-rail__fill {
+    position: absolute;
+    inset: 0;
+    display: block;
+    transform-origin: 50% 0;
+    background: linear-gradient(to bottom, var(--color-azure-soft), var(--color-azure));
+  }
+  .story-rail__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.1rem;
+  }
+  .story-rail__link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    color: var(--color-paper-faint);
+    text-decoration: none;
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-rail__link-num {
+    flex: none;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+  .story-rail__link:hover,
+  .story-rail__link:focus-visible {
+    color: var(--color-paper);
+    translate: 3px 0;
+  }
+  .story-rail__link[aria-current] {
+    color: var(--color-paper);
+  }
+  .story-rail__link[aria-current] .story-rail__link-num {
+    color: var(--color-azure-soft);
+  }
+
+  /* Odometer + swap: the pieces are stacked in one grid cell. */
+  .story-odo {
+    display: inline-flex;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .story-odo__cell,
+  .story-swap {
+    display: inline-grid;
+    overflow: hidden;
+    overflow: clip;
+    padding-block: 0.06em;
+  }
+  .story-odo__char,
+  .story-swap__item {
+    grid-area: 1 / 1;
+    display: block;
+    white-space: nowrap;
+  }
+
+  /* ================================================================ */
+  /* Chapter + opener                                                  */
+  /* ================================================================ */
+
+  .story-chapter {
+    position: relative;
+    padding-top: clamp(4rem, 9vw, 7.5rem);
+  }
+  .story-chapter:first-of-type {
+    padding-top: 0;
+  }
+  .story-chapter__moments {
+    display: grid;
+    gap: clamp(4.5rem, 10vw, 8rem);
+    padding-top: clamp(3.25rem, 7vw, 5.5rem);
+  }
+
+  .story-opener {
+    --open: 1;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: clamp(18rem, 50vh, 27rem);
+    margin-left: calc(-1 * var(--st-spine-gap));
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 3.5vw, 3rem) clamp(1.5rem, 3.5vw, 2.75rem)
+      calc(var(--st-spine-gap) + clamp(0.25rem, 1.5vw, 1rem));
+  }
+  /* The panel's clip grows out of a date-marker pill sitting on the spine. */
+  .story-opener__panel {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 1.75rem;
+    background:
+      radial-gradient(110% 90% at 0% 100%, color-mix(in srgb, transparent, var(--st-tone) 17%), transparent 62%),
+      radial-gradient(70% 60% at 100% 0%, color-mix(in srgb, transparent, var(--st-tone-2) 8%), transparent 70%),
+      linear-gradient(160deg, var(--color-ink-raised-2), var(--color-ink-raised));
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line),
+      var(--depth-shadow-md);
+    clip-path: inset(
+      calc((1 - var(--open)) * (50% - 1.375rem)) calc((1 - var(--open)) * (100% - 7.25rem))
+        calc((1 - var(--open)) * (50% - 1.375rem)) 0 round calc(1.375rem + var(--open) * 0.375rem)
+    );
+  }
+  .story-opener__marker {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    width: 7.25rem;
+    height: 2.75rem;
+    translate: 0 -50%;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-paper);
+    opacity: clamp(0, calc(1 - var(--open) * 2.4), 1);
+    pointer-events: none;
+  }
+  .story-opener__marker-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--st-tone);
+  }
+
+  .story-opener__content {
+    position: relative;
+    display: grid;
+    grid-template-areas: "num" "text" "toc";
+    align-content: space-between;
+    gap: 1.5rem;
+    min-width: 0;
+    opacity: clamp(0, calc((var(--open) - 0.45) * 2.6), 1);
+    translate: 0 calc((1 - var(--open)) * 2.25rem);
+  }
+  @media (min-width: 48rem) {
+    .story-opener__content {
+      grid-template-columns: minmax(0, 1fr) minmax(12rem, 17rem);
+      grid-template-areas: "num num" "text toc";
+      align-items: end;
+      column-gap: clamp(1.5rem, 4vw, 3.5rem);
+    }
+  }
+  .story-opener__number-wrap {
+    grid-area: num;
+    justify-self: end;
+    align-self: start;
+    pointer-events: none;
+  }
+  .story-opener__number {
+    display: block;
+    margin: -0.12em -0.04em 0 0;
+    font-size: clamp(6rem, 16vw, 14rem);
+    font-weight: 300;
+    line-height: 0.8;
+    letter-spacing: -0.06em;
+    font-variant-numeric: lining-nums;
+    color: transparent;
+    -webkit-text-stroke: 1px color-mix(in srgb, transparent, var(--st-tone) 60%);
+  }
+  .story-opener__text {
+    grid-area: text;
+    min-width: 0;
+  }
+  .story-opener__kicker-num {
+    margin-left: 0.35em;
+    color: var(--st-tone-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .story-opener__title {
+    margin: 0.9rem 0 0;
+    max-width: 14ch;
+    font-size: clamp(2.2rem, 5.2vw, 4.4rem);
+    font-weight: 340;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    color: var(--color-paper);
+    text-wrap: balance;
+  }
+  .story-opener__years {
+    margin-top: 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+    color: var(--st-tone-text);
+  }
+  .story-opener__toc {
+    grid-area: toc;
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid var(--color-ink-line);
+    display: grid;
+    gap: 0.1rem;
+  }
+  .story-opener__toc-link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    padding: 0.45rem 0;
+    font-size: 0.92rem;
+    line-height: 1.35;
+    color: var(--color-paper-dim);
+    text-decoration: none;
+    transition: color var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-opener__toc-year {
+    flex: none;
+    min-width: 2.75rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-paper-faint);
+    white-space: nowrap;
+  }
+  .story-opener__toc-title {
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    transition: background-size var(--motion-dur-base, 550ms) var(--st-ease);
+  }
+  .story-opener__toc-link:hover,
+  .story-opener__toc-link:focus-visible {
+    color: var(--color-paper);
+  }
+  .story-opener__toc-link:hover .story-opener__toc-title,
+  .story-opener__toc-link:focus-visible .story-opener__toc-title {
+    background-size: 100% 1px;
+  }
+
+  /* ================================================================ */
+  /* Moment                                                            */
+  /* ================================================================ */
+
+  .story-moment {
+    /* Strength of the moment's decorative layer (see "Scroll state"). */
+    --st-deco: 1;
+    position: relative;
+    display: grid;
+    grid-template-areas: "head" "media" "body";
+    gap: 1.5rem clamp(2rem, 5vw, 4.5rem);
+    transition:
+      translate 0.8s var(--st-ease),
+      scale 0.8s var(--st-ease);
+  }
+  .story-moment__head {
+    grid-area: head;
+    min-width: 0;
+  }
+  .story-moment__media {
+    grid-area: media;
+    min-width: 0;
+  }
+  .story-moment__body {
+    grid-area: body;
+    min-width: 0;
+    margin-top: -0.25rem;
+  }
+  .story-moment[data-media="artifact"] .story-moment__body {
+    margin-top: 0;
+  }
+
+  @media (min-width: 56rem) {
+    .story-moment[data-media="artifact"] {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas: "head media" "body media";
+      align-items: start;
+    }
+    .story-moment[data-media="artifact"][data-side="left"] {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-areas: "media head" "media body";
+    }
+    .story-moment__body {
+      margin-top: 0;
+    }
+  }
+
+  /* Scroll state: the moment being read leads, the rest step back.
+     Stepping back never touches text: only the decorative layer fades
+     (--st-deco: the milestone numeral, the artifact photo, the narrative's
+     rule), so titles, summaries, narratives and links keep full contrast
+     in both themes. The moment being read leads with its solid year and
+     glowing node; the others settle back a little. Only once the page is
+     live (the prerendered page reads at full strength), and not at all
+     under reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html[data-motion-ready] .story-moment[data-focus="past"] {
+      --st-deco: 0.45;
+      scale: 0.985;
+    }
+    html[data-motion-ready] .story-moment[data-focus="next"] {
+      --st-deco: 0.8;
+      translate: 0 0.75rem;
+    }
+    html[data-motion-ready] .story-moment[data-focus="future"] {
+      --st-deco: 0.55;
+      translate: 0 1.25rem;
+    }
+    html[data-motion-ready] .story-moment:is(:hover, :focus-within) {
+      --st-deco: 1;
+    }
+  }
+
+  /* The node on the spine. */
+  .story-moment__node {
+    position: absolute;
+    top: clamp(1.15rem, 2.8vw, 2.2rem);
+    left: calc(var(--st-spine-x) - var(--st-spine-gap) + 0.5px);
+    width: 0.75rem;
+    height: 0.75rem;
+    translate: -50% 0;
+    border-radius: 50%;
+    border: 1px solid var(--color-ink-line-strong);
+    background: var(--color-ink);
+    transition:
+      background-color 0.5s var(--st-ease),
+      border-color 0.5s var(--st-ease),
+      box-shadow 0.5s var(--st-ease),
+      scale 0.5s var(--st-ease);
+  }
+  .story-moment:is([data-focus="active"], [data-focus="past"]) .story-moment__node {
+    border-color: var(--color-azure);
+    background: var(--color-azure);
+  }
+  .story-moment[data-focus="active"] .story-moment__node {
+    scale: 1.3;
+    box-shadow: 0 0 0 5px color-mix(in srgb, transparent, var(--color-azure) 22%);
+  }
+  .story-moment[data-turning] .story-moment__node {
+    width: 1rem;
+    height: 1rem;
+    border-color: var(--color-ember);
+  }
+  .story-moment[data-turning]:is([data-focus="active"], [data-focus="past"]) .story-moment__node {
+    background: var(--color-ember);
+    border-color: var(--color-ember);
+  }
+  .story-moment[data-turning][data-focus="active"] .story-moment__node {
+    box-shadow: 0 0 0 6px color-mix(in srgb, transparent, var(--color-ember) 24%);
+  }
+
+  /* Milestone year. Outlined until the moment is being read. */
+  .story-moment__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem 1rem;
+  }
+  .story-moment__year {
+    font-size: clamp(3.4rem, 7.6vw, 6.4rem);
+    font-weight: 300;
+    line-height: 0.82;
+    letter-spacing: -0.055em;
+    font-variant-numeric: lining-nums;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-ink-line-strong);
+    opacity: var(--st-deco);
+    transition:
+      color 0.8s var(--st-ease),
+      -webkit-text-stroke-color 0.8s var(--st-ease),
+      opacity 0.7s var(--st-ease);
+  }
+  .story-moment[data-focus="active"] .story-moment__year {
+    color: var(--color-paper);
+    -webkit-text-stroke-color: transparent;
+  }
+  .story-moment[data-turning]:not([data-focus="active"]) .story-moment__year {
+    -webkit-text-stroke-color: color-mix(in srgb, transparent, var(--color-ember) 55%);
+  }
+  .story-moment[data-media="none"] .story-moment__year {
+    font-size: clamp(4rem, 11vw, 9rem);
+  }
+  .story-moment__labels {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding-bottom: 0.3rem;
+  }
+  .story-moment__date {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-paper-faint);
+  }
+
+  .story-moment__title {
+    margin: 1rem 0 0;
+    max-width: 20ch;
+    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    font-weight: 360;
+    line-height: 1.04;
+    letter-spacing: -0.028em;
+    color: var(--color-paper);
+    text-wrap: balance;
+  }
+  .story-moment[data-turning] .story-moment__title {
+    font-size: clamp(2.15rem, 4.4vw, 3.6rem);
+  }
+  .story-moment__summary {
+    margin-top: 1rem;
+    max-width: 36rem;
+    font-size: clamp(1.02rem, 1.3vw, 1.16rem);
+    line-height: 1.6;
+    color: var(--color-paper-dim);
+  }
+  .story-moment__summary p {
+    margin: 0;
+  }
+  .story-moment[data-media="none"] .story-moment__summary {
+    max-width: 40rem;
+  }
+
+  /* Artifact — a photo from the event, mounted like archive material. */
+  .story-moment__frame-wrap {
+    width: min(100%, 24rem);
+    margin-inline: auto;
+    rotate: -1.2deg;
+    transition: rotate 0.6s var(--st-ease);
+  }
+  .story-moment[data-side="left"] .story-moment__frame-wrap {
+    rotate: 1.1deg;
+  }
+  @media (min-width: 56rem) {
+    .story-moment__media {
+      padding-top: clamp(1rem, 4vw, 3rem);
+    }
+    .story-moment[data-side="right"] .story-moment__frame-wrap {
+      margin-inline: auto 0;
+    }
+    .story-moment[data-side="left"] .story-moment__frame-wrap {
+      margin-inline: 0 auto;
+    }
+  }
+  .story-moment__frame-wrap:has(.story-artifact:is(:hover, :focus-visible)) {
+    rotate: 0deg;
+  }
+  .story-artifact__mask {
+    border-radius: 1.15rem;
+  }
+  .story-artifact {
+    display: block;
+    padding: 0.55rem 0.55rem 0;
+    border-radius: 1.15rem;
+    background: var(--color-ink-raised);
+    color: inherit;
+    text-decoration: none;
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line),
+      var(--depth-shadow-md);
+    transition:
+      box-shadow 0.5s var(--st-ease),
+      translate 0.5s var(--st-ease);
+  }
+  .story-artifact:hover,
+  .story-artifact:focus-visible {
+    translate: 0 -4px;
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line-strong),
+      var(--depth-shadow-lg);
+  }
+  .story-artifact__cover {
+    display: block;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    /* The photo steps back with its moment; the caption below stays. */
+    opacity: var(--st-deco);
+    transition: opacity 0.7s var(--st-ease);
+  }
+  .story-artifact__caption {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.75rem;
+    row-gap: 0.15rem;
+    padding: 0.75rem 0.4rem 0.85rem;
+  }
+  .story-artifact__title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-paper);
+  }
+  .story-artifact__meta {
+    grid-column: 1;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--color-paper-faint);
+  }
+  .story-artifact__arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: var(--color-paper-faint);
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-artifact:hover .story-artifact__arrow,
+  .story-artifact:focus-visible .story-artifact__arrow {
+    color: var(--color-azure-soft);
+    translate: 4px 0;
+  }
+
+  /* Expand / collapse. */
+  .story-moment__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 2.75rem;
+    margin: 0 0 0 -0.55rem;
+    padding: 0.45rem 1rem 0.45rem 0.55rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-paper-dim);
+    cursor: pointer;
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      background-color var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-moment__toggle:hover {
+    color: var(--color-paper);
+    background: color-mix(in srgb, transparent, var(--color-ink-raised) 80%);
+  }
+  .story-moment__toggle:active {
+    scale: 0.98;
+  }
+  .story-moment__toggle-icon {
+    position: relative;
+    flex: none;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    border: 1px solid var(--color-ink-line-strong);
+    transition:
+      border-color var(--motion-dur-fast, 300ms) var(--st-ease),
+      background-color var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-moment__toggle-icon::before,
+  .story-moment__toggle-icon::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.6rem;
+    height: 1px;
+    background: currentColor;
+    translate: -50% -50%;
+    transition: rotate var(--motion-dur-base, 550ms) var(--st-ease);
+  }
+  .story-moment__toggle-icon::after {
+    rotate: 90deg;
+  }
+  .story-moment__toggle[aria-expanded="true"] .story-moment__toggle-icon::after {
+    rotate: 0deg;
+  }
+  .story-moment__toggle[aria-expanded="true"] .story-moment__toggle-icon,
+  .story-moment__toggle:hover .story-moment__toggle-icon {
+    border-color: var(--color-azure);
+  }
+  .story-moment__toggle[aria-expanded="true"] .story-moment__toggle-icon {
+    background: var(--color-azure-dim);
+  }
+
+  .story-moment__more {
+    overflow: hidden;
+  }
+  .story-moment__more-inner {
+    display: grid;
+    gap: 1.75rem;
+    max-width: 40rem;
+    padding-top: 1rem;
+  }
+  .story-moment__narrative {
+    margin: 0;
+    padding-left: 1.2rem;
+    border-left: 1px solid color-mix(in srgb, transparent, var(--st-tone) calc(55% * var(--st-deco)));
+    font-size: 1.02rem;
+    line-height: 1.75;
+    color: var(--color-paper-dim);
+    transition: border-color 0.7s var(--st-ease);
+  }
+  .story-moment__links-label {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-paper-faint);
+  }
+  .story-moment__links ul {
+    list-style: none;
+    margin: 0.65rem 0 0;
+    padding: 0;
+    border-top: 1px solid var(--color-ink-line);
+  }
+
+  .story-link {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1rem;
+    row-gap: 0.2rem;
+    padding: 0.8rem 0.5rem;
+    border-bottom: 1px solid var(--color-ink-line);
+    color: var(--color-paper);
+    text-decoration: none;
+    transition: background-color var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-link__title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: color var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-link__meta {
+    grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+    font-size: 0.78rem;
+    color: var(--color-paper-faint);
+  }
+  .story-link__result {
+    font-weight: 600;
+    color: var(--color-azure-soft);
+  }
+  .story-link__result::before {
+    content: "·";
+    margin-right: 0.6rem;
+    color: var(--color-paper-faint);
+  }
+  .story-link__arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: var(--color-paper-faint);
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-link:hover,
+  .story-link:focus-visible {
+    background: color-mix(in srgb, transparent, var(--color-azure) 6%);
+  }
+  .story-link:hover .story-link__title,
+  .story-link:focus-visible .story-link__title {
+    color: var(--color-azure-soft);
+  }
+  .story-link:hover .story-link__arrow,
+  .story-link:focus-visible .story-link__arrow {
+    color: var(--color-azure-soft);
+    translate: 4px 0;
+  }
+
+  /* ================================================================ */
+  /* Quote moment                                                      */
+  /* ================================================================ */
+
+  .story-quote {
+    position: relative;
+    isolation: isolate;
+    margin: 0;
+    padding: clamp(2.5rem, 6vw, 4.5rem) 0 clamp(0.5rem, 2vw, 1.5rem) clamp(0rem, 3vw, 2.5rem);
+  }
+  .story-quote__mark {
+    position: absolute;
+    top: -0.28em;
+    left: -0.06em;
+    z-index: -1;
+    font-size: clamp(9rem, 22vw, 18rem);
+    font-style: italic;
+    line-height: 1;
+    color: color-mix(in srgb, transparent, var(--st-tone) 26%);
+    pointer-events: none;
+    user-select: none;
+  }
+  .story-quote__rule {
+    width: min(11rem, 40%);
+    margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  }
+  .story-quote__rule span {
+    display: block;
+    height: 1px;
+    background: linear-gradient(90deg, var(--st-tone), transparent);
+  }
+  .story-quote__body {
+    margin: 0;
+  }
+  .story-quote__text {
+    margin: 0;
+    max-width: 21ch;
+    font-size: clamp(2rem, 4.8vw, 4.1rem);
+    font-style: italic;
+    font-weight: 320;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    color: var(--color-paper);
+    text-wrap: balance;
+  }
+  .story-quote__caption {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: clamp(1.25rem, 2.5vw, 1.75rem);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-paper-faint);
+  }
+  .story-quote__dash {
+    width: 1.75rem;
+    height: 1px;
+    background: var(--st-tone);
+  }
+
+  /* ================================================================ */
+  /* Onward                                                            */
+  /* ================================================================ */
+
+  .story-onward {
+    position: relative;
+    padding: clamp(2rem, 5vw, 4rem) var(--st-gutter) clamp(5rem, 11vw, 8.5rem);
+  }
+  .story-onward__inner {
+    max-width: var(--st-max);
+    margin-inline: auto;
+  }
+  .story-onward__grid {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  }
+  @media (min-width: 64rem) {
+    .story-onward__grid {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      align-items: stretch;
+    }
+  }
+
+  .story-onward__led {
+    min-width: 0;
+  }
+  .story-led {
+    display: block;
+    height: 100%;
+    border-radius: 1.5rem;
+  }
+  .story-led__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background: var(--color-ink-raised);
+    color: inherit;
+    text-decoration: none;
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line),
+      var(--depth-shadow-md);
+    transition: box-shadow 0.5s var(--st-ease);
+  }
+  .story-led__link:hover,
+  .story-led__link:focus-visible {
+    box-shadow:
+      inset 0 0 0 1px var(--color-ink-line-strong),
+      var(--depth-shadow-lg);
+  }
+  /* The project's own visual — its cover photo, or the same category
+     artwork Work and Home show — filling a 16:11 frame. No veil: nothing
+     is laid over it. */
+  .story-led__cover {
+    position: relative;
+    display: block;
+    flex: none;
+    aspect-ratio: 16 / 11;
+    overflow: hidden;
+  }
+  .story-led__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.4rem clamp(1.25rem, 2.5vw, 1.75rem) 1.6rem;
+  }
+  .story-led__lead {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-azure-soft);
+  }
+  .story-led__title {
+    font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+    font-weight: 360;
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    color: var(--color-paper);
+  }
+  .story-led__summary {
+    font-size: 0.96rem;
+    line-height: 1.55;
+    color: var(--color-paper-dim);
+  }
+  .story-led__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.6rem;
+  }
+  .story-led__arrow {
+    margin-left: auto;
+    font-size: 1.2rem;
+    color: var(--color-paper-faint);
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate var(--motion-dur-fast, 300ms) var(--st-ease);
+  }
+  .story-led__link:hover .story-led__arrow,
+  .story-led__link:focus-visible .story-led__arrow {
+    color: var(--color-azure-soft);
+    translate: 5px 0;
+  }
+
+  /* Work / Me / Beyond — large numbered doorways. */
+  .story-doors {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    align-content: start;
+    border-top: 1px solid var(--color-ink-line);
+  }
+  .story-door {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "idx label arrow" "idx desc arrow";
+    align-items: baseline;
+    column-gap: clamp(1rem, 2.5vw, 2rem);
+    padding: clamp(1.25rem, 2.6vw, 1.9rem) clamp(0.5rem, 1.5vw, 1.1rem);
+    overflow: hidden;
+    border-bottom: 1px solid var(--color-ink-line);
+    color: var(--color-paper);
+    text-decoration: none;
+    transition: opacity 0.45s var(--st-ease);
+  }
+  .story-door__sweep {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(90deg, color-mix(in srgb, transparent, var(--color-azure) 14%), transparent 85%);
+    transform-origin: 0 50%;
+    scale: 0 1;
+    transition: scale 0.65s var(--st-ease-enter);
+  }
+  .story-door__index {
+    grid-area: idx;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-azure-soft);
+  }
+  .story-door__label {
+    grid-area: label;
+    font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+    font-weight: 330;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    transition: translate 0.55s var(--st-ease);
+  }
+  /* Readable at rest (secondary text at full strength); hover/focus
+     brightens it to primary text rather than fading it in. */
+  .story-door__description {
+    grid-area: desc;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--color-paper-dim);
+    transition:
+      color 0.45s var(--st-ease),
+      translate 0.55s var(--st-ease);
+  }
+  .story-door__arrow {
+    grid-area: arrow;
+    align-self: center;
+    font-size: 1.5rem;
+    color: var(--color-paper-faint);
+    transition:
+      color var(--motion-dur-fast, 300ms) var(--st-ease),
+      translate 0.45s var(--st-ease);
+  }
+  .story-door:hover .story-door__sweep,
+  .story-door:focus-visible .story-door__sweep {
+    scale: 1 1;
+  }
+  .story-door:hover .story-door__description,
+  .story-door:focus-visible .story-door__description {
+    color: var(--color-paper);
+  }
+  .story-door:hover .story-door__arrow,
+  .story-door:focus-visible .story-door__arrow {
+    color: var(--color-azure-soft);
+    translate: 0.4rem 0;
+  }
+  .story-doors:has(.story-door:is(:hover, :focus-visible)) .story-door:not(:hover, :focus-visible) {
+    opacity: 0.5;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .story-door:hover .story-door__label,
+    .story-door:focus-visible .story-door__label,
+    .story-door:hover .story-door__description,
+    .story-door:focus-visible .story-door__description {
+      translate: 0.45rem 0;
+    }
+  }
+
+  /* ================================================================ */
+  /* Reduced motion                                                     */
+  /* ================================================================ */
+
+  @media (prefers-reduced-motion: reduce) {
+    .story-page *,
+    .story-page *::before,
+    .story-page *::after {
+      transition-duration: 0.01ms !important;
+    }
+    .story-timeline {
+      transition: none;
+    }
+    .story-moment__frame-wrap,
+    .story-moment[data-side="left"] .story-moment__frame-wrap {
+      rotate: 0deg;
+    }
+  }
+}
