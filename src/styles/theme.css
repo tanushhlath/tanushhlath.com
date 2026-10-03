@@ -40,7 +40,23 @@
   /* ---- Text -------------------------------------------------------- */
   --color-paper: #f3f0e8; /* primary text */
   --color-paper-dim: #9ba0ac; /* secondary text */
-  --color-paper-faint: #858994; /* tertiary text — still ≥ 4.5:1 on every surface */
+  /* Tertiary text: a warm grey a step below paper-dim (7.2:1 vs 7.5:1 on
+     the page), set apart mostly by hue, size and tracking. It must never
+     read stronger than paper-dim, and it must keep 4.5:1 on the lit Story /
+     Me atmospheres, so it can't go much darker than this. */
+  --color-paper-faint: #9e9d98;
+  /* Small labels (kickers, counts, chips, card captions) on a raised
+     surface. In dark mode they are simply paper-dim / paper-faint; light
+     mode deepens them a touch (below). Body text never uses these. */
+  --color-paper-dim-raised: var(--color-paper-dim);
+  --color-paper-faint-raised: var(--color-paper-faint);
+  /* The two greys above under names nothing overrides (don't set these —
+     they always equal paper-dim / paper-faint of the current mode). In
+     light mode a tinted region (a route's atmosphere, the Story wash, the
+     Home hero's bloom, …) mixes its local greys from them; look for
+     "Text on the tint" in the stylesheets. */
+  --paper-dim-base: var(--color-paper-dim);
+  --paper-faint-base: var(--color-paper-faint);
 
   /* ---- Accents ----------------------------------------------------- */
   --color-azure: #5d6cff; /* primary accent: links, active states, focus */
@@ -103,10 +119,16 @@
   /* ---- Text -------------------------------------------------------- */
   --color-paper: #111318;
   --color-paper-dim: #666b76;
-  /* A warm grey, set apart from paper-dim by hue rather than by being
-     lighter: anything lighter would fall below AA contrast (4.5:1) on
-     the page and on cards. */
-  --color-paper-faint: #6b6963;
+  /* Tertiary text: a warm grey with the same lightness as paper-dim
+     (4.7:1 on the page), set apart by hue, size and tracking. Tertiary text
+     must never read darker than secondary, and anything lighter falls
+     below 4.5:1. */
+  --color-paper-faint: #6d6b66;
+  /* Small labels on a raised surface: paper-dim is only 4.4:1 on
+     --color-ink-raised, so labels there take a little of --color-paper
+     (5.2:1 and 4.9:1 on it; the tertiary one stays the lighter). */
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 
   /* ---- Accents ----------------------------------------------------- */
   --color-azure: #4e5dff;
@@ -116,13 +138,17 @@
   --color-lavender: #6f63c9;
   --color-lavender-soft: #5b4dbf;
   --color-ember: #e98f6e;
-  --color-ember-soft: #9e4e30;
+  --color-ember-soft: #94482c; /* 5.8:1 on the page, like lavender-soft, so it holds on warm tints */
 
   /* ---- Interaction ------------------------------------------------- */
   --color-selection: rgba(78, 93, 255, 0.2);
   --color-selection-ink: var(--color-paper);
 
-  /* ---- Atmosphere — quieter blues, warmer paper, white light -------- */
+  /* ---- Atmosphere — quieter blues, warmer paper, white light --------
+     paper-dim has only 4.7:1 on the bare page, so grey text that sits on
+     a tinted light region (the Home hero's bloom, the Story wash, …) is
+     deepened locally in that region's own stylesheet — look for
+     "Text on the tint" — instead of fading the atmosphere. */
   --atmo-blue: color-mix(in srgb, transparent, var(--color-azure) 50%);
   --atmo-violet: color-mix(in srgb, transparent, var(--color-lavender) 55%);
   --atmo-sepia: #a0703f;

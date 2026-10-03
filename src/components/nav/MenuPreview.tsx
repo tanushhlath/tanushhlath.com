@@ -78,7 +78,7 @@ function PreviewBody({ preview, fit = "cover" }: { preview: Preview; fit?: "cove
       return (
         <>
           {fit === "contain" && (
-            <ProtectedImage image={preview.image} fill fit="cover" alt="" className="menu-preview__backdrop" />
+            <ProtectedImage image={preview.image} fill fit="cover" backdrop alt="" className="menu-preview__backdrop" />
           )}
           <ProtectedImage image={preview.image} fill fit={fit} alt="" className="menu-preview__img" />
           <span className="menu-preview__veil" />

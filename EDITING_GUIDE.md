@@ -327,6 +327,15 @@ reads each image's size, **strips hidden metadata** (camera, GPS,
 editor/account ids) and adds it to the gallery in number order. JPG, PNG,
 WebP, GIF and AVIF all work. Keep images around 1600 px on the long side.
 
+The build also writes smaller copies of every photo into a `_w/` folder
+next to it (`scripts/lib/media-variants.mjs` + `scripts/media-thumbs.ps1`;
+this uses Windows' built-in image tools — on other machines the originals
+are simply used). Cards and thumbnails load those small copies; the photo
+viewer loads the original. Never edit or delete `_w/` by hand: copies are
+rewritten when you replace a photo and removed when you delete one.
+Photos narrower than about 800 px look soft when shown large —
+`npm run media -- --small` lists them.
+
 ### Add an event image folder
 Create `public/media/events/<event-id>/` — the folder name must be the
 event's `id` exactly — and put the photos in it. Photos from one event
@@ -356,7 +365,10 @@ media: {
 ```
 
 `focus` sets which part of a photo stays visible when it's cropped
-("50% 30%" = centre, upper third). With `layout` left out the site picks
+("50% 30%" = centre, upper third). Without a `focus`, a picture whose
+shape is far from its frame — a certificate, a wide email screenshot — is
+shown whole on a mat instead of being cropped; adding a `focus` tells the
+site the crop is intended. With `layout` left out the site picks
 one: a single photo → large hero; 2–3 → split; 4–5 → mosaic; 6+ →
 filmstrip; photos plus videos → media stage.
 
@@ -369,6 +381,8 @@ block (§13).
 ### Add a video
 Put an `.mp4` (H.264) in the record's folder; it appears in its own video
 area with custom controls. Always give it a caption that says what it is.
+Videos only start loading as they are about to scroll into view (or when
+Play is pressed); a `poster` image, if set, shows until then.
 The Inter-House Horse Riding videos are captioned as practice footage —
 keep that caption.
 
@@ -573,6 +587,22 @@ Main tokens: `--color-ink` (background), `--color-ink-raised` /
 `--color-ember` (warm accent — use rarely). `--atmo-*` tune the background
 atmospheres. Dark is always the default; a visitor's choice of light is
 remembered on their device.
+
+`--color-paper-dim-raised` / `--color-paper-faint-raised` are mixed from
+the text colours above (nothing to set): in light mode they deepen small
+labels that sit on cards and panels a touch, because `--color-paper-dim`
+has only 4.4:1 on `--color-ink-raised`.
+
+Light mode keeps its full atmospheres (the Home hero's bloom, the Story
+wash and chapter cards, each route's lights). Grey text that sits on one
+of those tints is deepened locally instead: the tinted area redefines
+`--color-paper-dim` / `-faint` as the page grey plus a few percent of
+`--color-paper` — see the "Text on the tint" blocks in
+`styles/atmosphere.css` (one per route) and in the area files. Your values
+in `theme.css` stay exactly as you set them everywhere else. If you change
+a text, surface or atmosphere colour, keep small grey text at 4.5:1 or
+more against the page, the cards and the tinted areas — raise or lower
+that region's percentage rather than fading the tint.
 
 ---
 

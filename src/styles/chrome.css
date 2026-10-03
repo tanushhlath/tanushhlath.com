@@ -23,7 +23,7 @@
 :root {
   --chrome-h: 60px;
   --chrome-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 16px 36px -24px rgba(2, 3, 6, 0.85);
-  /* Home's first load: how long after hydration the bar arrives (step 6 of the hero). */
+  /* Home's first load: how long after the hero's entrance starts the bar arrives (step 6 of the hero). */
   --chrome-enter-delay: 540ms; /* Home entrance: after the statement (0.3 s), before the CTA (0.6 s) — REQUIREMENTS §7 */
 }
 
@@ -66,7 +66,9 @@
 .chrome-bar__surface {
   position: absolute;
   inset: 0 calc(-1 * var(--scrollbar-compensation, 0px)) 0 0;
-  background: color-mix(in srgb, transparent, var(--color-ink) 74%);
+  /* 84%: enough frost that the section count (small tertiary text) keeps
+     4.5:1 even while a white photo scrolls under the bar (dark mode). */
+  background: color-mix(in srgb, transparent, var(--color-ink) 84%);
   -webkit-backdrop-filter: blur(16px) saturate(1.35);
   backdrop-filter: blur(16px) saturate(1.35);
   border-bottom: 1px solid var(--color-ink-line);
@@ -127,8 +129,10 @@
   pointer-events: none;
 }
 
+/* After the hero's own fail-safe, keeping the entrance order (hero, then bar). */
 html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-bar__start, .chrome-bar__end) {
-  animation: motion-failsafe var(--motion-dur-base, 550ms) var(--ease-standard) var(--motion-failsafe-delay, 2.5s) forwards;
+  animation: motion-failsafe var(--motion-dur-base, 550ms) var(--ease-standard)
+    calc(var(--motion-failsafe-delay, 2.5s) + 600ms) forwards;
   pointer-events: auto;
 }
 
@@ -284,7 +288,7 @@ html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-b
   font-size: 11px;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised); /* a label on the bar's surface */
 }
 
 .chrome-indicator__name {
@@ -293,7 +297,7 @@ html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-b
 }
 
 .chrome-indicator__sub {
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
   letter-spacing: 0.14em;
 }
 
@@ -876,7 +880,8 @@ html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-b
 }
 
 /* Hover-capable screens: a hovered/focused item becomes dominant — it
-   shifts, its description slides in, the others quieten. Touch screens
+   shifts, its description slides in; under the mouse the others quieten
+   (MenuOverlay sets data-hovering for mouse hover only). Touch screens
    keep every description visible instead. */
 @media (hover: hover) {
   .menu__nav[data-hovering] .menu-item:not([data-active]) {

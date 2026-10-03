@@ -2,7 +2,15 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType, type Location } from "react-router-dom";
 import { isFileMode } from "./fileMode";
 import { isStateFragment, pathOf } from "./paths";
-import { findAnchor, focusWithoutScroll, isHashStateNavigation, scrollToElement, scrollToTop } from "./scroll";
+import {
+  findAnchor,
+  focusPage,
+  focusWithoutScroll,
+  isHashStateNavigation,
+  refocusIfLost,
+  scrollToElement,
+  scrollToTop,
+} from "./scroll";
 import { isReturnVisit, persistPositions, rememberPosition, savedPosition, scrollKey } from "./scrollMemory";
 
 /**
@@ -108,12 +116,6 @@ function scrollToFragment(fragment: string, moveFocus: boolean): void {
   });
 }
 
-/** After a page change, start keyboard and screen-reader users at the new page's content. */
-function focusPage(): void {
-  const main = document.getElementById("main");
-  if (main) focusWithoutScroll(main);
-}
-
 /** The fragment if it names a section to scroll to — "" for none or for UI state (/work/#did). */
 function anchorOf(location: Location): string {
   const fragment = location.hash.slice(1);
@@ -192,9 +194,10 @@ export function ScrollManager(): null {
       cancelPending();
       scrollToTop();
       // A new page — or the same page re-opened from its own link, whose
-      // focused link (in the closed menu / the remounted page) is gone.
-      const lostFocus = !document.activeElement || document.activeElement === document.body;
-      if (!samePage || lostFocus) focusPage();
+      // focused link (in the menu, which closes a frame or two later, or in
+      // the remounted page) is about to be gone.
+      if (!samePage) focusPage();
+      else refocusIfLost();
     }
   }, [location, navigationType]);
 

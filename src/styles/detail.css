@@ -441,18 +441,18 @@
   outline-offset: 4px;
 }
 
-/* Foreground: the recognition seal floats in front of the frame. It hangs
-   from the frame's lower edge, overlapping only its rounded corner, so a
-   certificate's text stays readable. The visual keeps room for it below. */
+/* Foreground: the recognition seal floats in front of the frame, hung just
+   below its lower edge so it never covers the photo (a certificate's
+   signature line sits right at the bottom). The visual keeps room for it. */
 .dt-hero__seal {
   position: absolute;
   z-index: 4;
   left: clamp(-2.25rem, -2.6vw, -0.75rem);
-  top: calc(100% - 1rem);
+  top: calc(100% + 0.6rem);
   max-width: min(19rem, 86%);
 }
 .dt-hero[data-seal] .dt-hero__visual {
-  padding-bottom: clamp(4.75rem, 7vw, 5.75rem);
+  padding-bottom: clamp(6.35rem, calc(7vw + 1.6rem), 7.35rem);
 }
 
 /* ================================================================== */

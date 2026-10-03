@@ -44,7 +44,10 @@ export interface MenuOverlayProps {
 export function MenuOverlay({ id, pathname, currentKey, onClose, focusRef }: MenuOverlayProps) {
   const reduced = useReducedMotionSafe();
   const menu = getMenu();
-  const [activeKey, setActiveKey] = useState<MenuKey | null>(null);
+  // The hovered / keyboard-focused item. Only mouse hover quietens the
+  // others (a keyboard user reading down the list keeps every item legible).
+  const [active, setActive] = useState<{ key: MenuKey; via: "pointer" | "keyboard" } | null>(null);
+  const activeKey = active?.key ?? null;
   const shownKey: MenuKey = activeKey ?? currentKey ?? menu.home.key;
   const shown = menu.all.find((e) => e.key === shownKey);
   // The page you go "back to" — the one you're on (none on the 404: the control just reads "Back").
@@ -53,7 +56,7 @@ export function MenuOverlay({ id, pathname, currentKey, onClose, focusRef }: Men
   const variants = overlayVariants(reduced);
 
   const clearIfLeaving = (event: FocusEvent<HTMLElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveKey(null);
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActive(null);
   };
 
   const row = (entry: MenuEntry, order: number, size: "lg" | "md") => (
@@ -65,7 +68,7 @@ export function MenuOverlay({ id, pathname, currentKey, onClose, focusRef }: Men
       isPage={entry.href === pathname}
       inSection={entry.key === currentKey}
       active={entry.key === activeKey}
-      onActivate={setActiveKey}
+      onActivate={(key, via) => setActive({ key, via })}
       focusRef={entry.key === focusKey ? focusRef : undefined}
       reduced={reduced}
     />
@@ -122,8 +125,8 @@ export function MenuOverlay({ id, pathname, currentKey, onClose, focusRef }: Men
             <nav
               aria-label="Site"
               className="menu__nav"
-              data-hovering={activeKey ? "" : undefined}
-              onPointerLeave={(e: PointerEvent) => e.pointerType === "mouse" && setActiveKey(null)}
+              data-hovering={active?.via === "pointer" ? "" : undefined}
+              onPointerLeave={(e: PointerEvent) => e.pointerType === "mouse" && setActive(null)}
               onBlur={clearIfLeaving}
             >
               <ul className="menu-list">
@@ -158,7 +161,7 @@ interface MenuRowProps {
   /** You're somewhere inside this item's section (e.g. a Work detail page). */
   inSection: boolean;
   active: boolean;
-  onActivate: (key: MenuKey) => void;
+  onActivate: (key: MenuKey, via: "pointer" | "keyboard") => void;
   focusRef?: Ref<HTMLAnchorElement>;
   reduced: boolean;
 }
@@ -177,8 +180,8 @@ function MenuRow({ entry, order, size, isPage, inSection, active, onActivate, fo
         aria-current={isPage ? "page" : undefined}
         data-cursor="view"
         data-cursor-label="Go"
-        onPointerEnter={(e) => e.pointerType === "mouse" && onActivate(entry.key)}
-        onFocus={(e) => e.currentTarget.matches(":focus-visible") && onActivate(entry.key)}
+        onPointerEnter={(e) => e.pointerType === "mouse" && onActivate(entry.key, "pointer")}
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && onActivate(entry.key, "keyboard")}
       >
         <span className="menu-item__index" data-mark={entry.index ? undefined : "home"} aria-hidden="true">
           {entry.index ?? <span className="menu-item__home-mark" />}

@@ -37,8 +37,10 @@
 }
 .explore-page[data-lens="tried"],
 .explore-page [data-lens="tried"] {
-  --lens: color-mix(in srgb, var(--color-paper-dim), var(--color-azure) 25%);
-  --lens-soft: var(--color-paper-dim);
+  /* (From the page's own grey, so the lit-text override on a chosen door
+     never changes this lens's colour.) */
+  --lens: color-mix(in srgb, var(--paper-dim-base), var(--color-azure) 25%);
+  --lens-soft: var(--color-paper-dim-raised); /* label text on the lens-tinted door */
 }
 .explore-page[data-lens="care"],
 .explore-page [data-lens="care"] {
@@ -406,6 +408,16 @@
     var(--color-ink-raised);
   box-shadow: 0 34px 70px -40px color-mix(in srgb, transparent, var(--lens) 75%);
 }
+/* Text on the tint (light): the chosen door is washed in its lens colour
+   and lit by its glow, so its grey text (count, description) takes 22% of
+   --color-paper for 4.5:1 on it (the rest of Explore takes 10%,
+   styles/atmosphere.css). The global tokens stay the owner's values. */
+:root[data-theme="light"] .ex-door[data-active="true"] {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 22%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 22%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
 
 .ex-door__glow {
   position: absolute;
@@ -417,6 +429,11 @@
   transition: opacity 0.5s ease;
   pointer-events: none;
 }
+/* On the chosen door the count sits beside that body text, so it keeps
+   plain tertiary text rather than the deeper label colour. */
+.ex-door[data-active="true"] .ex-door__top {
+  color: var(--color-paper-faint);
+}
 
 .ex-door__top {
   display: flex;
@@ -425,12 +442,17 @@
   font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 .ex-door__index {
   color: var(--lens-soft);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* Text on the tint (light): on the chosen door the lens-coloured index
+   sits in the lens wash too, so it takes a little of --color-paper. */
+:root[data-theme="light"] .ex-door[data-active="true"] .ex-door__index {
+  color: color-mix(in srgb, var(--color-paper) 12%, var(--lens-soft));
 }
 .ex-door__count {
   letter-spacing: 0.08em;
@@ -450,7 +472,7 @@
 .ex-door__label {
   font-size: 0.86rem;
   line-height: 1.4;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
 }
 .ex-door__detail {
   display: grid;

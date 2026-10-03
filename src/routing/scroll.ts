@@ -63,6 +63,28 @@ export function focusWithoutScroll(element: HTMLElement): void {
   element.focus({ preventScroll: true });
 }
 
+/** Start keyboard and screen-reader users at the page's content (#main). */
+export function focusPage(): void {
+  const main = document.getElementById("main");
+  if (main) focusWithoutScroll(main);
+}
+
+/**
+ * After re-opening the current page: if the focused element has gone (or
+ * goes once the menu that held it has closed, a frame or two later), start
+ * again at the page's content — never leave keyboard focus on <body>. A
+ * focus that survives stays put.
+ */
+export function refocusIfLost(): void {
+  const check = () => {
+    const el = document.activeElement;
+    if (!el || el === document.body || !el.isConnected) focusPage();
+  };
+  check();
+  requestAnimationFrame(() => requestAnimationFrame(check));
+  window.setTimeout(check, 350);
+}
+
 /**
  * Same-page anchor: smooth-scroll to the element (instant under reduced
  * motion) and move focus there. The URL is left alone, so fragment state

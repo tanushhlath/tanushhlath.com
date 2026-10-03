@@ -7,7 +7,7 @@ import { globalIgnores } from "eslint/config";
 
 export default tseslint.config(
   // dist/ and its mirror on the project root (assets/app.js…) are build output.
-  globalIgnores(["dist", "dist-ssr", "node_modules", "assets", "private-media", "Portfolio Media"]),
+  globalIgnores(["dist", "dist-ssr", "node_modules", "assets", "private-media"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

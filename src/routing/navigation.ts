@@ -3,7 +3,7 @@ import { useLocation, useNavigate, type Location, type NavigateFunction } from "
 import { fileHref, isFileMode } from "./fileMode";
 import { isExternalHref, isFileHref, isStateFragment, normalizeHref, pathOf, routeFamily, splitHref } from "./paths";
 import { triggerRouteReset } from "./routeReset";
-import { HASH_STATE, scrollToAnchor, scrollToTop } from "./scroll";
+import { HASH_STATE, refocusIfLost, scrollToAnchor, scrollToTop } from "./scroll";
 import { runRouteTransition } from "./transitions";
 
 /**
@@ -84,7 +84,18 @@ function navigateWithin(
         }
         triggerRouteReset();
       },
-      { from: family, to: family, type: "reset", animate, afterUpdate: scrollToTop }
+      {
+        from: family,
+        to: family,
+        type: "reset",
+        animate,
+        // The link that was focused (in the menu, which now closes, or in the
+        // remounted page) is gone: start keyboard focus at the content again.
+        afterUpdate: () => {
+          scrollToTop();
+          refocusIfLost();
+        },
+      }
     );
     return "app";
   }

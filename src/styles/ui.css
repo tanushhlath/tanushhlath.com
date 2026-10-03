@@ -1,14 +1,17 @@
 /*
   UI PRIMITIVES — the shared building blocks in src/components/ui/:
-  Kicker, Tag/TierTag, ExternalLink, ArrowLink, CopyEmail, SegmentedTabs,
-  FilterBar, PageHero, SectionHeader, ContinueThread.
+  Kicker, Tag, ExternalLink, ArrowLink, CopyEmail, SegmentedTabs,
+  FilterBar, PageHero, SectionHeader (+ the content-block styles).
 
   Everything here is colour-token driven (src/styles/theme.css), so both
   themes come for free. Pages may restyle a primitive inside their own
   scope (e.g. `.work-page .seg-tabs__tab`); these are the site defaults.
+  Only variants some page actually uses are defined here (the list is in
+  src/components/ui/index.ts).
 */
 
 :root {
+  /* The shared page column (styles/base.css), under the names ui uses. */
   --ui-gutter: var(--page-gutter);
   --ui-max: var(--page-max);
   --ui-ease: var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
@@ -57,7 +60,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Tag / TierTag                                                       */
+/* Tag                                                                 */
 /* ------------------------------------------------------------------ */
 
 .tag {
@@ -70,21 +73,18 @@
   font-size: 0.72rem;
   line-height: 1.2;
   letter-spacing: 0.03em;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   white-space: nowrap;
-}
-.tag--strong {
-  color: var(--color-paper);
 }
 .tag--accent {
   color: var(--color-azure-soft);
   border-color: color-mix(in srgb, transparent, var(--color-azure) 45%);
   background: var(--color-azure-dim);
 }
-.tag--lavender {
-  color: var(--color-lavender-soft);
-  border-color: color-mix(in srgb, transparent, var(--color-lavender) 45%);
-  background: color-mix(in srgb, transparent, var(--color-lavender) 12%);
+/* Dark: the tag's own blue wash on top of a blue room (Work) leaves plain
+   azure-soft under 4.5:1, so the label takes a little of the paper. */
+:root:not([data-theme="light"]) .tag--accent {
+  color: color-mix(in srgb, var(--color-azure-soft) 80%, var(--color-paper));
 }
 .tag--ember {
   color: var(--color-ember-soft);
@@ -94,11 +94,6 @@
 .tag--quiet {
   border-color: var(--color-ink-line);
   color: var(--color-paper-faint);
-}
-.tag--solid {
-  border-color: transparent;
-  background: var(--color-accent-solid);
-  color: var(--color-on-accent, #fff);
 }
 .tag__dot {
   flex: none;
@@ -214,26 +209,14 @@
 .arrow-link--right .arrow-link__glyph--next {
   transform: translateX(-120%);
 }
-.arrow-link--left .arrow-link__glyph--next {
-  transform: translateX(120%);
-}
 .arrow-link--down .arrow-link__glyph--next {
   transform: translateY(-120%);
-}
-.arrow-link--up .arrow-link__glyph--next {
-  transform: translateY(120%);
 }
 .arrow-link--right:is(:hover, :focus-visible) .arrow-link__glyph:not(.arrow-link__glyph--next) {
   transform: translateX(120%);
 }
-.arrow-link--left:is(:hover, :focus-visible) .arrow-link__glyph:not(.arrow-link__glyph--next) {
-  transform: translateX(-120%);
-}
 .arrow-link--down:is(:hover, :focus-visible) .arrow-link__glyph:not(.arrow-link__glyph--next) {
   transform: translateY(120%);
-}
-.arrow-link--up:is(:hover, :focus-visible) .arrow-link__glyph:not(.arrow-link__glyph--next) {
-  transform: translateY(-120%);
 }
 .arrow-link:is(:hover, :focus-visible) .arrow-link__glyph--next {
   transform: none;
@@ -313,46 +296,6 @@
   color: var(--color-paper-faint);
 }
 
-/* pill: compact segmented control */
-.seg-tabs--pill {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.3rem;
-  border: 1px solid var(--color-ink-line-strong);
-  border-radius: 999px;
-  background: color-mix(in srgb, transparent, var(--color-ink-raised) 70%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-.seg-tabs--pill .seg-tabs__tab {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  min-height: 44px;
-  padding: 0.65rem 1.15rem;
-  border-radius: 999px;
-}
-.seg-tabs--pill .seg-tabs__label {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-.seg-tabs--pill .seg-tabs__indicator {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-azure-dim);
-  border: 1px solid color-mix(in srgb, transparent, var(--color-azure) 65%);
-}
-.seg-tabs--pill .seg-tabs__hint {
-  display: none;
-}
-@media (min-width: 48rem) {
-  .seg-tabs--pill .seg-tabs__hint {
-    display: inline;
-  }
-}
-
 /* editorial: large serif labels, a glowing rule marks the lens */
 .seg-tabs--editorial {
   display: grid;
@@ -420,9 +363,6 @@
   display: flex;
   gap: 0.5rem;
 }
-.filter-bar--wrap {
-  flex-wrap: wrap;
-}
 .filter-bar--scroll {
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -443,7 +383,7 @@
   border: 1px solid var(--color-ink-line-strong);
   border-radius: 999px;
   background: color-mix(in srgb, transparent, var(--color-ink-raised) 45%);
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
@@ -496,7 +436,7 @@
 .filter-bar__count {
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 .filter-bar__chip[aria-pressed="true"] .filter-bar__count {
   color: var(--color-azure-soft);
@@ -506,13 +446,14 @@
 /* PageHero                                                            */
 /* ------------------------------------------------------------------ */
 
+/* Gutter padding + a centred inner capped at --page-max = the shared page
+   column, so the hero lines up with the top bar and the footer. */
 .page-hero {
   position: relative;
   padding: clamp(8rem, 18vh, 11.5rem) var(--ui-gutter) clamp(3rem, 7vh, 5rem);
 }
 .page-hero__inner {
   display: grid;
-  gap: clamp(2rem, 5vw, 4rem);
   max-width: var(--ui-max);
   margin-inline: auto;
 }
@@ -551,22 +492,12 @@
 .page-hero__extra {
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
-.page-hero__aside {
-  min-width: 0;
-  color: var(--color-paper-dim);
-}
 
 .page-hero--display .page-hero__title {
   font-size: clamp(3rem, 8.8vw, 8.25rem);
   line-height: 0.92;
   letter-spacing: -0.04em;
   max-width: 12ch;
-}
-@media (min-width: 64rem) {
-  .page-hero--split .page-hero__inner {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    align-items: end;
-  }
 }
 .page-hero--centered {
   text-align: center;
@@ -638,116 +569,9 @@
 .section-header__aside {
   color: var(--color-paper-dim);
 }
-.section-header--center {
-  justify-items: center;
-  text-align: center;
-}
-.section-header--center :is(.section-header__title, .section-header__intro) {
-  margin-inline: auto;
-}
-
-/* ------------------------------------------------------------------ */
-/* ContinueThread                                                      */
-/* ------------------------------------------------------------------ */
-
-.continue-thread {
-  padding: clamp(3.5rem, 8vw, 6rem) var(--ui-gutter);
-  border-top: 1px solid var(--color-ink-line);
-}
-.continue-thread__inner {
-  max-width: var(--ui-max);
-  margin-inline: auto;
-}
-.continue-thread__head {
-  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
-}
-.continue-thread__heading {
-  margin: 0.9rem 0 0;
-  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--color-paper);
-}
-.continue-thread__list {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-ink-line);
-}
-.continue-thread__link {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: clamp(1rem, 2.5vw, 2rem);
-  padding: clamp(1.1rem, 2.4vw, 1.6rem) 0;
-  border-bottom: 1px solid var(--color-ink-line);
-  color: inherit;
-  text-decoration: none;
-  transition: background-color 0.35s ease;
-}
-.continue-thread__link--cover {
-  grid-template-columns: auto 5.5rem minmax(0, 1fr) auto;
-}
-@media (min-width: 40rem) {
-  .continue-thread__link--cover {
-    grid-template-columns: auto 8rem minmax(0, 1fr) auto;
-  }
-}
-.continue-thread__link:hover,
-.continue-thread__link:focus-visible {
-  background: color-mix(in srgb, transparent, var(--color-ink-raised) 55%);
-}
-.continue-thread__num {
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
-}
-.continue-thread__cover {
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-.continue-thread__body {
-  display: grid;
-  gap: 0.25rem;
-  min-width: 0;
-}
-.continue-thread__lead {
-  font-size: 0.8rem;
-  color: var(--color-paper-faint);
-}
-.continue-thread__title {
-  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
-  line-height: 1.15;
-  color: var(--color-paper);
-  transition:
-    color 0.3s ease,
-    transform 0.45s var(--ui-ease);
-}
-.continue-thread__link:is(:hover, :focus-visible) .continue-thread__title {
-  color: var(--color-azure-soft);
-  transform: translateX(4px);
-}
-.continue-thread__meta {
-  font-size: 0.78rem;
-  color: var(--color-paper-dim);
-}
-.continue-thread__arrow {
-  font-size: 1.1rem;
-  color: var(--color-paper-dim);
-  transition:
-    transform 0.45s var(--ui-ease),
-    color 0.3s ease;
-}
-.continue-thread__link:is(:hover, :focus-visible) .continue-thread__arrow {
-  color: var(--color-azure-soft);
-  transform: translateX(4px);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .arrow-link__glyph,
-  .continue-thread__title,
-  .continue-thread__arrow,
   .seg-tabs--editorial .seg-tabs__label {
     transition: none;
   }
@@ -918,6 +742,41 @@
   margin-top: 0.3rem;
   line-height: 1.6;
   color: var(--color-paper-dim);
+}
+.block--embed {
+  margin: 0;
+}
+.block-embed__frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-ink-line);
+  border-radius: 16px;
+  background: var(--color-ink-raised);
+}
+.block-embed__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.block-embed__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1.25rem;
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-paper-dim);
+}
+.block-embed__source {
+  color: var(--color-paper);
+}
+.block-embed__source:hover,
+.block-embed__source:focus-visible {
+  color: var(--color-azure-soft);
 }
 .block-link {
   display: flex;

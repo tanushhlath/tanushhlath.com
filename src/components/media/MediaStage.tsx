@@ -11,6 +11,7 @@ import {
 import type { MediaLayout, ResolvedImage, ResolvedMedia, ResolvedVideo } from "@/types/content";
 import { Reveal, Tilt, useParallax } from "@/animations";
 import { cn } from "@/lib/cn";
+import { getImageCopy } from "@/lib/content";
 import { ProtectedImage } from "./ProtectedImage";
 import { VideoPlayer } from "./VideoPlayer";
 import { Lightbox } from "./Lightbox";
@@ -326,9 +327,9 @@ function HeroLayout({ images, numbering, onOpen }: LayoutProps) {
   const total = numbering.images.length;
   return (
     <div ref={ref} className="media-hero">
-      {/* Ambient light: the same photo, blurred far behind the frame (same file, no extra request). */}
+      {/* Ambient light: the same photo, blurred far behind the frame — a small copy is plenty for a blur. */}
       <motion.span className="media-hero__ambient" aria-hidden="true" style={{ y: glowY }}>
-        <img src={mediaUrl(lead.src)} alt="" loading="lazy" decoding="async" draggable={false} />
+        <img src={mediaUrl(getImageCopy(lead.src, 320))} alt="" loading="lazy" decoding="async" draggable={false} />
       </motion.span>
       <Reveal variant="mask">
         <HeroFrame image={lead} index={numbering.of(lead)} total={total} onOpen={onOpen} />

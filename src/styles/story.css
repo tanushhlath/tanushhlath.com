@@ -246,15 +246,32 @@
   .story-timeline {
     position: relative;
     padding: clamp(1.5rem, 4vw, 3.5rem) var(--st-gutter) clamp(6rem, 12vw, 9rem);
-    --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 11%);
+    /* The wash's centre sits under the wide rail's small labels (Chapter
+       0X / 06, the chapter list), which need 4.5:1 on it: stronger than
+       this and they drop below it. */
+    --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 7%);
     --st-wash-b: color-mix(in srgb, transparent, var(--st-tone-2) 7%);
     transition:
       --st-wash-a 1.4s var(--st-ease),
       --st-wash-b 1.4s var(--st-ease);
   }
+  /* Light: the chapter's colour washes the page (the dark-mode limit above
+     doesn't apply on paper); the grey text over it is deepened below. */
   :root[data-theme="light"] .story-timeline {
     --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 9%);
     --st-wash-b: color-mix(in srgb, transparent, var(--st-tone-2) 5%);
+  }
+  /* Text on the tint (light): grey text over the wash takes 7% of
+     --color-paper (the rest of Story takes 5%, styles/atmosphere.css); the
+     rail, which sits on the wash's centre, and the chapter cards take more
+     (below). Just enough for 4.5:1 on the measured darkest spot — the
+     global tokens stay the owner's exact values, and both greys take the
+     same share so tertiary never reads stronger than secondary. */
+  :root[data-theme="light"] .story-timeline {
+    --color-paper-dim: color-mix(in srgb, var(--color-paper) 7%, var(--paper-dim-base));
+    --color-paper-faint: color-mix(in srgb, var(--color-paper) 7%, var(--paper-faint-base));
+    --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+    --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
   }
 
   /* The chapter's light, over the Story atmosphere and under the page. */
@@ -405,7 +422,7 @@
     gap: 0.45rem;
     min-width: 0;
     font-size: 0.8rem;
-    color: var(--color-paper-dim);
+    color: var(--color-paper-dim-raised);
   }
   .story-pill__num {
     flex: none;
@@ -456,6 +473,15 @@
       top: calc(var(--chrome-h, 76px) + 2.5rem);
       padding-top: 0.25rem;
     }
+    /* Text on the tint (light): the wide rail sits on the wash's centre,
+       under the Story key light, so its small grey labels take 12% of
+       --color-paper for 4.5:1 there (the timeline's 7% isn't enough). */
+    :root[data-theme="light"] .story-rail {
+      --color-paper-dim: color-mix(in srgb, var(--color-paper) 12%, var(--paper-dim-base));
+      --color-paper-faint: color-mix(in srgb, var(--color-paper) 12%, var(--paper-faint-base));
+      --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+      --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+    }
   }
 
   .story-rail__count {
@@ -472,7 +498,6 @@
   }
   .story-rail__total {
     color: var(--color-paper-faint);
-    opacity: 0.7;
   }
   .story-rail__year {
     display: flex;
@@ -619,6 +644,28 @@
         calc((1 - var(--open)) * (50% - 1.375rem)) 0 round calc(1.375rem + var(--open) * 0.375rem)
     );
   }
+  /* Text on the tint (light): the card's chapter lights sit under its
+     small kicker, years and chapter list. On a phone the list stacks into
+     the brightest corner, so it takes 18% of --color-paper; side by side
+     (48rem+) it sits clear of it and 8% is enough. Tone-coloured labels
+     take a little of --color-paper too. The global tokens stay the
+     owner's exact values. */
+  :root[data-theme="light"] .story-opener {
+    --color-paper-dim: color-mix(in srgb, var(--color-paper) 18%, var(--paper-dim-base));
+    --color-paper-faint: color-mix(in srgb, var(--color-paper) 18%, var(--paper-faint-base));
+    --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+    --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+  }
+  @media (min-width: 48rem) {
+    :root[data-theme="light"] .story-opener {
+      --color-paper-dim: color-mix(in srgb, var(--color-paper) 8%, var(--paper-dim-base));
+      --color-paper-faint: color-mix(in srgb, var(--color-paper) 8%, var(--paper-faint-base));
+    }
+  }
+  :root[data-theme="light"] .story-opener__kicker-num,
+  :root[data-theme="light"] .story-opener__years {
+    color: color-mix(in srgb, var(--color-paper) 15%, var(--st-tone-text));
+  }
   .story-opener__marker {
     position: absolute;
     top: 50%;
@@ -654,6 +701,11 @@
     min-width: 0;
     opacity: clamp(0, calc((var(--open) - 0.45) * 2.6), 1);
     translate: 0 calc((1 - var(--open)) * 2.25rem);
+  }
+  /* A keyboard user tabbing into a card that's still opening must see where focus is. */
+  .story-opener__content:focus-within {
+    opacity: 1;
+    translate: none;
   }
   @media (min-width: 48rem) {
     .story-opener__content {
@@ -1008,13 +1060,13 @@
     grid-column: 1;
     font-size: 0.72rem;
     letter-spacing: 0.03em;
-    color: var(--color-paper-faint);
+    color: var(--color-paper-faint-raised);
   }
   .story-artifact__arrow {
     grid-column: 2;
     grid-row: 1 / span 2;
     align-self: center;
-    color: var(--color-paper-faint);
+    color: var(--color-paper-faint-raised);
     transition:
       color var(--motion-dur-fast, 300ms) var(--st-ease),
       translate var(--motion-dur-fast, 300ms) var(--st-ease);

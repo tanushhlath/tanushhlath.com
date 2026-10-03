@@ -32,19 +32,29 @@ interface SwitchContext {
 const cut = { opacity: 0, transition: { duration: 0 } };
 
 /**
- * How a room arrives. The outgoing room leaves first (AnimatePresence
- * "wait"), so the new one must show up at once: its opacity always comes
- * in fast (EASE.enter), and only the room's own movement takes the longer
- * DUR.slow. Together with the short exit the stage is never empty for
- * more than a frame or two.
+ * The new room starts showing while the old one is on its way out (the
+ * stage uses AnimatePresence "popLayout": the new room mounts at once and
+ * the old one is lifted out of the flow to fade on top of it), so the
+ * stage is never empty. Its opacity waits a beat (HANDOFF), until the old
+ * room is mostly gone, so the two rooms' text barely overlaps.
+ */
+const HANDOFF = DUR.micro * 0.6;
+
+/**
+ * How a room arrives: its opacity comes in fast (EASE.enter) after the
+ * handoff; only the room's own movement takes the longer DUR.slow.
  */
 function arrival({ instant, reduced }: SwitchContext) {
   if (instant) return { duration: 0 };
-  if (reduced) return { duration: DUR.fast, ease: EASE.enter };
-  return { duration: DUR.slow, ease: EASE.standard, opacity: { duration: DUR.base, ease: EASE.enter } };
+  if (reduced) return { duration: DUR.fast, ease: EASE.enter, delay: HANDOFF };
+  return {
+    duration: DUR.slow,
+    ease: EASE.standard,
+    opacity: { duration: DUR.base, ease: EASE.enter, delay: HANDOFF },
+  };
 }
 
-/** Leaving is quick (DUR.micro), so the next room isn't kept waiting. */
+/** Leaving is quick (DUR.micro): the old room clears the stage for the new one. */
 const departure = { duration: DUR.micro, ease: EASE.exit };
 
 /**
@@ -212,10 +222,16 @@ export function BeyondView() {
   const ready = useSwitchReady();
   useAtmosphere(`beyond-${mode}`);
 
-  // Direction of travel between rooms (adjusted during render when the room changes).
-  const [travel, setTravel] = useState({ mode, dir: 1 });
-  if (travel.mode !== mode) setTravel({ mode, dir: modeOrder(mode) >= modeOrder(travel.mode) ? 1 : -1 });
-  const context: SwitchContext = { dir: travel.dir, instant: !ready, reduced };
+  // Each switch: its direction of travel, and whether it is the fragment
+  // arriving after hydration (instant). Recorded when the room changes
+  // (during render) and kept until the next switch, so both rooms of one
+  // switch — and any re-render while they animate — agree on it, even once
+  // the page has become "ready" in between.
+  const [travel, setTravel] = useState({ mode, dir: 1, instant: true });
+  if (travel.mode !== mode) {
+    setTravel({ mode, dir: modeOrder(mode) >= modeOrder(travel.mode) ? 1 : -1, instant: !ready });
+  }
+  const context: SwitchContext = { dir: travel.dir, instant: travel.instant, reduced };
 
   const roomsRef = useRef<HTMLDivElement>(null);
   const copy = pages.beyond;
@@ -274,8 +290,16 @@ export function BeyondView() {
         </div>
       </header>
 
-      <section {...tabPanelProps("beyond", mode)} className="by-stage" data-mode={mode} data-hash-panel="">
-        <AnimatePresence mode="wait" initial={false} custom={context}>
+      {/* data-switch="instant": the fragment arrived after hydration; the old
+          room is hidden at once instead of waiting a frame for its exit. */}
+      <section
+        {...tabPanelProps("beyond", mode)}
+        className="by-stage"
+        data-mode={mode}
+        data-switch={travel.instant ? "instant" : undefined}
+        data-hash-panel=""
+      >
+        <AnimatePresence mode="popLayout" initial={false} custom={context}>
           <motion.div
             key={mode}
             className="by-room-body"

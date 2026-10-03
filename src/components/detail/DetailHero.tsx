@@ -14,7 +14,7 @@ import { ExpandIcon } from "@/components/media/icons";
 import { aspectOf, mediaUrl } from "@/components/media/protection";
 import { ArrowLink, Kicker } from "@/components/ui";
 import { ProjectArt } from "@/components/work";
-import { detailCopy, type WorkEntry, type WorkItem } from "@/lib/content";
+import { detailCopy, getImageCopy, type WorkEntry, type WorkItem } from "@/lib/content";
 import { workTransitionName } from "@/routing/transitions";
 import type { ResolvedImage } from "@/types/content";
 import { DetailBack } from "./DetailBack";
@@ -216,7 +216,7 @@ function photoFrameVars(image: ResolvedImage): Record<string, string> {
 function Ambient({ image }: { image: ResolvedImage }) {
   return (
     <div className="dt-hero__ambient" aria-hidden="true">
-      <img src={mediaUrl(image.src)} alt="" decoding="async" draggable={false} />
+      <img src={mediaUrl(getImageCopy(image.src, 320))} alt="" decoding="async" draggable={false} />
     </div>
   );
 }
@@ -266,7 +266,7 @@ function Frame({ work, entry, image, coverIndex, onOpen, drift }: FrameProps) {
   const inner = (
     <>
       <span className="dt-frame__glow" aria-hidden="true">
-        <img src={mediaUrl(image.src)} alt="" decoding="async" draggable={false} />
+        <img src={mediaUrl(getImageCopy(image.src, 320))} alt="" decoding="async" draggable={false} />
       </span>
       <motion.span className="dt-frame__depth" style={drift}>
         <ProtectedImage

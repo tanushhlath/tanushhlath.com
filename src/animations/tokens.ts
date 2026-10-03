@@ -79,7 +79,7 @@ export interface MotionSettings {
   revealOffset: number;
   /** Duration (s) of a standard reveal. Mask/clip/drift use `DUR.slow`. */
   revealDuration: number;
-  /** Duration (s) of the reverse animation when scrolling back up past something. */
+  /** Duration (s) of the reverse animation when scrolling back up past something (mirrored as --motion-dur-exit in motion.css). */
   exitDuration: number;
   /** Seconds between items in a `<Stagger>` group. */
   staggerGap: number;

@@ -202,8 +202,9 @@ function relocate(url, prefix) {
   return prefix + url.slice(isRootRelative ? 1 : 2);
 }
 
-const URL_ATTRIBUTE = /(\s(?:src|href|poster|data-src)=")([^"]*)(")/g;
-const SRCSET_ATTRIBUTE = /(\s(?:srcset|imagesrcset)=")([^"]*)(")/g;
+// Case-insensitive: React writes srcSet= / imageSrcSet= (HTML attribute names ignore case).
+const URL_ATTRIBUTE = /(\s(?:src|href|poster|data-src)=")([^"]*)(")/gi;
+const SRCSET_ATTRIBUTE = /(\s(?:srcset|imagesrcset)=")([^"]*)(")/gi;
 const STYLE_ATTRIBUTE = /(\sstyle=")([^"]*)(")/g;
 const CSS_URL = /(url\(\s*(?:&quot;|&#x27;|&#39;|'|")?)([^)"'&]+)/g;
 

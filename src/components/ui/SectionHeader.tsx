@@ -16,7 +16,6 @@ export interface SectionHeaderProps {
   aside?: ReactNode;
   /** Heading level. Default "h2". */
   as?: "h2" | "h3";
-  align?: "start" | "center";
   /** "md" (default) or "lg" for chapter-sized sections. */
   size?: "md" | "lg";
   /** Word(s) of the title to set in italic. */
@@ -40,7 +39,6 @@ export function SectionHeader({
   intro,
   aside,
   as = "h2",
-  align = "start",
   size = "md",
   emphasis,
   id,
@@ -53,7 +51,6 @@ export function SectionHeader({
       className={cn(
         "section-header",
         `section-header--${size}`,
-        align === "center" && "section-header--center",
         aside !== undefined && "section-header--with-aside",
         className
       )}

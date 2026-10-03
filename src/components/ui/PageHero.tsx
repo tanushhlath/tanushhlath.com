@@ -6,12 +6,11 @@ import { Kicker, type KickerProps } from "./Kicker";
 /**
  * Page compositions:
  *   "editorial" (default)  left-aligned, large heading, intro underneath
- *   "display"               oversized heading for the big narrative pages (Story, Work)
- *   "split"                 heading on the left, intro/aside in a right column (Me, Beyond)
- *   "centered"              centred and airy — playful entrances (Explore, 404)
+ *   "display"               oversized heading for the big narrative pages (Story)
+ *   "centered"              centred and airy — playful entrances (Explore)
  *   "compact"               smaller and tighter — functional pages (Archive)
  */
-export type PageHeroVariant = "editorial" | "display" | "split" | "centered" | "compact";
+export type PageHeroVariant = "editorial" | "display" | "centered" | "compact";
 
 export interface PageHeroProps {
   /** Small label above the heading (the page's place-name). */
@@ -26,8 +25,6 @@ export interface PageHeroProps {
   /** Index shown in the kicker, e.g. "02" (matches the menu numbering). */
   index?: string;
   kickerTone?: KickerProps["tone"];
-  /** Right-hand column ("split") or a block under the intro (other variants). */
-  aside?: ReactNode;
   /** Extra content after the intro — tabs, calls to action. */
   children?: ReactNode;
   id?: string;
@@ -37,9 +34,11 @@ export interface PageHeroProps {
 }
 
 /**
- * The opening of every secondary page: kicker → masked heading → intro,
+ * The opening of a secondary page: kicker → masked heading → intro,
  * arriving in that order (and replaying when scrolled back to). One
  * component, several compositions, so pages don't all open the same way.
+ * Its inner column is the shared page column (--page-gutter / --page-max
+ * in styles/base.css), so it lines up with the top bar and the footer.
  */
 export function PageHero({
   kicker,
@@ -49,7 +48,6 @@ export function PageHero({
   emphasis,
   index,
   kickerTone,
-  aside,
   children,
   id,
   headingId,
@@ -86,11 +84,6 @@ export function PageHero({
             </Reveal>
           )}
         </div>
-        {aside && (
-          <Reveal variant={variant === "split" ? "split-right" : "rise"} delay={0.28} className="page-hero__aside">
-            {aside}
-          </Reveal>
-        )}
       </div>
     </header>
   );

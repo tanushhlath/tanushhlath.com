@@ -19,6 +19,8 @@ const PROGRESS_RANGE: Exclude<Parameters<typeof useSectionProgress>[1], ScrollRa
  * Whatever timeline piece crosses it is the part being read.
  */
 const READING_BAND = "-42% 0px -52% 0px";
+/** The middle of that band, as a fraction of the viewport height. */
+const READING_LINE = 0.45;
 
 interface ActiveState {
   index: number;
@@ -60,7 +62,26 @@ export function StoryTimeline({ model }: { model: StoryModel }) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root || typeof IntersectionObserver === "undefined") return;
+    const pieces = Array.from(root.querySelectorAll<HTMLElement>("[data-story-index]"));
     const inBand = new Map<Element, number>();
+
+    // Between pieces (or after a jump — End, a long drag — that the band
+    // never saw cross anything): the last piece whose top has passed the
+    // reading line, i.e. the one just read; the first before any has.
+    const passed = () => {
+      const line = window.innerHeight * READING_LINE;
+      let index = 0;
+      for (const el of pieces) {
+        const i = Number(el.dataset.storyIndex);
+        if (Number.isFinite(i) && el.getBoundingClientRect().top <= line) index = Math.max(index, i);
+      }
+      return index;
+    };
+    const update = () => {
+      const next = inBand.size > 0 ? Math.max(...inBand.values()) : passed();
+      setActive((prev) => (prev.index === next ? prev : { index: next, dir: next > prev.index ? 1 : -1 }));
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -69,14 +90,27 @@ export function StoryTimeline({ model }: { model: StoryModel }) {
           if (entry.isIntersecting) inBand.set(entry.target, i);
           else inBand.delete(entry.target);
         }
-        if (inBand.size === 0) return; // between pieces: keep the last one
-        const next = Math.max(...inBand.values());
-        setActive((prev) => (prev.index === next ? prev : { index: next, dir: next > prev.index ? 1 : -1 }));
+        update();
       },
       { rootMargin: READING_BAND, threshold: 0 }
     );
-    root.querySelectorAll("[data-story-index]").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    pieces.forEach((el) => observer.observe(el));
+
+    // A jump from one gap to another reports nothing: settle once the
+    // scrolling stops.
+    let timer = 0;
+    const onScroll = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (inBand.size === 0) update();
+      }, 140);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   const current = moments[Math.min(active.index, moments.length - 1)];

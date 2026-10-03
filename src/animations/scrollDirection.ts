@@ -63,16 +63,24 @@ function onScroll() {
   if (!frameId) frameId = requestAnimationFrame(read);
 }
 
+/** First reading of the scroll position — in an animation frame, never inside React's commit, where reading scrollY would force a style/layout pass. */
+function init() {
+  anchorY = Math.max(0, window.scrollY);
+  const prev = state;
+  state = { direction: prev.direction, scrolled: anchorY > TOP_THRESHOLD };
+  writeAttributes(state, null);
+  if (state.scrolled !== prev.scrolled) listeners.forEach((listener) => listener(state));
+}
+
 /**
  * Start tracking (idempotent). Called automatically by the reveal system and
- * by any subscriber; safe to call early from the app entry as well.
+ * by any subscriber; safe to call early from the app entry as well. The
+ * html attributes appear in the next animation frame.
  */
 export function startScrollDirection() {
   if (started || !isBrowser) return;
   started = true;
-  anchorY = Math.max(0, window.scrollY);
-  state = { direction: "down", scrolled: anchorY > TOP_THRESHOLD };
-  writeAttributes(state, null);
+  requestAnimationFrame(init);
   window.addEventListener("scroll", onScroll, { passive: true });
 }
 

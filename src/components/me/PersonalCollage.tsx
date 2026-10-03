@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
-import { motion, type MotionStyle } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   DUR,
   EASE,
@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { meCopy } from "@/lib/content";
 import type { PersonalDetail } from "@/types/content";
 import { layoutFacts } from "./factLayout";
+import { useHashChoice } from "./useHashChoice";
 
 /**
  * A FEW THINGS ABOUT ME — a mosaic of small, specific answers.
@@ -34,6 +35,12 @@ import { layoutFacts } from "./factLayout";
  *   default           the answer steps forward when you hover or focus it
  *
  * Arrivals are reversible (StaggerItem variants differ per kind).
+ *
+ * Deep links: every card's id is `fact-<id>`. /me/#fact-preferred-number
+ * (Home's quick questions link here) scrolls to that card (ScrollManager)
+ * and marks it `data-targeted`: a soft ring settles around it and, if the
+ * answer is covered, its Reveal button invites the click (me.css). The
+ * mark follows the URL, so it clears on the next in-page navigation.
  */
 
 type Kind = "number" | "flip" | "game" | "music" | "place" | "default";
@@ -59,6 +66,11 @@ const SHORT_ANSWER = 16;
 
 export function PersonalCollage({ details }: { details: PersonalDetail[] }) {
   const layout = useMemo(() => layoutFacts(details), [details]);
+  const [targetId] = useHashChoice<string | null>(
+    "fact-",
+    (id) => details.some((d) => d.id === id),
+    null
+  );
   if (details.length === 0) return null;
 
   return (
@@ -72,6 +84,7 @@ export function PersonalCollage({ details }: { details: PersonalDetail[] }) {
             as="li"
             key={detail.id}
             id={`fact-${detail.id}`}
+            data-targeted={detail.id === targetId ? "" : undefined}
             variant={variant}
             className={cn(
               "me-fact",
@@ -79,7 +92,7 @@ export function PersonalCollage({ details }: { details: PersonalDetail[] }) {
               place.wide && "me-fact--wide",
               place.tall && "me-fact--tall"
             )}
-            style={place.style as MotionStyle}
+            style={place.style}
           >
             <FactCard detail={detail} kind={kind} />
           </StaggerItem>

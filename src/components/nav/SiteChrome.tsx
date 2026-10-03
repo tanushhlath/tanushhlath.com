@@ -167,11 +167,35 @@ export function SiteChrome() {
     };
   }, []);
 
-  // Home entrance: prerendered hidden (data-entrance="pending"), played on hydration.
+  // Home entrance: prerendered hidden (data-entrance="pending"), played on
+  // hydration — in step with the hero: the bar waits for the hero's first
+  // reveal ([data-entrance-lead]) to start, so on a slow device, where the
+  // reveals get going a while after hydration, it still follows the
+  // statement instead of racing ahead of it.
   useEffect(() => {
     const bar = barRef.current;
     if (!bar || bar.dataset.entrance !== "pending") return;
-    bar.dataset.entrance = prefersReducedMotion() ? "none" : "play";
+    if (prefersReducedMotion()) {
+      bar.dataset.entrance = "none";
+      return;
+    }
+    const lead = document.querySelector("[data-entrance-lead]");
+    const started = () => !lead || lead.getAttribute("data-reveal") === "visible";
+    const play = () => {
+      bar.dataset.entrance = "play";
+      observer.disconnect();
+      window.clearTimeout(fallback);
+    };
+    const observer = new MutationObserver(() => {
+      if (started()) play();
+    });
+    const fallback = window.setTimeout(play, 2000);
+    if (started()) play();
+    else if (lead) observer.observe(lead, { attributes: true, attributeFilter: ["data-reveal"] });
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallback);
+    };
   }, []);
 
   const toggleMenu = () => {

@@ -1,10 +1,8 @@
 import { Fragment, useMemo, useRef, type CSSProperties } from "react";
-import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/cn";
-import { MOTION_TAGS } from "./tags";
 import { motionSettings } from "./tokens";
-import { useReveal } from "./useReveal";
-import { entranceDelay, maskedTextVariants, revealVariants } from "./variants";
+import { entranceDelay, revealLabel } from "./variants";
+import { useViewportState } from "./viewport";
 
 type TextTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span" | "div" | "blockquote" | "figcaption";
 
@@ -43,8 +41,6 @@ interface Word {
   emphasized: boolean;
 }
 
-const STILL: Variants = { below: {}, visible: {}, above: {} };
-
 function normalizeWord(word: string): string {
   return word.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 }
@@ -59,16 +55,33 @@ function splitLines(text: string, emphasis: Set<string>): Word[][] {
   );
 }
 
+const ms = (seconds: number) => `${Math.round(seconds * 1000)}ms`;
+
+/** Stagger position of one moving piece (read by motion.css). */
+function orderStyle(index: number): CSSProperties | undefined {
+  return index ? ({ "--i": index } as CSSProperties) : undefined;
+}
+
 /**
  * Masked heading reveal: words (or lines) slide up out of clipping masks,
  * reversibly — they sink back when you scroll up past the heading and drop
  * in from above when it re-enters from the top.
  *
+ * The motion itself is CSS (src/styles/motion.css, "TextReveal"): the block
+ * carries `data-reveal` and its timing as custom properties, and every
+ * piece transitions from its own position, so a heading costs no animation
+ * work on the main thread and reverses smoothly from wherever it is. Each
+ * word is three spans: the mask (clips), the mover (animates) and the piece
+ * (`.text-reveal__piece`, free for page styles such as colour or an
+ * underline, including their own transitions).
+ *
  * Accessibility: headings carry the full text as their accessible name
  * (aria-label) with the split pieces hidden from assistive tech; other tags
  * get a visually hidden copy instead, because aria-label isn't allowed on
  * generic elements (`srText={false}` drops it when the enclosing heading is
- * already labelled). Reduced motion → the whole block fades.
+ * already labelled). Reduced motion → the text is simply shown: no movement,
+ * no fade, and nothing that differs between the prerendered page and the
+ * first client render.
  */
 export function TextReveal({
   text,
@@ -85,8 +98,9 @@ export function TextReveal({
   srText = true,
 }: TextRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const { state, label, reduced, active } = useReveal(ref, { amount, disabled });
-  const start = entranceDelay(delay, state);
+  const active = motionSettings.revealsEnabled && !disabled;
+  const state = useViewportState(ref, { amount, disabled: !active });
+  const label = revealLabel(state.phase);
 
   const emphasisKey = typeof emphasis === "string" ? emphasis : (emphasis ?? []).join(" ");
   const lines = useMemo(
@@ -95,78 +109,65 @@ export function TextReveal({
   );
 
   const byLine = mode === "lines";
-  const gap = byLine ? motionSettings.textStagger * 2.5 : motionSettings.textStagger;
-  const pieceVariants = useMemo(() => maskedTextVariants({ delay: start, gap, reduced }), [start, gap, reduced]);
-  const blockVariants = useMemo(
-    () => (reduced ? revealVariants("fade", { delay: start, reduced: true }) : STILL),
-    [reduced, start]
-  );
+  const timing = {
+    ...style,
+    "--text-reveal-delay": ms(entranceDelay(delay, state)),
+    "--text-reveal-gap": ms(byLine ? motionSettings.textStagger * 2.5 : motionSettings.textStagger),
+    // Long headings still finish promptly.
+    "--text-reveal-cap": ms(motionSettings.staggerMax * 2),
+  } as CSSProperties;
 
   const labelled = /^h[1-6]$/.test(as);
   const plain = text.replace(/\s*\n\s*/g, " ");
-  const initial = active ? "below" : false;
-  const Tag = MOTION_TAGS[as];
 
   const renderWord = (word: Word) =>
     word.emphasized ? <span className={emphasisClassName}>{word.text}</span> : word.text;
+
+  const pieces = byLine
+    ? lines.map((words, li) => (
+        <span key={li} className="text-reveal__line">
+          <span className="text-reveal__move" data-reveal="" style={orderStyle(li)}>
+            <span className="text-reveal__piece">
+              {words.map((word, wi) => (
+                <Fragment key={word.index}>
+                  {wi > 0 && " "}
+                  {renderWord(word)}
+                </Fragment>
+              ))}
+            </span>
+          </span>
+        </span>
+      ))
+    : lines.map((words, li) => (
+        <Fragment key={li}>
+          {li > 0 && <br />}
+          {words.map((word, wi) => (
+            <Fragment key={word.index}>
+              {wi > 0 && " "}
+              <span className="text-reveal__mask">
+                <span className="text-reveal__move" data-reveal="" style={orderStyle(word.index)}>
+                  <span className={cn("text-reveal__piece", word.emphasized && emphasisClassName)}>{word.text}</span>
+                </span>
+              </span>
+            </Fragment>
+          ))}
+        </Fragment>
+      ));
+
+  // Every allowed tag takes the same attributes; typed as one of them.
+  const Tag = as as "div";
 
   return (
     <Tag
       ref={ref}
       id={id}
-      className={className}
-      style={style}
+      className={cn("text-reveal", className)}
+      style={timing}
       aria-label={labelled ? plain : undefined}
       data-reveal={label}
-      initial={initial}
-      animate={label}
-      variants={blockVariants}
     >
       {!labelled && srText && <span className="sr-only">{plain}</span>}
-      <span aria-hidden="true">
-        {byLine
-          ? lines.map((words, li) => (
-              <span key={li} className="text-reveal__line">
-                <motion.span
-                  className="text-reveal__piece"
-                  data-reveal=""
-                  custom={li}
-                  initial={initial}
-                  animate={label}
-                  variants={pieceVariants}
-                >
-                  {words.map((word, wi) => (
-                    <Fragment key={word.index}>
-                      {wi > 0 && " "}
-                      {renderWord(word)}
-                    </Fragment>
-                  ))}
-                </motion.span>
-              </span>
-            ))
-          : lines.map((words, li) => (
-              <Fragment key={li}>
-                {li > 0 && <br />}
-                {words.map((word, wi) => (
-                  <Fragment key={word.index}>
-                    {wi > 0 && " "}
-                    <span className="text-reveal__mask">
-                      <motion.span
-                        className={cn("text-reveal__piece", word.emphasized && emphasisClassName)}
-                        data-reveal=""
-                        custom={word.index}
-                        initial={initial}
-                        animate={label}
-                        variants={pieceVariants}
-                      >
-                        {word.text}
-                      </motion.span>
-                    </span>
-                  </Fragment>
-                ))}
-              </Fragment>
-            ))}
-      </span>
+      <span aria-hidden="true">{pieces}</span>
     </Tag>
   );
 }

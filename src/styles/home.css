@@ -152,8 +152,15 @@
       radial-gradient(closest-side at 62% 36%, color-mix(in srgb, transparent, var(--color-lavender) 8%), transparent 70%);
   }
 
-  :root[data-theme="light"] .home-hero__bloom-light {
-    opacity: 0.55;
+  /* Text on the tint (light): the bloom sits under the statement and the
+     place line, so the hero's grey text takes 7% of --color-paper (the
+     rest of Home takes 5%, styles/atmosphere.css) — 4.5:1 on the bloom.
+     The global tokens stay the owner's exact values. */
+  :root[data-theme="light"] .home-hero {
+    --color-paper-dim: color-mix(in srgb, var(--color-paper) 7%, var(--paper-dim-base));
+    --color-paper-faint: color-mix(in srgb, var(--color-paper) 7%, var(--paper-faint-base));
+    --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+    --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
   }
 
   /* 2 — kicker row (+ the compact portrait and location on phones/tablets) */
@@ -977,6 +984,14 @@
     box-shadow: var(--depth-shadow-lg);
   }
 
+  /* Light: a shorter drop than --depth-shadow-lg — the long one reaches the
+     small meta line under the frame and pulls it below 4.5:1. */
+  :root[data-theme="light"] .home-work-card__media {
+    box-shadow:
+      0 4px 8px rgba(40, 32, 20, 0.08),
+      0 14px 28px -18px rgba(40, 32, 20, 0.26);
+  }
+
   /* A project's designed artwork (no photos yet) fills the frame. */
   .home-work-card__art {
     position: absolute;
@@ -1195,7 +1210,7 @@
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--color-paper-faint);
+    color: var(--color-paper-faint-raised);
   }
 
   /* The question is the card's headline; its answer lives on Me. */
@@ -1248,7 +1263,7 @@
     margin-top: 1.1rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--color-paper-dim);
+    color: var(--color-paper-dim-raised);
     transition: color 0.3s var(--ease-standard);
   }
 
@@ -1740,7 +1755,7 @@
     font-size: 0.72rem;
     letter-spacing: 0.1em;
     font-variant-numeric: tabular-nums;
-    color: var(--color-paper-faint);
+    color: var(--color-paper-faint-raised);
   }
 
   .home-finale__label {
@@ -1754,7 +1769,7 @@
   .home-finale__desc {
     grid-area: desc;
     font-size: 0.82rem;
-    color: var(--color-paper-dim);
+    color: var(--color-paper-dim-raised);
   }
 
   .home-finale__arrow {
@@ -1809,6 +1824,24 @@
 
 .home-header {
   margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+/* Curiosity proof links: text flow instead of the shared inline-flex, so
+   when a label wraps the arrow stays beside its last word rather than out
+   at the column edge. */
+.home-care__link.arrow-link {
+  display: block;
+  text-wrap: balance;
+}
+
+.home-care__link .arrow-link__label {
+  display: inline;
+}
+
+.home-care__link .arrow-link__arrow {
+  display: inline-block;
+  margin-left: 0.55rem;
+  vertical-align: -0.22em;
 }
 
 /* Home headings are a step larger than the site default. */
@@ -1886,4 +1919,10 @@
   .home-story__grid .home-story__head {
     margin-bottom: 2.25rem;
   }
+}
+
+/* The hero statement fades out as the page scrolls (an inline, scroll-linked
+   style); if keyboard focus is on its "Enter" link, keep it visible. */
+.home-hero__lede:focus-within {
+  opacity: 1 !important;
 }

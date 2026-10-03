@@ -110,7 +110,9 @@ export function WorkHero({ lens, lenses }: WorkHeroProps) {
             </Reveal>
           )}
         </div>
-        <Reveal delay={0.28} className="wk-hero__lenses">
+        {/* The selected lens comes from the fragment (/work/#did): hidden until
+            the app has applied it, so a slow load never shows "Built" first. */}
+        <Reveal delay={0.28} className="wk-hero__lenses" data-hash-panel="">
           {lenses}
         </Reveal>
       </div>

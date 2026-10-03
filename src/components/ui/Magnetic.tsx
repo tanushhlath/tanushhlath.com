@@ -1,7 +1,6 @@
 import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { SPRING, usePointerEnabled } from "@/animations";
-import { cn } from "@/lib/cn";
 
 export interface MagneticProps {
   children: ReactNode;
@@ -9,8 +8,6 @@ export interface MagneticProps {
   strength?: number;
   /** Largest pull in px, whatever the element's size. Default 14. */
   max?: number;
-  /** "div" (default) or "span" for inline contexts. */
-  as?: "div" | "span";
   className?: string;
   /** Render still. */
   disabled?: boolean;
@@ -29,12 +26,11 @@ export function Magnetic({
   children,
   strength = 0.3,
   max = 14,
-  as = "div",
   className,
   disabled = false,
 }: MagneticProps) {
   const enabled = usePointerEnabled(disabled);
-  const ref = useRef<HTMLElement | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const frame = useRef(0);
   const pointer = useRef({ x: 0, y: 0 });
 
@@ -63,7 +59,7 @@ export function Magnetic({
     ty.set(clamp((pointer.current.y - (rect.top + rect.height / 2)) * strength));
   };
 
-  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!enabled || event.pointerType === "touch") return;
     pointer.current = { x: event.clientX, y: event.clientY };
     if (!frame.current) frame.current = requestAnimationFrame(update);
@@ -76,15 +72,15 @@ export function Magnetic({
     ty.set(0);
   };
 
-  const setRef = (el: HTMLElement | null) => {
-    ref.current = el;
-  };
-  const props = {
-    className: cn("magnetic", as === "span" && "magnetic--inline", className),
-    style: enabled ? { x, y } : undefined,
-    onPointerMove,
-    onPointerLeave,
-    children,
-  };
-  return as === "span" ? <motion.span ref={setRef} {...props} /> : <motion.div ref={setRef} {...props} />;
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      style={enabled ? { x, y } : undefined}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
+      {children}
+    </motion.div>
+  );
 }

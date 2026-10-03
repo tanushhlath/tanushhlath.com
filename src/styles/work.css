@@ -166,6 +166,14 @@ a:is(:hover, :focus-visible) .wk-open .wk-open__glyph--next {
   color: var(--color-azure-soft);
   background-size: 100% 0.055em;
 }
+/* A deep link (/work/#did) highlights its verb once the app has applied the
+   lens; until then none is, so the default lens's verb never flashes (the
+   prerendered heading shows at once with reduced motion). */
+html[data-hash-pending] .wk-hero__title .wk-hero__verb {
+  color: inherit;
+  background-size: 0% 0.055em;
+  transition: none;
+}
 
 .wk-hero__intro {
   margin-top: clamp(1.4rem, 2.6vw, 2.1rem);
@@ -568,7 +576,7 @@ a:is(:hover, :focus-visible) .wk-open .wk-open__glyph--next {
   font-variant-numeric: tabular-nums;
 }
 .wk-pcard__status {
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
 }
 .wk-pcard__title {
   font-family: var(--font-display);
@@ -826,6 +834,11 @@ a:hover .wk-art__front .wk-art__svg {
   text-transform: uppercase;
   color: var(--color-paper-dim);
 }
+/* Light: the frosted chip lets the art's blue light through, so this
+   tiny label takes a quarter of the primary text colour for 4.5:1. */
+:root[data-theme="light"] .wk-art__label {
+  color: color-mix(in srgb, var(--color-paper) 25%, var(--color-paper-dim));
+}
 .wk-feature__chip {
   z-index: 3;
   left: clamp(1rem, 3.5%, 1.5rem);
@@ -929,6 +942,17 @@ a:hover .wk-art__front .wk-art__svg {
 .wk-row:hover::before,
 .wk-row[data-open]::before {
   opacity: 1;
+}
+/* Text on the tint (light): with the band in, over Work's key light and
+   fields, the row's grey text takes 18% of --color-paper for 4.5:1 (the
+   rest of Work takes 12%, styles/atmosphere.css). The global tokens stay
+   the owner's values. */
+:root[data-theme="light"] .wk-row:hover,
+:root[data-theme="light"] .wk-row[data-open] {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 18%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 18%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 }
 
 .wk-row__node {
@@ -1080,6 +1104,11 @@ a:hover .wk-art__front .wk-art__svg {
   background: color-mix(in srgb, var(--color-lavender) 8%, transparent);
   font-size: 0.78rem;
   font-weight: 600;
+}
+/* Text on the tint (light): the pill's own wash sits over Work's key light
+   and fields, so its accent text takes a little of --color-paper (4.5:1). */
+:root[data-theme="light"] .wk-row__badge {
+  color: color-mix(in srgb, var(--color-paper) 12%, var(--color-lavender-soft));
 }
 .wk-ribbon {
   flex: none;
@@ -1871,7 +1900,7 @@ a:hover .wk-art__front .wk-art__svg {
   border: 0;
   border-radius: 999px;
   background: none;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font: inherit;
   font-size: 0.82rem;
   font-weight: 650;
@@ -1889,7 +1918,8 @@ a:hover .wk-art__front .wk-art__svg {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--color-azure);
+  /* Behind the pressed label's on-accent text: the AA-safe solid accent. */
+  background: var(--color-accent-solid);
 }
 .wk-dock__label {
   position: relative;
@@ -2038,7 +2068,9 @@ a:hover .wk-art__front .wk-art__svg {
   --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 9%);
 }
 .atmo[data-route="work"][data-atmo="work-recognized"] {
-  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 24%);
+  /* 18%: the results' small org names and "Open" links sit in this light
+     (dark; light mode keeps 24%, below). */
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 18%);
   --atmo-key-x: 52%;
   --atmo-key-y: -10%;
   --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
@@ -2046,6 +2078,9 @@ a:hover .wk-art__front .wk-art__svg {
   --atmo-rim-y: 104%;
   --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-violet) 16%);
   --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
+}
+:root[data-theme="light"] .atmo[data-route="work"][data-atmo="work-recognized"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 24%);
 }
 .atmo[data-route="work"][data-atmo="work-all"] {
   --atmo-key-x: 72%;

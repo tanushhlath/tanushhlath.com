@@ -63,7 +63,7 @@ function keyFor(item: MenuItem): MenuKey | undefined {
 }
 
 /* ------------------------------------------------------------------ */
-/* Previews (computed once — content is static)                        */
+/* Previews (built on first use — content is static)                  */
 /* ------------------------------------------------------------------ */
 
 function storyPreview(): MenuPreview | undefined {
@@ -150,6 +150,11 @@ const PREVIEWS: Record<MenuKey, () => MenuPreview | undefined> = {
 
 function toEntry(item: MenuItem, group: MenuEntry["group"], index?: string): MenuEntry {
   const key = keyFor(item) ?? "home";
+  // Previews are only needed once the menu opens, but the top bar reads the
+  // menu on every page's first render — so build each preview on first use
+  // (the archive/story previews walk a lot of content).
+  let preview: MenuPreview | undefined;
+  let built = false;
   return {
     key,
     href: pathOf(item.href),
@@ -157,7 +162,13 @@ function toEntry(item: MenuItem, group: MenuEntry["group"], index?: string): Men
     description: item.description,
     group,
     index,
-    preview: PREVIEWS[key]?.(),
+    get preview() {
+      if (!built) {
+        preview = PREVIEWS[key]?.();
+        built = true;
+      }
+      return preview;
+    },
   };
 }
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useTransform } from "framer-motion";
 import { EASE, usePointer, useReducedMotionSafe } from "@/animations";
@@ -19,6 +19,42 @@ const GLOW_TRAVEL = { x: 8, y: 6 }; // vw, vh
 const YEAR = /\b(?:19|20)\d{2}\b/;
 
 /**
+ * false from the prerendered page until the page has settled into its first
+ * state after hydration: its own sub-mood (useAtmosphere runs in effects),
+ * and on a deep link the #fragment state too (App.tsx clears
+ * html[data-hash-pending] once that is applied) — then two more frames so
+ * those changes are on screen. Until then the moods don't glide, so a link
+ * to /beyond/#lab or /explore/#proud opens directly in its own light.
+ */
+function useSettled(): boolean {
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    let frame = 0;
+    const settle = () => {
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => setSettled(true));
+      });
+    };
+    if (!root.hasAttribute("data-hash-pending")) {
+      settle();
+      return () => cancelAnimationFrame(frame);
+    }
+    const observer = new MutationObserver(() => {
+      if (root.hasAttribute("data-hash-pending")) return;
+      observer.disconnect();
+      settle();
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-hash-pending"] });
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  return settled;
+}
+
+/**
  * The living background behind every page — rendered once by App.
  *
  * A fixed, non-interactive stack of layers whose mood follows the route
@@ -29,13 +65,15 @@ const YEAR = /\b(?:19|20)\d{2}\b/;
  *
  * SSR-safe: the route family is known during prerender, so the right
  * mood is in the static HTML from the first paint. Sub-moods and the
- * pointer only arrive after hydration.
+ * pointer only arrive after hydration — without gliding in (see
+ * useSettled): the page opens in its mood; later changes glide.
  */
 export function Atmosphere() {
   const { pathname } = useLocation();
   const family = pageFamily(pathname);
   const variant = useAtmosphereVariant();
   const reduced = useReducedMotionSafe();
+  const settled = useSettled();
 
   // A3's shared pointer: one listener site-wide, spring-smoothed, and
   // perfectly still on touch screens, under reduced motion and on routes
@@ -53,7 +91,13 @@ export function Atmosphere() {
   const drift = reduced ? 0 : "0.06em";
 
   return (
-    <div className="atmo" data-route={family} data-atmo={variant ?? undefined} aria-hidden="true">
+    <div
+      className="atmo"
+      data-route={family}
+      data-atmo={variant ?? undefined}
+      data-settling={settled ? undefined : ""}
+      aria-hidden="true"
+    >
       <div className="atmo__layer atmo__base" />
       <div className="atmo__layer atmo__fields" />
       <div className="atmo__layer atmo__planes" />
@@ -63,7 +107,8 @@ export function Atmosphere() {
           {year && (
             <motion.span
               key={year}
-              initial={{ opacity: 0, y: drift }}
+              className="atmo__year"
+              initial={settled ? { opacity: 0, y: drift } : false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reduced ? 0 : "-0.06em" }}
               transition={{ duration: reduced ? 0 : 1.2, ease: EASE.standard }}

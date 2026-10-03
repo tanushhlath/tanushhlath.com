@@ -1,9 +1,9 @@
-import type { TargetAndTransition, Transition, Variants } from "framer-motion";
+import type { CSSProperties } from "react";
 import { DUR, EASE, motionSettings } from "./tokens";
 import type { ViewportPhase, ViewportState } from "./viewport";
 
 /**
- * REVEAL VARIANTS
+ * REVEAL POSES
  *
  * Every reveal has three states, named after where the element is:
  *
@@ -15,6 +15,16 @@ import type { ViewportPhase, ViewportState } from "./viewport";
  * in from the top. Scrolling back up past something plays "below" — it exits
  * downward, the way it came. "above" is always applied instantly because the
  * element is already off screen when it happens.
+ *
+ * How it moves: each state is an inline style (opacity, transform and, for
+ * some variants, clip-path or filter) and the browser's own CSS transitions
+ * carry the element from one to the next. Opacity and transform transitions
+ * run on the compositor, so no animation code runs on the main thread while
+ * things reveal, and a reversal mid-entrance simply continues from wherever
+ * the element is. The inline `transition` is only there while something can
+ * move: once an entrance has finished (`settled`, see useRevealSettled) the
+ * element rests in its plain pose — no clip, filter or 3D context — and any
+ * transitions the page itself gives it (hover colours, shadows) apply again.
  */
 
 export type RevealVariant =
@@ -32,10 +42,7 @@ export type RevealVariant =
 export type RevealLabel = "below" | "visible" | "above";
 
 export interface RevealTiming {
-  /**
-   * Seconds before the entrance starts. Leave it out for children of a
-   * `groupVariants` parent: a delay here would override the parent's stagger.
-   */
+  /** Seconds before the entrance starts. */
   delay?: number;
   /** Entrance duration (s). Defaults per variant. */
   duration?: number;
@@ -43,28 +50,44 @@ export interface RevealTiming {
   distance?: number;
   /** Visitor prefers reduced motion → opacity only. */
   reduced?: boolean;
+  /** The entrance has finished: the resting pose, with no transition. */
+  settled?: boolean;
+  /**
+   * Still in the prerendered state (never moved): the hidden pose needs no
+   * exit transition yet, which keeps it out of the static HTML.
+   */
+  pristine?: boolean;
 }
 
-type Target = TargetAndTransition;
-type SettleValues = NonNullable<Target["transitionEnd"]>;
+type Ease = readonly [number, number, number, number];
+
+/** One state of a variant. Transform parts left out are 0 (scale 1). */
+interface Pose {
+  opacity: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+  rotateX?: number;
+  clip?: string;
+  filter?: string;
+}
+
+type TransformPart = "x" | "y" | "scale" | "rotateX";
 
 interface VariantShape {
-  below: (d: number) => Target;
-  above: (d: number) => Target;
-  visible: Target;
-  /** Applied once the entrance finishes, so a resting element keeps no clip, filter or 3D context. */
-  settle?: SettleValues;
-  /** Resting values for this variant's transform/clip/filter keys (used under reduced motion). */
-  neutral: Target;
+  /** Transform functions this variant moves, in order (every state writes all of them, so they interpolate cleanly). */
+  parts: readonly TransformPart[];
+  /** Perspective (px) kept on the transform while moving; dropped once settled. */
+  perspective?: number;
+  below: (d: number) => Pose;
+  above: (d: number) => Pose;
+  visible: Pose;
   /** Default entrance duration (s). */
   duration: number;
-  /** Entrance overrides for individual values. */
-  enter?: Partial<Record<"opacity" | "transformPerspective", Transition>>;
-  /** Exit overrides for individual values. */
-  exit?: Partial<Record<"transformPerspective", Transition>>;
+  /** Opacity's own entrance timing, when it differs from the movement's. */
+  opacity?: { duration: number; ease: Ease };
 }
 
-const INSTANT: Transition = { duration: 0 };
 const INSET_OPEN = "inset(0% 0% 0% 0%)";
 const MASK_CLOSED = "inset(14% 8% 14% 8% round 24px)";
 const MASK_OPEN = "inset(0% 0% 0% 0% round 0px)";
@@ -78,209 +101,219 @@ const MASK_OPEN = "inset(0% 0% 0% 0% round 0px)";
  * element itself must always keep the edge it enters by (never collapse to
  * nothing or open from the far edge). Break either and an element sitting on
  * the reveal line flips back and forth. Wipes that need to start from the far
- * edge belong on an inner layer — see maskRevealVariants.
+ * edge belong on an inner layer — see maskRevealStyles.
  */
 const shapes: Record<RevealVariant, VariantShape> = {
   rise: {
+    parts: ["y"],
     below: (d) => ({ opacity: 0, y: d }),
     above: (d) => ({ opacity: 0, y: -d }),
-    visible: { opacity: 1, y: 0 },
-    neutral: { y: 0 },
+    visible: { opacity: 1 },
     duration: motionSettings.revealDuration,
   },
   fade: {
+    parts: [],
     below: () => ({ opacity: 0 }),
     above: () => ({ opacity: 0 }),
     visible: { opacity: 1 },
-    neutral: {},
     duration: motionSettings.revealDuration,
   },
   // A window opening: the frame grows from an inset, rounded crop to full bleed.
   mask: {
-    below: (d) => ({ opacity: 0, y: d * 0.4, scale: 0.97, clipPath: MASK_CLOSED }),
-    above: (d) => ({ opacity: 0, y: -d * 0.4, scale: 0.97, clipPath: MASK_CLOSED }),
-    visible: { opacity: 1, y: 0, scale: 1, clipPath: MASK_OPEN },
-    settle: { clipPath: "none" },
-    neutral: { y: 0, scale: 1, clipPath: "none" },
+    parts: ["y", "scale"],
+    below: (d) => ({ opacity: 0, y: d * 0.4, scale: 0.97, clip: MASK_CLOSED }),
+    above: (d) => ({ opacity: 0, y: -d * 0.4, scale: 0.97, clip: MASK_CLOSED }),
+    visible: { opacity: 1, clip: MASK_OPEN },
     duration: DUR.slow,
-    enter: { opacity: { duration: DUR.base, ease: EASE.standard } },
+    opacity: { duration: DUR.base, ease: EASE.standard },
   },
   // A directional wipe that unrolls from the edge that came into view first:
   // top-down while scrolling down, bottom-up while scrolling back up. The
   // closed clip keeps a hairline of that edge (hidden by the opacity).
   clip: {
-    below: (d) => ({ opacity: 0, y: d * 0.5, clipPath: "inset(0% 0% 99.8% 0%)" }),
-    above: (d) => ({ opacity: 0, y: -d * 0.5, clipPath: "inset(99.8% 0% 0% 0%)" }),
-    visible: { opacity: 1, y: 0, clipPath: INSET_OPEN },
-    settle: { clipPath: "none" },
-    neutral: { y: 0, clipPath: "none" },
+    parts: ["y"],
+    below: (d) => ({ opacity: 0, y: d * 0.5, clip: "inset(0% 0% 99.8% 0%)" }),
+    above: (d) => ({ opacity: 0, y: -d * 0.5, clip: "inset(99.8% 0% 0% 0%)" }),
+    visible: { opacity: 1, clip: INSET_OPEN },
     duration: DUR.slow,
-    enter: { opacity: { duration: DUR.fast, ease: EASE.standard } },
+    opacity: { duration: DUR.fast, ease: EASE.standard },
   },
   "split-left": {
+    parts: ["x", "y"],
     below: (d) => ({ opacity: 0, x: -d * 1.5, y: d * 0.3 }),
     above: (d) => ({ opacity: 0, x: -d * 1.5, y: -d * 0.3 }),
-    visible: { opacity: 1, x: 0, y: 0 },
-    neutral: { x: 0, y: 0 },
+    visible: { opacity: 1 },
     duration: motionSettings.revealDuration,
   },
   "split-right": {
+    parts: ["x", "y"],
     below: (d) => ({ opacity: 0, x: d * 1.5, y: d * 0.3 }),
     above: (d) => ({ opacity: 0, x: d * 1.5, y: -d * 0.3 }),
-    visible: { opacity: 1, x: 0, y: 0 },
-    neutral: { x: 0, y: 0 },
+    visible: { opacity: 1 },
     duration: motionSettings.revealDuration,
   },
   // Focus pull. Filters repaint, so keep this for a few large moments.
   blur: {
+    parts: ["y"],
     below: (d) => ({ opacity: 0, y: d * 0.5, filter: "blur(14px)" }),
     above: (d) => ({ opacity: 0, y: -d * 0.5, filter: "blur(14px)" }),
-    visible: { opacity: 1, y: 0, filter: "blur(0px)" },
-    settle: { filter: "none" },
-    neutral: { y: 0, filter: "none" },
+    visible: { opacity: 1, filter: "blur(0px)" },
     duration: DUR.slow,
   },
   scale: {
+    parts: ["y", "scale"],
     below: (d) => ({ opacity: 0, scale: 0.92, y: d * 0.4 }),
     above: (d) => ({ opacity: 0, scale: 0.92, y: -d * 0.4 }),
-    visible: { opacity: 1, scale: 1, y: 0 },
-    neutral: { scale: 1, y: 0 },
+    visible: { opacity: 1 },
     duration: motionSettings.revealDuration,
   },
   // Horizontal drift keyed to scroll direction: in from the right going down, from the left going up.
   drift: {
+    parts: ["x"],
     below: (d) => ({ opacity: 0, x: d * 2 }),
     above: (d) => ({ opacity: 0, x: -d * 2 }),
-    visible: { opacity: 1, x: 0 },
-    neutral: { x: 0 },
+    visible: { opacity: 1 },
     duration: DUR.slow,
   },
   // Leans back in perspective and stands up. The perspective is dropped once
-  // settled (and restored instantly before an exit) so the resting element
-  // carries no 3D transform: crisp text, no stacking-context side effects.
+  // settled, so the resting element carries no 3D transform: crisp text, no
+  // stacking-context side effects.
   tilt: {
-    below: (d) => ({ opacity: 0, y: d, rotateX: 16, transformPerspective: 1000 }),
-    above: (d) => ({ opacity: 0, y: -d, rotateX: -16, transformPerspective: 1000 }),
-    visible: { opacity: 1, y: 0, rotateX: 0, transformPerspective: 1000 },
-    settle: { transformPerspective: 0 },
-    neutral: { y: 0, rotateX: 0, transformPerspective: 0 },
+    parts: ["y", "rotateX"],
+    perspective: 1000,
+    below: (d) => ({ opacity: 0, y: d, rotateX: 16 }),
+    above: (d) => ({ opacity: 0, y: -d, rotateX: -16 }),
+    visible: { opacity: 1 },
     duration: DUR.slow,
-    enter: { transformPerspective: INSTANT },
-    exit: { transformPerspective: INSTANT },
   },
 };
 
-/**
- * Framer spreads a value's own transition over the delay a parent hands
- * down, so a child carrying `delay: 0` would silently cancel its group's
- * stagger. Only write the key when a delay was actually asked for.
- */
-function withDelay(transition: Transition, delay: number | undefined): Transition {
-  return delay === undefined ? transition : { ...transition, delay };
+/* ------------------------------------------------------------------ */
+/* CSS helpers                                                         */
+/* ------------------------------------------------------------------ */
+
+const round = (value: number) => Math.round(value * 100) / 100;
+const ms = (seconds: number) => `${Math.round(seconds * 1000)}ms`;
+const cubic = (ease: Ease) => `cubic-bezier(${ease.join(", ")})`;
+
+function transformOf(shape: VariantShape, pose: Pose): string {
+  const fns = shape.perspective ? [`perspective(${shape.perspective}px)`] : [];
+  for (const part of shape.parts) {
+    if (part === "x") fns.push(`translateX(${round(pose.x ?? 0)}px)`);
+    else if (part === "y") fns.push(`translateY(${round(pose.y ?? 0)}px)`);
+    else if (part === "scale") fns.push(`scale(${round(pose.scale ?? 1)})`);
+    else fns.push(`rotateX(${round(pose.rotateX ?? 0)}deg)`);
+  }
+  return fns.length ? fns.join(" ") : "none";
 }
 
-/** Variants for one revealing element (standalone `<Reveal>` or a `<StaggerItem>`). */
-export function revealVariants(variant: RevealVariant, timing: RevealTiming = {}): Variants {
+interface Track {
+  property: "opacity" | "transform" | "clip-path" | "filter";
+  duration: number;
+  ease: Ease;
+  delay?: number;
+}
+
+function transitionOf(tracks: readonly Track[]): string {
+  return tracks
+    .map(({ property, duration, ease, delay }) => `${property} ${ms(duration)} ${cubic(ease)}${delay ? ` ${ms(delay)}` : ""}`)
+    .join(", ");
+}
+
+/** The CSS properties a shape moves besides opacity. */
+function movedProperties(shape: VariantShape): Track["property"][] {
+  const props: Track["property"][] = [];
+  if (shape.parts.length || shape.perspective) props.push("transform");
+  if (shape.visible.clip) props.push("clip-path");
+  if (shape.visible.filter) props.push("filter");
+  return props;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reveal                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Inline style for one revealing element (`<Reveal>`, `<StaggerItem>`, or
+ * a custom reveal built on `useReveal`) in the state `label`.
+ */
+export function revealStyle(variant: RevealVariant, label: RevealLabel, timing: RevealTiming = {}): CSSProperties {
   const shape = shapes[variant] ?? shapes.rise;
-  const { delay } = timing;
+  const moved = movedProperties(shape);
+  const delay = timing.delay ?? 0;
 
   if (timing.reduced) {
-    const hiddenOpacity = motionSettings.reducedMotionReveal === "none" ? 1 : 0;
-    const fadeOut: Transition = { duration: DUR.fast * 0.6, ease: EASE.standard };
-    const fadeIn = withDelay(
-      { duration: DUR.fast, ease: EASE.standard },
-      delay === undefined ? undefined : Math.min(delay, 0.15)
-    );
-    return {
-      below: { ...shape.neutral, opacity: hiddenOpacity, transition: { default: INSTANT, opacity: fadeOut } },
-      above: { ...shape.neutral, opacity: hiddenOpacity, transition: INSTANT },
-      visible: { ...shape.neutral, opacity: 1, transition: { default: INSTANT, opacity: fadeIn } },
-    };
+    // Nothing moves: the resting pose, fading only (or not at all).
+    const style: CSSProperties = {};
+    if (moved.includes("transform")) style.transform = "none";
+    if (moved.includes("clip-path")) style.clipPath = "none";
+    if (moved.includes("filter")) style.filter = "none";
+    const hidden = motionSettings.reducedMotionReveal === "none" ? 1 : 0;
+    if (label === "visible") {
+      style.opacity = 1;
+      if (!timing.settled) {
+        style.transition = transitionOf([
+          { property: "opacity", duration: DUR.fast, ease: EASE.standard, delay: Math.min(delay, 0.15) },
+        ]);
+      }
+    } else {
+      style.opacity = hidden;
+      if (label === "above") style.transition = "none";
+      else if (!timing.pristine) style.transition = transitionOf([{ property: "opacity", duration: DUR.fast * 0.6, ease: EASE.standard }]);
+    }
+    return style;
   }
 
   const distance = timing.distance ?? motionSettings.revealDistance;
-  const duration = timing.duration ?? shape.duration;
-  const enter: Transition = {
-    ...withDelay({ duration, ease: EASE.enter }, delay),
-    ...(shape.enter?.opacity ? { opacity: withDelay(shape.enter.opacity, delay) } : {}),
-    ...(shape.enter?.transformPerspective ? { transformPerspective: shape.enter.transformPerspective } : {}),
-  };
 
-  return {
-    below: {
-      ...shape.below(distance),
-      transition: { duration: motionSettings.exitDuration, ease: EASE.exit, ...shape.exit },
-    },
-    above: { ...shape.above(distance), transition: INSTANT },
-    visible: {
-      ...shape.visible,
-      transition: enter,
-      ...(shape.settle ? { transitionEnd: shape.settle } : {}),
-    },
-  };
-}
-
-/**
- * Variants for a group container (`<Stagger>`, `<TextReveal>`): no visual
- * change of its own, it only orchestrates children. Entrances stagger in
- * order; exits run quickly in reverse; "above" is instant.
- */
-export function groupVariants(gap: number, delay = 0): Variants {
-  return {
-    below: { transition: { delayChildren: staggerDelay(gap * 0.4, 0, true) } },
-    above: { transition: { delayChildren: 0 } },
-    visible: { transition: { delayChildren: staggerDelay(gap, delay, false) } },
-  };
-}
-
-/** Delay for child `i` of `total`, in order (or reversed, for exits). */
-function staggerDelay(gap: number, start: number, reverse: boolean) {
-  return (i: number, total: number) => start + gap * (reverse ? total - 1 - i : i);
-}
-
-/* ------------------------------------------------------------------ */
-/* Masked text (TextReveal)                                            */
-/* ------------------------------------------------------------------ */
-
-export interface MaskedTextTiming {
-  /** Seconds before the first word/line. */
-  delay?: number;
-  /** Seconds between consecutive words/lines. */
-  gap: number;
-  reduced?: boolean;
-}
-
-/**
- * Words (or lines) sliding up out of a clipping mask. Pass each piece's
- * index as the motion element's `custom` prop. Exits sink back down all at
- * once; "above" parks them over the mask so re-entry drops in from the top.
- * A quick opacity fade rides along so tall accents or a very tight
- * line-height can never peek out of the mask while hidden.
- */
-export function maskedTextVariants({ delay = 0, gap, reduced = false }: MaskedTextTiming): Variants {
-  if (reduced) {
-    const still: Target = { y: "0%", opacity: 1, transition: INSTANT };
-    return { below: still, above: still, visible: still };
+  if (label === "visible" && timing.settled) {
+    const style: CSSProperties = { opacity: 1 };
+    if (moved.includes("transform")) style.transform = "none";
+    if (moved.includes("clip-path")) style.clipPath = "none";
+    if (moved.includes("filter")) style.filter = "none";
+    return style;
   }
-  // Long headings still finish promptly.
-  const maxOffset = motionSettings.staggerMax * 2;
-  return {
-    below: { y: "115%", opacity: 0, transition: { duration: motionSettings.exitDuration, ease: EASE.exit } },
-    above: { y: "-115%", opacity: 0, transition: INSTANT },
-    visible: (i: number) => {
-      const start = delay + Math.min(i * gap, maxOffset);
-      return {
-        y: "0%",
-        opacity: 1,
-        transition: {
-          duration: DUR.slow,
-          ease: EASE.enter,
-          delay: start,
-          opacity: { duration: DUR.fast, ease: EASE.standard, delay: start },
-        },
-      };
-    },
-  };
+
+  const pose = label === "visible" ? shape.visible : label === "above" ? shape.above(distance) : shape.below(distance);
+  const style: CSSProperties = { opacity: pose.opacity };
+  if (moved.includes("transform")) style.transform = transformOf(shape, pose);
+  if (moved.includes("clip-path")) style.clipPath = pose.clip;
+  if (moved.includes("filter")) style.filter = pose.filter;
+
+  if (label === "above") {
+    style.transition = "none";
+  } else if (label === "below") {
+    if (!timing.pristine) {
+      style.transition = transitionOf(
+        ["opacity" as const, ...moved].map((property) => ({
+          property,
+          duration: motionSettings.exitDuration,
+          ease: EASE.exit,
+        }))
+      );
+    }
+  } else {
+    const duration = timing.duration ?? shape.duration;
+    style.transition = transitionOf([
+      { property: "opacity", duration: shape.opacity?.duration ?? duration, ease: shape.opacity?.ease ?? EASE.enter, delay },
+      ...moved.map((property) => ({ property, duration, ease: EASE.enter, delay })),
+    ]);
+  }
+  return style;
+}
+
+/** The clip-path a variant opens to (null when it doesn't clip, or under reduced motion). */
+export function revealOpenClip(variant: RevealVariant, reduced = false): string | null {
+  return reduced ? null : ((shapes[variant] ?? shapes.rise).visible.clip ?? null);
+}
+
+/** Milliseconds from the moment a reveal turns "visible" until its entrance has finished. */
+export function revealSettleMs(variant: RevealVariant, timing: RevealTiming = {}): number {
+  const shape = shapes[variant] ?? shapes.rise;
+  const delay = timing.delay ?? 0;
+  if (timing.reduced) return Math.round((Math.min(delay, 0.15) + DUR.fast) * 1000);
+  const duration = timing.duration ?? shape.duration;
+  return Math.round((delay + Math.max(duration, shape.opacity?.duration ?? 0)) * 1000);
 }
 
 /* ------------------------------------------------------------------ */
@@ -311,43 +344,67 @@ export interface MaskRevealTiming {
   /** Starting zoom of the inner layer. Default `motionSettings.maskZoom`. */
   zoom?: number;
   reduced?: boolean;
+  /** The entrance has finished: the resting pose, with no transition. */
+  settled?: boolean;
+  /** Still in the prerendered state (never moved). */
+  pristine?: boolean;
 }
-
-const STILL_VARIANTS: Variants = { below: {}, above: {}, visible: {} };
 
 /**
  * `frame` is the observed outer element: its box never changes, so the
  * viewport engine measures it exactly (only reduced motion fades it).
  * `content` is the inner layer that carries the wipe and counter-zooms —
  * clipping it can't disturb the observation, so the wipe is free to open
- * from the far edge.
+ * from the far edge. Either may be undefined (nothing to set).
  */
-export function maskRevealVariants(
+export function maskRevealStyles(
   direction: MaskDirection,
-  { delay, duration = DUR.slow, zoom = motionSettings.maskZoom, reduced = false }: MaskRevealTiming = {}
-): { frame: Variants; content: Variants } {
+  label: RevealLabel,
+  { delay = 0, duration = DUR.slow, zoom = motionSettings.maskZoom, reduced = false, settled = false, pristine = false }: MaskRevealTiming = {}
+): { frame?: CSSProperties; content?: CSSProperties } {
   if (reduced) {
-    const still: Target = { scale: 1, clipPath: "none", transition: INSTANT };
     return {
-      frame: revealVariants("fade", { delay, reduced: true }),
-      content: { below: still, above: still, visible: still },
+      frame: revealStyle("fade", label, { delay, reduced: true, settled, pristine }),
+      content: { transform: "none", clipPath: "none" },
     };
   }
+  if (label === "visible" && settled) return { content: { transform: "none", clipPath: "none" } };
   const wipe = WIPES[direction] ?? WIPES.vertical;
-  const exit: Transition = { duration: motionSettings.exitDuration, ease: EASE.exit };
-  const enter: Transition = {
-    ...withDelay({ duration, ease: EASE.enter }, delay),
-    scale: withDelay({ duration: duration * 1.4, ease: EASE.enter }, delay),
+  if (label === "visible") {
+    return {
+      content: {
+        clipPath: wipe.open,
+        transform: "scale(1)",
+        transition: transitionOf([
+          { property: "clip-path", duration, ease: EASE.enter, delay },
+          { property: "transform", duration: duration * 1.4, ease: EASE.enter, delay },
+        ]),
+      },
+    };
+  }
+  const content: CSSProperties = {
+    clipPath: label === "above" ? wipe.above : wipe.below,
+    transform: `scale(${round(zoom)})`,
   };
-  return {
-    frame: STILL_VARIANTS,
-    content: {
-      below: { clipPath: wipe.below, scale: zoom, transition: exit },
-      above: { clipPath: wipe.above, scale: zoom, transition: INSTANT },
-      // Resting with no clip keeps focus rings and shadows unclipped.
-      visible: { clipPath: wipe.open, scale: 1, transition: enter, transitionEnd: { clipPath: "none" } },
-    },
-  };
+  if (label === "above") content.transition = "none";
+  else if (!pristine) {
+    content.transition = transitionOf([
+      { property: "clip-path", duration: motionSettings.exitDuration, ease: EASE.exit },
+      { property: "transform", duration: motionSettings.exitDuration, ease: EASE.exit },
+    ]);
+  }
+  return { content };
+}
+
+/** The clip-path a MaskReveal's inner layer opens to (null under reduced motion). */
+export function maskOpenClip(direction: MaskDirection, reduced = false): string | null {
+  return reduced ? null : (WIPES[direction] ?? WIPES.vertical).open;
+}
+
+/** Milliseconds from the moment a MaskReveal turns "visible" until its entrance has finished. */
+export function maskRevealSettleMs({ delay = 0, duration = DUR.slow, reduced = false }: MaskRevealTiming = {}): number {
+  if (reduced) return revealSettleMs("fade", { delay, reduced: true });
+  return Math.round((delay + duration * 1.4) * 1000);
 }
 
 /* ------------------------------------------------------------------ */

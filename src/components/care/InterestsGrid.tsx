@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { DUR, EASE, Reveal, Stagger, StaggerItem, useReducedMotionSafe } from "@/animations";
+import { DUR, EASE, Reveal, Stagger, StaggerItem, useHydrated, useReducedMotionSafe } from "@/animations";
 import { MediaCover } from "@/components/media";
 import { ArrowLink } from "@/components/ui";
 import { moveRovingFocus } from "@/components/ui/rovingFocus";
@@ -25,12 +25,16 @@ import { useHashChoice } from "@/components/me/useHashChoice";
  * The panel's content is displaced in the direction you moved through the
  * list (down the list → the new note rises from below; up → it drops in).
  * The active line draws a lead toward the panel. Deep links:
- * /me/#interest-<id> selects that interest after mount.
+ * /me/#interest-<id> selects that interest after mount. Until it has, the
+ * prerendered selection may be the wrong one, so on such loads the panel
+ * stays hidden ([data-hash-panel]) and no line looks selected (me.css,
+ * html[data-hash-pending]); the swap itself happens without animation.
  */
 export function InterestsGrid({ interests }: { interests: Interest[] }) {
   const baseId = useId();
   const reduced = useReducedMotionSafe();
   const panelRef = useRef<HTMLDivElement>(null);
+  const hydrated = useHydrated();
   const [direction, setDirection] = useState(1);
   const [activeId, choose] = useHashChoice(
     "interest-",
@@ -140,11 +144,15 @@ export function InterestsGrid({ interests }: { interests: Interest[] }) {
           aria-labelledby={tabId(active.id)}
           tabIndex={0}
           className="me-care__panel"
+          data-hash-panel=""
         >
           <span className="me-care__panel-num font-display" aria-hidden="true">
             {pad2(activeIndex)}
           </span>
-          <AnimatePresence mode="wait" initial={false} custom={direction}>
+          {/* Remounted once, right after hydration: that render is where a
+              deep link's interest replaces the prerendered one, and the
+              visitor should land on it, not watch the default leave. */}
+          <AnimatePresence key={hydrated ? "live" : "prerender"} mode="wait" initial={false} custom={direction}>
             <motion.div
               key={active.id}
               custom={direction}

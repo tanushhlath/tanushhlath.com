@@ -165,6 +165,14 @@
     0 0 0 1px var(--color-ink-line-strong),
     var(--depth-shadow-lg);
 }
+/* Light: a shorter drop than --depth-shadow-lg — the long one reaches the
+   ledger's first small label under the portrait and pulls it below 4.5:1. */
+:root[data-theme="light"] .me-portrait__frame {
+  box-shadow:
+    0 0 0 1px var(--color-ink-line-strong),
+    0 4px 8px rgba(40, 32, 20, 0.08),
+    0 18px 36px -22px rgba(40, 32, 20, 0.3);
+}
 .me-portrait__frame .mask-reveal__content {
   position: relative;
 }
@@ -224,6 +232,11 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-paper-dim);
+}
+/* Light: the frosted plate lets the photo darken it, so this tiny label
+   takes a quarter of the primary text colour to keep 4.5:1. */
+:root[data-theme="light"] .me-portrait__home {
+  color: color-mix(in srgb, var(--color-paper) 25%, var(--color-paper-dim));
 }
 .me-portrait__home::before {
   content: "";
@@ -288,8 +301,7 @@
   align-items: center;
   gap: 0.6rem 1.5rem;
 }
-.me-page .me-ledger__email,
-.me-page .me-onward__email {
+.me-page .me-ledger__email {
   color: var(--color-paper);
   background-image: linear-gradient(currentColor, currentColor);
   background-size: 100% 1px;
@@ -301,23 +313,26 @@
     background-size var(--dur-base) var(--ease-standard);
   overflow-wrap: anywhere;
 }
-.me-page .me-ledger__email:hover,
-.me-page .me-onward__email:hover {
+.me-page .me-ledger__email:hover {
   color: var(--color-azure-soft);
 }
 
 /* ================================================================== */
-/* BIO — standfirst + body, defining things in the margin              */
+/* BIO — a spread: serif standfirst | body                             */
 /* ================================================================== */
 
+/*
+  One reading column on phones and tablets. From 64rem the bio uses the
+  hero's two columns: the standfirst under the portrait, the body under
+  the heading and ledger, its first line level with the standfirst's
+  first line (below the ember rule).
+*/
 .me-bio {
+  --me-bio-rule: calc(2px + 1.4rem);
   display: grid;
-  row-gap: clamp(3rem, 7vw, 4.5rem);
+  row-gap: clamp(1.75rem, 3.5vw, 2.5rem);
   padding-top: clamp(3.5rem, 9vw, 7rem);
   padding-bottom: clamp(2rem, 6vw, 4rem);
-}
-.me-bio__text {
-  min-width: 0;
 }
 .me-bio__lede {
   margin: 0;
@@ -334,14 +349,14 @@
   display: block;
   width: 2.5rem;
   height: 2px;
-  margin-bottom: 1.4rem;
+  margin-bottom: calc(var(--me-bio-rule) - 2px);
   border-radius: 2px;
   background: var(--color-ember);
 }
 .me-bio__body {
   display: grid;
   gap: 1.35rem;
-  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  min-width: 0;
   max-width: 40rem;
   font-size: clamp(1.02rem, 1.2vw, 1.1rem);
   line-height: 1.75;
@@ -350,113 +365,14 @@
 .me-bio__body p {
   margin: 0;
 }
-
-.me-bio__margin {
-  min-width: 0;
-}
 @media (min-width: 64rem) {
   .me-bio {
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
     column-gap: clamp(2.5rem, 6vw, 6.5rem);
     align-items: start;
   }
-  .me-bio__text {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .me-bio__margin {
-    grid-column: 1;
-    grid-row: 1;
-    position: sticky;
-    top: calc(var(--chrome-h, 60px) + 2.5rem);
-    padding-top: 0.6rem;
-    max-width: 26rem;
-  }
-}
-
-.me-defining {
-  list-style: none;
-  margin: 1.1rem 0 0;
-  padding: 0;
-  border-top: 1px solid var(--color-ink-line);
-}
-.me-defining__item {
-  border-bottom: 1px solid var(--color-ink-line);
-}
-.me-defining__link {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  grid-template-areas:
-    "num text"
-    ". hint";
-  align-items: baseline;
-  column-gap: 0.5rem;
-  row-gap: 0.1rem;
-  padding: 0.8rem 0;
-  color: var(--color-paper);
-  text-decoration: none;
-}
-.me-defining__num {
-  grid-area: num;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
-}
-.me-defining__text {
-  grid-area: text;
-  font-size: 1.28rem;
-  font-weight: 360;
-  line-height: 1.2;
-  transition:
-    color var(--dur-fast) var(--ease-standard),
-    transform var(--dur-base) var(--ease-standard);
-}
-.me-defining__hint {
-  grid-area: hint;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--color-paper-faint);
-  transition:
-    color var(--dur-fast) var(--ease-standard),
-    opacity var(--dur-base) var(--ease-standard),
-    transform var(--dur-base) var(--ease-standard);
-}
-.me-defining__arrow {
-  transition: transform var(--dur-base) var(--ease-standard);
-}
-.me-defining__link:is(:hover, :focus-visible) .me-defining__text {
-  color: var(--color-azure-soft);
-  transform: translateX(0.3rem);
-}
-.me-defining__link:is(:hover, :focus-visible) .me-defining__hint {
-  color: var(--color-paper-dim);
-}
-.me-defining__link:is(:hover, :focus-visible) .me-defining__arrow {
-  transform: translateX(0.3rem);
-}
-@media (hover: hover) and (pointer: fine) {
-  /* Mouse: one compact line; the hint slides in beside the words. */
-  .me-defining__link {
-    grid-template-columns: 2rem auto minmax(0, 1fr);
-    grid-template-areas: "num text hint";
-    column-gap: 0.75rem;
-  }
-  .me-defining__hint {
-    justify-self: end;
-    max-width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 0.76rem;
-    opacity: 0;
-    transform: translateX(-0.4rem);
-  }
-  .me-defining__link:is(:hover, :focus-visible) .me-defining__hint {
-    opacity: 1;
-    transform: translateX(0.3rem);
+  .me-bio__body {
+    padding-top: var(--me-bio-rule);
   }
 }
 
@@ -585,6 +501,19 @@
     transform: scaleX(1);
   }
 }
+/* A deep link (/me/#interest-<id>) is applied just after hydration; until
+   then the prerendered selection may be the wrong one, so no line looks
+   selected (the panel is hidden meanwhile via [data-hash-panel]). */
+html[data-hash-pending] .me-care__tab[aria-selected="true"] .me-care__title {
+  color: var(--color-paper-dim);
+  font-style: normal;
+}
+html[data-hash-pending] .me-care__tab[aria-selected="true"] .me-care__num {
+  color: var(--color-paper-faint);
+}
+html[data-hash-pending] .me-care__tab[aria-selected="true"] .me-care__lead {
+  transform: scaleX(0);
+}
 
 .me-care__stage {
   min-width: 0;
@@ -601,6 +530,13 @@
     radial-gradient(120% 80% at 100% 0%, var(--me-warm), transparent 60%),
     linear-gradient(165deg, var(--color-ink-raised), color-mix(in srgb, var(--color-ink-raised-2) 70%, transparent));
   box-shadow: var(--depth-shadow-md);
+}
+/* Light: the panel fades into the page rather than into the darker
+   raised-2, so its secondary text keeps 4.5:1. */
+:root[data-theme="light"] .me-care__panel {
+  background:
+    radial-gradient(120% 80% at 100% 0%, var(--me-warm), transparent 60%),
+    linear-gradient(165deg, var(--color-ink-raised), color-mix(in srgb, var(--color-ink) 70%, transparent));
 }
 .me-care__panel:focus-visible {
   outline-offset: 4px;
@@ -768,7 +704,7 @@
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 .me-fact__prompt {
   margin: 0.4rem 0 0;
@@ -776,7 +712,7 @@
   font-size: 0.92rem;
   font-weight: 500;
   line-height: 1.35;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   transition: color var(--dur-fast) var(--ease-standard);
 }
 .me-fact__answer {
@@ -818,6 +754,12 @@
     color var(--dur-fast) var(--ease-standard),
     background-color var(--dur-fast) var(--ease-standard);
 }
+/* Light: on the number card the button sits in the azure glow, so its
+   label takes a quarter of the primary text colour to keep 4.5:1.
+   (:where keeps this below the hover / targeted colours.) */
+:where(:root[data-theme="light"]) .me-fact__reveal {
+  color: color-mix(in srgb, var(--color-paper) 25%, var(--color-paper-dim));
+}
 .me-fact__reveal:hover,
 .me-fact__reveal:focus-visible {
   border-style: solid;
@@ -829,6 +771,58 @@
 @media (hover: hover) and (pointer: fine) {
   .me-fact__card:hover {
     border-color: var(--color-ink-line-strong);
+  }
+}
+
+/* ---- the card a deep link lands on (/me/#fact-<id>) --------------- */
+/*
+  PersonalCollage marks it [data-targeted]. Once the card has arrived, a
+  soft azure ring settles around it with two slow pings; a covered
+  answer's Reveal button lights up and breathes a few times to invite the
+  click. Under reduced motion the ring and the lit button stay, still.
+*/
+.me-fact[data-targeted] .me-fact__card {
+  --me-target-ring:
+    0 0 0 1px color-mix(in srgb, var(--color-azure) 45%, transparent),
+    0 0 2.75rem -0.5rem color-mix(in srgb, var(--color-azure) 42%, transparent);
+  border-color: color-mix(in srgb, var(--color-azure) 70%, transparent);
+  box-shadow: var(--me-target-ring);
+}
+.me-fact[data-targeted] .me-fact__prompt {
+  color: var(--color-paper);
+}
+.me-fact[data-targeted][data-reveal="visible"] .me-fact__card {
+  animation: me-fact-ping 1.8s var(--ease-standard) 0.5s 2;
+}
+@keyframes me-fact-ping {
+  0% {
+    box-shadow:
+      var(--me-target-ring),
+      0 0 0 0 color-mix(in srgb, var(--color-azure) 40%, transparent);
+  }
+  75%,
+  100% {
+    box-shadow:
+      var(--me-target-ring),
+      0 0 0 0.9rem color-mix(in srgb, var(--color-azure) 0%, transparent);
+  }
+}
+.me-fact[data-targeted] .me-fact__reveal {
+  border-style: solid;
+  border-color: var(--color-azure);
+  background: var(--color-azure-dim);
+  color: var(--color-azure-soft);
+}
+.me-fact[data-targeted][data-reveal="visible"] .me-fact__reveal {
+  animation: me-fact-invite 1.6s var(--ease-standard) 1.2s 3;
+}
+@keyframes me-fact-invite {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-azure) 45%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.5rem color-mix(in srgb, var(--color-azure) 0%, transparent);
   }
 }
 
@@ -852,7 +846,7 @@
     box-shadow: var(--depth-shadow-md);
   }
   .me-fact__card--plain:hover .me-fact__prompt {
-    color: var(--color-paper-faint);
+    color: var(--color-paper-faint-raised);
   }
   .me-fact__card--plain:hover .me-fact__answer {
     transform: translateY(-3px);
@@ -1079,7 +1073,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
 }
 .me-eq {
   position: absolute;
@@ -1317,6 +1311,9 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+.me-skill__cat[data-repeats] {
+  visibility: hidden;
 }
 .me-skill__cat {
   grid-area: cat;
@@ -1687,7 +1684,7 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 .me-onward__label {
   margin-top: auto;
@@ -1730,15 +1727,6 @@
   background: var(--color-accent-solid);
   color: var(--color-on-accent);
   transform: translateX(0.25rem);
-}
-.me-onward__contact {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.75rem;
-  margin-top: clamp(1.75rem, 4vw, 2.5rem);
-  font-size: 0.95rem;
-  color: var(--color-paper-dim);
 }
 
 /* ================================================================== */

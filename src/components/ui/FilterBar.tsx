@@ -27,11 +27,11 @@ export interface FilterBarProps {
   /** Accessible name for the group. Default "Filter". */
   label?: string;
   /**
-   * "wrap" (default) flows onto several lines; "scroll" keeps one line
-   * that scrolls sideways on narrow screens (the active chip is kept in
-   * view).
+   * "scroll" (the default, and today the only layout): one line that
+   * scrolls sideways when it doesn't fit, keeping the active chip in view.
+   * Add a layout here (and its CSS in styles/ui.css) when a page needs one.
    */
-  layout?: "wrap" | "scroll";
+  layout?: "scroll";
   size?: "sm" | "md";
   id?: string;
   className?: string;
@@ -51,7 +51,7 @@ export function FilterBar({
   active,
   onChange,
   label = "Filter",
-  layout = "wrap",
+  layout = "scroll",
   size = "md",
   id,
   className,
@@ -64,15 +64,15 @@ export function FilterBar({
     options.findIndex((o) => optionValue(o) === active)
   );
 
-  // Scroll layout: keep the active chip visible inside the strip (never scrolls the page).
+  // Keep the active chip visible inside the strip (never scrolls the page).
   useEffect(() => {
     const scroller = scrollerRef.current;
-    if (layout !== "scroll" || !scroller) return;
+    if (!scroller) return;
     const chip = scroller.querySelector<HTMLElement>('[aria-pressed="true"]');
     if (!chip) return;
     const left = chip.offsetLeft - scroller.clientWidth / 2 + chip.offsetWidth / 2;
     scroller.scrollTo({ left: Math.max(0, left), behavior: reduced ? "auto" : "smooth" });
-  }, [active, layout, reduced]);
+  }, [active, reduced]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     moveRovingFocus(event);
@@ -86,7 +86,7 @@ export function FilterBar({
         role="toolbar"
         aria-label={label}
         aria-orientation="horizontal"
-        layoutScroll={layout === "scroll"}
+        layoutScroll
         onKeyDown={onKeyDown}
         className={cn("filter-bar", `filter-bar--${layout}`, `filter-bar--${size}`, className)}
       >

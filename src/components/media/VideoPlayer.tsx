@@ -68,6 +68,8 @@ export function VideoPlayer({
   const [shielded, setShielded] = useState(false);
 
   const media = useMediaState(videoRef, src);
+  const url = mediaUrl(src);
+  const near = useNearViewport(rootRef);
 
   /* --- commands ------------------------------------------------------ */
 
@@ -223,7 +225,6 @@ export function VideoPlayer({
 
   const ratio =
     width && height ? width / height : media.videoRatio > 0 ? media.videoRatio : 16 / 9;
-  const url = mediaUrl(src);
   // Without a poster, Safari shows a black frame until playback; asking for
   // a time fragment makes it paint the first frame.
   const videoSrc = !poster && !url.startsWith("blob:") && !url.includes("#") ? `${url}#t=0.001` : url;
@@ -258,7 +259,10 @@ export function VideoPlayer({
           ref={videoRef}
           src={videoSrc}
           poster={poster ? mediaUrl(poster) : undefined}
-          preload="metadata"
+          // Even "metadata" makes Chrome fetch a short clip whole, so a player
+          // loads nothing until it is about to scroll into view
+          // (pressing play loads it regardless). Decrypted blobs are local.
+          preload={near || url.startsWith("blob:") ? "metadata" : "none"}
           playsInline
           loop={loop}
           controlsList="nodownload noplaybackrate noremoteplayback"
@@ -376,6 +380,27 @@ function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const ss = String(s).padStart(2, "0");
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+
+/**
+ * True once the element has come within 300px of the viewport
+ * (and stays true). False on the server and on the first client render.
+ */
+function useNearViewport(ref: RefObject<HTMLElement | null>): boolean {
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (near || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: "300px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, near]);
+  return near;
 }
 
 /* ------------------------------------------------------------------ */

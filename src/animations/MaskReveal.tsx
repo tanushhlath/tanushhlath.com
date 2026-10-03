@@ -1,11 +1,10 @@
-import { useMemo, useRef, type ReactNode } from "react";
-import { motion, type MotionStyle } from "framer-motion";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { cn } from "@/lib/cn";
-import { MOTION_TAGS, type MotionPassThrough, type MotionTagName } from "./tags";
-import { useReveal } from "./useReveal";
-import { entranceDelay, maskRevealVariants, type MaskDirection } from "./variants";
+import { plainStyle, type ElementPassThrough, type MotionTagName, type RevealStyle } from "./tags";
+import { useClipExitFromRest, useReveal, useRevealSettled } from "./useReveal";
+import { entranceDelay, maskOpenClip, maskRevealSettleMs, maskRevealStyles, type MaskDirection } from "./variants";
 
-export interface MaskRevealProps extends MotionPassThrough {
+export interface MaskRevealProps extends ElementPassThrough {
   children?: ReactNode;
   /**
    * "vertical" (default): wipes up from the bottom edge scrolling down, down
@@ -27,7 +26,8 @@ export interface MaskRevealProps extends MotionPassThrough {
   className?: string;
   /** Classes for the inner layer that holds the children. */
   contentClassName?: string;
-  style?: MotionStyle;
+  /** CSS for the frame (plain values). */
+  style?: RevealStyle;
   /** Render visible and still. */
   disabled?: boolean;
 }
@@ -44,7 +44,8 @@ export interface MaskRevealProps extends MotionPassThrough {
  *     <ProtectedImage image={cover} className="h-full w-full" />
  *   </MaskReveal>
  *
- * Only clip-path, transform and opacity animate. Reduced motion → a short fade.
+ * Only clip-path, transform and opacity change, as CSS transitions between
+ * inline poses (see variants.ts). Reduced motion → a short fade.
  */
 export function MaskReveal({
   children,
@@ -57,17 +58,19 @@ export function MaskReveal({
   disabled = false,
   className,
   contentClassName,
+  style,
   ...rest
 }: MaskRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const { state, label, reduced, active } = useReveal(ref, { amount, disabled });
-  const effectiveDelay = entranceDelay(delay, state);
-  const { frame, content } = useMemo(
-    () => maskRevealVariants(direction, { delay: effectiveDelay, duration, zoom, reduced }),
-    [direction, effectiveDelay, duration, zoom, reduced]
-  );
-  const initial = active ? "below" : false;
-  const Tag = MOTION_TAGS[as];
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { state, label, reduced, active, pristine } = useReveal(ref, { amount, disabled });
+  const timing = { delay: entranceDelay(delay, state), duration, zoom, reduced, pristine };
+  const settled = useRevealSettled(state, label, maskRevealSettleMs(timing), active);
+  useClipExitFromRest(contentRef, label, settled, active ? maskOpenClip(direction, reduced) : null);
+  useLoadImagesAhead(ref, active);
+  const { frame, content } = active ? maskRevealStyles(direction, label, { ...timing, settled }) : {};
+  // Every allowed tag takes the same attributes; typed as one of them.
+  const Tag = as as "div";
 
   return (
     <Tag
@@ -75,19 +78,37 @@ export function MaskReveal({
       ref={ref}
       className={cn("mask-reveal", className)}
       data-reveal={label}
-      initial={initial}
-      animate={label}
-      variants={frame}
+      style={frame ? { ...plainStyle(style), ...frame } : plainStyle(style)}
     >
-      <motion.div
-        className={cn("mask-reveal__content", contentClassName)}
-        data-reveal=""
-        initial={initial}
-        animate={label}
-        variants={content}
-      >
+      <div ref={contentRef} className={cn("mask-reveal__content", contentClassName)} data-reveal="" style={content}>
         {children}
-      </motion.div>
+      </div>
     </Tag>
   );
+}
+
+/**
+ * The closed wipe clips the content to nothing, and the browser's lazy
+ * loading treats clipped-away images as not visible — so a photo inside
+ * would only start loading once the wipe had finished, and the card would
+ * open empty. Start loading them as the frame (never clipped) comes within
+ * a screen of the viewport instead.
+ */
+function useLoadImagesAhead(ref: RefObject<HTMLElement | null>, enabled: boolean) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!enabled || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        el.querySelectorAll<HTMLImageElement>('img[loading="lazy"]').forEach((img) => {
+          img.loading = "eager";
+        });
+        io.disconnect();
+      },
+      { rootMargin: "100% 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, enabled]);
 }

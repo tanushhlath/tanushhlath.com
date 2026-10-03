@@ -14,7 +14,7 @@ import {
   navigation,
 } from "@/lib/content";
 import { pathOf, splitHref } from "@/routing/paths";
-import type { LabIdea } from "@/types/content";
+import type { LabIdea, LabStatus } from "@/types/content";
 import { LabMargins, LabSketch } from "./sketches";
 
 /** djb2 — the same id always gives the same small tilt (server and client agree). */
@@ -107,24 +107,52 @@ function LabCard({ idea }: { idea: LabIdea }) {
 }
 
 /**
+ * The statuses on the board as a quiet key, in lifecycle order: small
+ * rubber stamps joined by a pencilled dash (idea → … → done). Shown instead
+ * of filter chips when no status holds more than one idea, where every
+ * chip would only isolate a single card that already wears its stamp.
+ * Decorative (the stamps repeat what each card says), so hidden from
+ * assistive tech.
+ */
+function LabKey({ statuses }: { statuses: LabStatus[] }) {
+  return (
+    <ol className="by-lab__key" aria-hidden="true">
+      {statuses.map((status) => (
+        <li key={status} className="by-lab__key-item">
+          <span className="by-stamp" data-status={status}>
+            <span className="by-stamp__label">{labStatusLabels[status].label}</span>
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** A status value from the filter options (the ids are LabStatus keys). */
+const isLabStatus = (value: string): value is LabStatus => value in labStatusLabels;
+
+/**
  * LAB — "Half-formed ideas, on purpose": a creative workspace, not a
  * terminal. A faint cutting-mat grid with a ruler edge, pencil line-work
  * in the margins, and each idea as a taped-down sketch card: a doodle for
  * its state, a rubber status stamp that presses in as the card arrives,
  * a margin note saying what that status means, and a link to wherever the
- * idea went (idea.href). Filter chips narrow the board by status; cards
- * make room for each other instead of snapping.
+ * idea went (idea.href). Once a status holds two or more ideas, filter
+ * chips narrow the board by status (cards make room for each other instead
+ * of snapping); until then a status key sits there instead (LabKey).
  */
 export function LabView() {
   const ideas = getLabIdeas();
   const filters = getLabFilters();
   const [filter, setFilter] = useState("all");
   const reduced = useReducedMotionSafe();
-  const visible = filter === "all" ? ideas : ideas.filter((idea) => idea.status === filter);
+  // Chips only when filtering can group something; one idea per status → the key.
+  const filterable = filters.length > 1 && filters.some((option) => option.count > 1);
+  const visible = !filterable || filter === "all" ? ideas : ideas.filter((idea) => idea.status === filter);
 
   return (
     <div className="by-lab by-shell">
-      {filters.length > 1 && (
+      {filterable ? (
         <Reveal variant="fade" className="by-lab__tools">
           <FilterBar
             label={beyondModes.lab.label}
@@ -135,6 +163,12 @@ export function LabView() {
             onChange={setFilter}
           />
         </Reveal>
+      ) : (
+        filters.length > 1 && (
+          <Reveal variant="fade" className="by-lab__tools">
+            <LabKey statuses={filters.map((option) => option.id).filter(isLabStatus)} />
+          </Reveal>
+        )
       )}
       <Reveal variant="fade" className="by-lab__mat" id="lab-board">
         <span className="by-lab__ruler" aria-hidden="true" />

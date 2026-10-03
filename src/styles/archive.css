@@ -158,7 +158,7 @@
   align-items: baseline;
   gap: 0.4rem;
   margin: 0;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font-size: 0.82rem;
   white-space: nowrap;
 }
@@ -176,7 +176,7 @@
   display: inline-block;
 }
 .ar-count__total {
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 
 .ar-console__row {
@@ -190,7 +190,7 @@
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 
 .ar-console__toggle-row {
@@ -206,7 +206,7 @@
   border: 1px solid var(--ar-line-strong);
   border-radius: 999px;
   background: transparent;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
@@ -422,7 +422,7 @@
   border: 0;
   border-radius: 0.55rem;
   background: transparent;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font: inherit;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -444,7 +444,7 @@
 .ar-years__count {
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
   transition: color 0.2s ease;
 }
 .ar-years__track {
@@ -708,6 +708,16 @@
   transform: scaleX(1);
   opacity: 1;
 }
+/* Text on the tint (light): while the band is in, the row's small grey
+   type, category and date take 8% of --color-paper for 4.5:1 on it. The
+   global tokens stay the owner's values. */
+:root[data-theme="light"] .ar-row:hover,
+:root[data-theme="light"] .ar-row:focus-visible {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 8%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 8%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
 .ar-row:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -939,7 +949,7 @@
   z-index: 40;
   display: flex;
   justify-content: center;
-  padding-inline: var(--ui-gutter);
+  padding-inline: var(--page-gutter);
   pointer-events: none;
 }
 .ar-status {
@@ -960,7 +970,7 @@
 }
 .ar-status__count {
   flex: none;
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font-variant-numeric: tabular-nums;
 }
 .ar-status__count strong {

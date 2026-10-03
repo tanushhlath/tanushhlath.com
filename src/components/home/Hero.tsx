@@ -24,8 +24,9 @@ import { splitName, useRange, type ScrollOffsets } from "./homeUtils";
  * by 0.6 and capped at 0.6 s because the hero is on screen at mount —
  * motionSettings.initialDelayScale / initialDelayMax):
  *   ambient bloom → kicker (0.03 s) → portrait (0.12 s) → name (0.18 s)
- *   → statement (0.3 s) → top bar (SiteChrome; --chrome-enter-delay in
- *   chrome.css, which must stay between the two) → Enter / Explore (0.6 s).
+ *   → statement (0.3 s) → top bar (SiteChrome, timed from the kicker's
+ *   start; --chrome-enter-delay in chrome.css, which must stay between the
+ *   two) → Enter / Explore (0.6 s).
  *
  * Scrolling away, the stage stays pinned for a moment (CSS, home.css) and
  * recedes in depth — the bloom widens and fades slowest, the identity block
@@ -107,7 +108,8 @@ export function Hero() {
               <Portrait className="home-portrait--compact" delay={0.2} />
               <div className="home-hero__kicker-text">
                 {/* 2 — context label */}
-                <Reveal variant="rise" distance={14} delay={0.05}>
+                {/* data-entrance-lead: the top bar's entrance starts with this one (SiteChrome). */}
+                <Reveal variant="rise" distance={14} delay={0.05} data-entrance-lead="">
                   <Kicker className="home-hero__kicker">{site.heroKicker}</Kicker>
                 </Reveal>
                 <Reveal variant="fade" delay={0.45} className="home-hero__place home-hero__place--compact">

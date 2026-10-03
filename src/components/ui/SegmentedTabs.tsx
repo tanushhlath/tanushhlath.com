@@ -7,7 +7,7 @@ import { moveRovingFocus } from "./rovingFocus";
 export interface TabOption {
   value: string;
   label: string;
-  /** Short description shown next to (pill) or under (editorial) the label. */
+  /** Short description shown under the label (hidden on phones). */
   hint?: string;
   /** Number of items behind the tab. */
   count?: number;
@@ -29,19 +29,18 @@ export interface SegmentedTabsProps {
    */
   idPrefix?: string;
   /**
-   * "pill" (default) — compact segmented control, the indicator is a filled pill.
-   * "editorial" — large serif labels with hints underneath, the indicator is a rule.
+   * The composition. "editorial" (the default, and today the only one):
+   * large serif labels with hints underneath, a glowing rule marks the
+   * selected tab. Add a variant here (and its CSS in styles/ui.css) when a
+   * page needs a different look.
    */
-  variant?: "pill" | "editorial";
+  variant?: "editorial";
   className?: string;
 }
 
 /**
- * The lens switcher used by /work (Built/Did/Recognized/All) and /beyond
- * (Now/Next/Lab) — one shared control so the *mechanism* of switching
- * feels consistent, even though what each tab reveals looks nothing
- * alike. Larger and more editorial than FilterBar: this is choosing a
- * lens, not filtering a list.
+ * The lens switcher on /work (Built/Did/Recognized/All). Larger and more
+ * editorial than FilterBar: this is choosing a lens, not filtering a list.
  *
  * A real WAI-ARIA tab list: one Tab stop, ←/→/Home/End move between tabs
  * and select them (automatic activation), the indicator glides to the
@@ -53,7 +52,7 @@ export function SegmentedTabs({
   onChange,
   label,
   idPrefix,
-  variant = "pill",
+  variant = "editorial",
   className,
 }: SegmentedTabsProps) {
   const groupId = useId();

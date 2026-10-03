@@ -946,11 +946,13 @@ const archive = lazy((): ArchiveEntry[] => {
     });
   });
   const kindRank = { project: 0, event: 1, story: 2 } as const;
+  // One shared collator: localeCompare(…, "en") builds a new one per call.
+  const byTitle = new Intl.Collator("en").compare;
   return [...workRows, ...storyRows].sort(
     (a, b) =>
       compareYearDesc(a.year, b.year) ||
       kindRank[a.kind] - kindRank[b.kind] ||
-      a.title.localeCompare(b.title, "en")
+      byTitle(a.title, b.title)
   );
 });
 

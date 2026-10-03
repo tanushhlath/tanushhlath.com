@@ -1,5 +1,5 @@
 import { Reveal, Stagger, StaggerItem } from "@/animations";
-import { MediaCover } from "@/components/media";
+import { MediaCover, fitFor } from "@/components/media";
 import Link from "@/routing/Link";
 import { eventCategories, getAllWork, projectCategories, workCopy, type WorkEntry } from "@/lib/content";
 import { WORK_UI, countLabel } from "./helpers";
@@ -107,6 +107,9 @@ export function AllLens({ state }: { state: WorkState }) {
   );
 }
 
+/** Standard tiles' cover shape (work.css .wk-tile__cover); featured tiles grow with their row. */
+const TILE_RATIO = 16 / 10;
+
 function Tile({ entry, from }: { entry: WorkEntry; from: WorkState }) {
   const date = entry.dateLabel ?? (entry.year !== undefined ? String(entry.year) : undefined);
   const featured = entry.importance === "featured";
@@ -121,6 +124,9 @@ function Tile({ entry, from }: { entry: WorkEntry; from: WorkState }) {
             image={entry.cover}
             title={entry.title}
             label={entry.categoryLabel}
+            // A document far from the tile's shape (a wide email screenshot)
+            // shows whole on the mat instead of being cut mid-word.
+            fit={entry.cover && !featured ? fitFor(entry.cover, TILE_RATIO) : "auto"}
             sizes={featured ? "(min-width: 1024px) 40vw, 100vw" : "(min-width: 1024px) 26vw, (min-width: 640px) 45vw, 100vw"}
           />
         )}

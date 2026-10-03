@@ -1,5 +1,5 @@
 import "@/index.css";
-import { StrictMode } from "react";
+import { StrictMode, startTransition } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter, MemoryRouter } from "react-router-dom";
 import { AppRoutes } from "@/routes";
@@ -72,10 +72,15 @@ const container = document.getElementById("root");
 if (!container) throw new Error('index.html must contain <div id="root"></div>.');
 
 // Built pages arrive with this route already rendered into #root by the
-// prerender step, so React hydrates it. `npm run dev` (empty #root):
-// a normal client render.
+// prerender step, so React hydrates it — as a transition, so it works in
+// short slices and yields to the browser between them instead of holding
+// the main thread in one long task (input and paint stay responsive on
+// slower phones; a tap during hydration hydrates its target first).
+// `npm run dev` (empty #root): a normal client render.
 if (container.firstElementChild) {
-  hydrateRoot(container, app);
+  startTransition(() => {
+    hydrateRoot(container, app);
+  });
 } else {
   createRoot(container).render(app);
 }

@@ -20,13 +20,16 @@
  *   <Reveal>…</Reveal>                                   rise in (default)
  *   <Reveal variant="split-left" delay={0.1} as="section" id="x" className="…">
  *       variants: rise | fade | mask | clip | split-left | split-right | blur | scale | drift | tilt
- *       props: delay, duration, distance, amount (reveal line), as, id, className, style, disabled
+ *       props: delay, duration, distance, amount (reveal line), as, id, className, style (plain CSS), disabled
  *   <Stagger as="ul" gap={0.06} variant="rise"><StaggerItem as="li">…</StaggerItem>…</Stagger>
  *       items reveal as each reaches the screen; items arriving together cascade in order
  *   <TextReveal as="h2" text="A different way in" emphasis="different" className="…" />
  *       masked word-by-word heading (mode="lines": one mask per "\n"-separated line)
  *   <MaskReveal direction="vertical" className="aspect-[4/3] rounded-2xl"><img … /></MaskReveal>
  *       clip-path wipe + settling zoom for images (direction: vertical | horizontal | center)
+ *   All four render plain elements: each state is an inline pose (or, for
+ *   TextReveal, a CSS rule) and CSS transitions move between them on the
+ *   compositor — no animation code runs per frame while things reveal.
  *
  * DEPTH
  *   <Parallax speed={-0.15}><img … /></Parallax>         scroll parallax (negative = lags behind)
@@ -38,7 +41,7 @@
  *
  * HOOKS
  *   const phase = useViewportPhase(ref);                 "before" | "inside" | "after" (changes only on transitions)
- *   const { label, reduced, active } = useReveal(ref);   build a custom reveal: animate={label} with revealVariants()
+ *   const { label, state, reduced, active, pristine } = useReveal(ref);   build a custom reveal with revealStyle() (see useReveal.ts)
  *   const progress = useSectionProgress(ref, "through"); MotionValue 0…1 (ranges: through | enter | cover | exit | center)
  *   const y = useParallax(ref, { speed: 0.2 });          MotionValue px, 0 under reduced motion
  *   const { x, y } = usePointer();                       window pointer, MotionValues -1…1 (smoothed; { smooth: false } = raw)
@@ -53,7 +56,7 @@
  * LOW LEVEL
  *   observeViewport(el, (phase) => …, amount)            imperative phase listener (no React)
  *   subscribeScrollDirection(({ direction, scrolled }) => …)
- *   revealVariants("scale", { delay, reduced })          Framer variants: "below" | "visible" | "above"
+ *   revealStyle("scale", label, { delay, reduced, settled }) inline pose + transition for "below" | "visible" | "above"
  *   revealLabel(phase)                                   phase → variant label
  *   transition={{ duration: DUR.base, ease: EASE.enter }} / useSpring(v, SPRING.tilt)
  *
@@ -62,7 +65,8 @@
  *   in front inside a preserve-3d stage), depth-shadow-sm / -md / -lg, depth-lift (hover lift)
  *   var(--motion-ease-enter | -standard | -cinematic | -exit | -snappy), var(--motion-dur-fast …)
  *   Hooks for CSS: html[data-scroll-dir="up"|"down"], html[data-scrolled="true"|"false"],
- *   [data-reveal="below"|"visible"|"above"] on every reveal
+ *   [data-reveal="below"|"visible"|"above"] on every reveal, [data-reveal-focus] on
+ *   reveals holding keyboard focus
  */
 
 export { EASE, DUR, SPRING, motionSettings, type MotionSettings } from "./tokens";
@@ -98,21 +102,20 @@ export {
 } from "./viewport";
 
 export {
-  revealVariants,
-  groupVariants,
-  maskedTextVariants,
-  maskRevealVariants,
+  revealStyle,
+  revealSettleMs,
+  maskRevealStyles,
+  maskRevealSettleMs,
   revealLabel,
   entranceDelay,
   type RevealVariant,
   type RevealLabel,
   type RevealTiming,
   type MaskDirection,
-  type MaskedTextTiming,
   type MaskRevealTiming,
 } from "./variants";
 
-export { useReveal, type RevealState } from "./useReveal";
+export { useReveal, useRevealSettled, type RevealState } from "./useReveal";
 export { Reveal, type RevealProps } from "./Reveal";
 export { Stagger, StaggerItem, type StaggerProps, type StaggerItemProps } from "./Stagger";
 export { TextReveal, type TextRevealProps } from "./TextReveal";
@@ -132,4 +135,4 @@ export { usePointer, usePointerParallax, usePointerEnabled, type PointerValues, 
 export { Tilt, TiltLayer, type TiltProps, type TiltLayerProps } from "./Tilt";
 export { Marquee, type MarqueeProps } from "./Marquee";
 
-export { MOTION_TAGS, type MotionTagName } from "./tags";
+export { MOTION_TAGS, type MotionTagName, type RevealStyle } from "./tags";

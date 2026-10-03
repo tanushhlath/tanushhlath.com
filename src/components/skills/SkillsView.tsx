@@ -115,6 +115,8 @@ function SkillRow({ skill, open, onToggle }: { skill: Skill; open: boolean; onTo
   const rowId = `skill-${skill.id}`;
   const toggleId = `${rowId}-toggle`;
   const panelId = `${rowId}-proof`;
+  const categoryLabel = skillCategories[skill.category]?.label ?? skill.category;
+  const repeatsName = categoryLabel.trim().toLowerCase() === skill.name.trim().toLowerCase();
   // A few real covers from the evidence, stacked, as a hint of what's inside.
   const preview = groups
     .filter((g) => g.key !== "story")
@@ -148,7 +150,11 @@ function SkillRow({ skill, open, onToggle }: { skill: Skill; open: boolean; onTo
           data-cursor="view"
           data-cursor-label={open ? "Close" : meCopy.skills.open}
         >
-          <span className="me-skill__cat">{skillCategories[skill.category]?.label ?? skill.category}</span>
+          {/* A category named like the skill itself ("Leadership") would just repeat
+              it: the label keeps its space (rows stay aligned) but isn't shown. */}
+          <span className="me-skill__cat" data-repeats={repeatsName || undefined} aria-hidden={repeatsName || undefined}>
+            {categoryLabel}
+          </span>
           <span className="me-skill__name font-display">{skill.name}</span>
           <span className="me-skill__meta">
             {preview.length > 1 && (

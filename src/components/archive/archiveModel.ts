@@ -180,8 +180,11 @@ function matches(entry: ArchiveEntry, f: ArchiveFilters, terms: string[]): boole
 
 const KIND_RANK = { project: 0, event: 1, story: 2 } as const;
 
+// One shared collator: localeCompare(…, "en") builds a new one per call.
+const titleCollator = new Intl.Collator("en", { sensitivity: "base" });
+
 function compareTitle(a: ArchiveEntry, b: ArchiveEntry): number {
-  return a.title.localeCompare(b.title, "en", { sensitivity: "base" });
+  return titleCollator.compare(a.title, b.title);
 }
 
 function sortEntries(list: ArchiveEntry[], sort: ArchiveSort): ArchiveEntry[] {

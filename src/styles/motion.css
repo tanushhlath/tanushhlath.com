@@ -30,6 +30,7 @@
   --motion-dur-base: 550ms; /* DUR.base — standard reveal */
   --motion-dur-slow: 800ms; /* DUR.slow — large media, wipes */
   --motion-dur-cinematic: 1100ms; /* DUR.cinematic — hero moments */
+  --motion-dur-exit: 400ms; /* motionSettings.exitDuration — reveals leaving */
 
   /* Keep equal to FAILSAFE_MS in src/animations/boot.ts. */
   --motion-failsafe-delay: 2.5s;
@@ -62,14 +63,28 @@
 /*
   Every scroll reveal is prerendered in its hidden pose and tagged
   [data-reveal] (value: "below" | "visible" | "above", or "" on inner
-  pieces). If the script never arrives, this one-shot animation shows
-  everything after a short delay; animations override the inline hidden
-  styles. src/animations/boot.ts sets html[data-motion-ready] the moment the
-  script runs, which switches it off. (Without JavaScript at all, the
-  <noscript> style in dev.html does the same instantly.)
+  pieces). The poses are inline styles (Reveal, StaggerItem, MaskReveal —
+  src/animations/variants.ts) or the TextReveal rules below, and CSS
+  transitions move between them. If the script never arrives, this
+  one-shot animation shows everything after a short delay; animations
+  override the inline hidden styles. src/animations/boot.ts sets
+  html[data-motion-ready] the moment the script runs, which switches it
+  off. (Without JavaScript at all, the <noscript> style in dev.html does
+  the same instantly.)
 */
 html:not([data-motion-ready]) [data-reveal] {
   animation: motion-failsafe var(--motion-dur-base) var(--motion-ease-standard) var(--motion-failsafe-delay) forwards;
+}
+
+/*
+  The Home hero's pieces get their own compositor layers until the motion
+  system takes over, so their fail-safe runs on time even while a slow
+  device's main thread is busy loading the app — otherwise they'd freeze
+  mid-way while the (already layered) top bar's fail-safe played first.
+  Only these few elements: layers cost memory.
+*/
+html:not([data-motion-ready]) .home-hero [data-reveal] {
+  will-change: opacity, transform, filter;
 }
 
 @keyframes motion-failsafe {
@@ -79,6 +94,17 @@ html:not([data-motion-ready]) [data-reveal] {
     clip-path: none;
     filter: none;
   }
+}
+
+/*
+  A late start (src/animations/boot.ts: the script arrived after the
+  fail-safe may already have shown the page): every reveal settles
+  instantly. Reveal, StaggerItem and MaskReveal carry their transitions
+  inline, hence !important; Framer's own animations are made instant in
+  boot.ts.
+*/
+html[data-motion-late] [data-reveal] {
+  transition: none !important;
 }
 
 /*
@@ -107,24 +133,20 @@ body {
 /*
   Keyboard focus always lands on something visible. Tabbing scrolls the
   focused element just into view — possibly still under the reveal line —
-  so a hidden reveal holding focus is shown at once.
+  so a hidden reveal holding focus is shown at once. src/animations/
+  viewport.ts marks every reveal around the keyboard-focused element with
+  [data-reveal-focus]. (A :has(:focus-visible) rule would do the same, but
+  it re-checks every waiting reveal's whole subtree on every style change —
+  measurable on long pages.)
 */
-[data-reveal="below"]:focus-visible,
-[data-reveal="above"]:focus-visible {
+[data-reveal-focus],
+[data-reveal-focus] [data-reveal=""] {
   opacity: 1 !important;
   transform: none !important;
   clip-path: none !important;
   filter: none !important;
-}
-/* Separate rule: a browser without :has() drops only this one. */
-[data-reveal="below"]:has(:focus-visible),
-[data-reveal="above"]:has(:focus-visible),
-[data-reveal="below"]:has(:focus-visible) [data-reveal=""],
-[data-reveal="above"]:has(:focus-visible) [data-reveal=""] {
-  opacity: 1 !important;
-  transform: none !important;
-  clip-path: none !important;
-  filter: none !important;
+  /* At once: not through the reveal's own (inline) transitions. */
+  transition: none !important;
 }
 
 /* ================================================================== */
@@ -139,6 +161,17 @@ body {
     gives descenders, accents and italic overhang room inside the clip; the
     matching negative margin cancels it, so the heading's layout and
     line-height are exactly what they'd be without the effect.
+
+    The motion is pure CSS, keyed on the block's data-reveal:
+      visible  words rise into place one after another (the resting state)
+      below    they sink back out of their masks, all at once
+      above    parked over the masks instantly, so re-entry drops in from the top
+    Transitions start from wherever a word is, so a reversal mid-entrance is
+    smooth. Timing comes from TextReveal.tsx (tokens.ts): --text-reveal-delay
+    (before the first word), --text-reveal-gap (between words), and
+    --text-reveal-cap (latest any word starts); --i on each mover is its
+    position. The mover, not .text-reveal__piece, carries the transitions,
+    so page styles on the piece keep their own.
   */
   .text-reveal__mask {
     display: inline-block;
@@ -155,9 +188,34 @@ body {
     margin-block: -0.12em -0.18em;
   }
 
+  .text-reveal__move {
+    --text-reveal-at: calc(
+      var(--text-reveal-delay, 0ms) + min(var(--i, 0) * var(--text-reveal-gap, 45ms), var(--text-reveal-cap, 1200ms))
+    );
+    display: inline-block;
+    transition:
+      transform var(--motion-dur-slow) var(--motion-ease-enter) var(--text-reveal-at),
+      opacity var(--motion-dur-fast) var(--motion-ease-standard) var(--text-reveal-at);
+  }
+
   .text-reveal__piece {
     display: inline-block;
   }
+
+  .text-reveal[data-reveal="below"] .text-reveal__move {
+    transform: translateY(115%);
+    opacity: 0;
+    transition:
+      transform var(--motion-dur-exit) var(--motion-ease-exit),
+      opacity var(--motion-dur-exit) var(--motion-ease-exit);
+  }
+
+  .text-reveal[data-reveal="above"] .text-reveal__move {
+    transform: translateY(-115%);
+    opacity: 0;
+    transition: none;
+  }
+
 
   /* ---- <MaskReveal> ----------------------------------------------- */
 
@@ -326,11 +384,20 @@ body {
 /* ================================================================== */
 
 /*
-  The JS side already turns reveals into short fades and switches off
-  parallax, tilt and pointer depth; .depth-lift handles its own case above.
-  Here: the marquee becomes a still, scrollable strip.
+  The JS side already turns reveals into short fades (variants.ts) and
+  switches off parallax, tilt and pointer depth; .depth-lift handles its
+  own case above.
+  Here: TextReveal headings are simply shown (no movement, no fade — the
+  same from the prerendered page on, so nothing flashes at hydration), and
+  the marquee becomes a still, scrollable strip.
 */
 @media (prefers-reduced-motion: reduce) {
+  .text-reveal .text-reveal__move {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+
   .marquee {
     overflow-x: auto;
     scrollbar-width: thin;

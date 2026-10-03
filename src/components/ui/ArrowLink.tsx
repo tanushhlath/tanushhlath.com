@@ -4,26 +4,26 @@ import { isExternalHref, normalizeHref } from "@/routing/paths";
 import { cn } from "@/lib/cn";
 import { ExternalLink } from "./ExternalLink";
 
-export type ArrowDirection = "right" | "down" | "left" | "up";
+export type ArrowDirection = "right" | "down";
 
 export interface ArrowLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children"> {
   /** Internal path from `paths.*` (or a same-page "#anchor"). External URLs are handled too. */
   href: string;
   children: ReactNode;
   /**
-   * "text"  — inline, underline draws in on hover (default)
+   * "text"  — inline, turns accent blue on hover (default)
    * "pill"  — hairline pill, for secondary calls to action
    * "solid" — filled electric blue, for the one primary action in a view
    */
   variant?: "text" | "pill" | "solid";
-  /** Which way the arrow points. "down" suits "Enter ↓"-style same-page jumps. */
+  /** Which way the arrow points: onward ("right", default) or a same-page jump down ("Enter ↓"). */
   direction?: ArrowDirection;
   /** Label for the contextual cursor. Default "Go". */
   cursorLabel?: string;
   className?: string;
 }
 
-const GLYPH: Record<ArrowDirection, string> = { right: "→", down: "↓", left: "←", up: "↑" };
+const GLYPH: Record<ArrowDirection, string> = { right: "→", down: "↓" };
 
 /**
  * Internal call to action with an arrow that slides out and back in on

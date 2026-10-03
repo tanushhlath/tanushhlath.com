@@ -31,7 +31,7 @@ engineering constraints.
 - **Motion:** use `src/animations/` (reversible, direction-aware reveals —
   never `once: true`), tuned in `src/animations/tokens.ts`. Respect
   reduced motion.
-- **Media:** `public/media/<events|projects>/<id>/`, auto-discovered by
+- **Media:** `public/media/<events|projects>/<id>/` (+ generated `_w/` small copies), auto-discovered by
   `scripts/media-manifest.mjs` (which also strips image metadata). Render
   media only through `src/components/media/`. `private-media/` is never
   published or committed.

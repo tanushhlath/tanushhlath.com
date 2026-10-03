@@ -18,7 +18,7 @@
     4. NOW   the floating board, related work
     5. NEXT  the road (sticky 3D floor) and the horizon bands
     6. LAB   workspace mat, sketch cards, stamps, line-work
-    7. Onward + coda
+    7. Onward (the page ending: the way into the next room)
     8. Responsive
     9. Reduced motion
 */
@@ -127,6 +127,13 @@
 .beyond-page[data-mode="lab"] .by-hero__em {
   color: var(--color-lavender-soft);
 }
+/* A deep link (/beyond/#lab): no room colour until the app has applied the
+   room, so the default room's colour never flashes (the prerendered heading
+   shows at once with reduced motion); then it tints in. */
+html[data-hash-pending] .by-hero__em {
+  color: inherit;
+  transition: none;
+}
 
 .by-hero__intro {
   max-width: 36rem;
@@ -160,7 +167,7 @@
   border: 1px solid var(--by-hair);
   border-radius: var(--by-radius);
   background: color-mix(in srgb, var(--color-ink-raised) 58%, transparent);
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -262,7 +269,7 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   font-variant-numeric: tabular-nums;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
   transition: color 0.4s ease;
 }
 .by-room[data-active="true"] .by-room__index {
@@ -280,13 +287,13 @@
 .by-room__hint {
   font-size: 0.82rem;
   line-height: 1.35;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .by-room[data-active="true"] .by-room__hint {
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
 }
 
 /* --- Emblems (rooms + onward) -------------------------------------- */
@@ -408,6 +415,13 @@
 .by-room-body {
   padding-top: clamp(3rem, 7vw, 5.5rem);
   transform-origin: 50% 0;
+}
+/* A deep link (/beyond/#lab) swaps the prerendered room right after
+   hydration: the outgoing room goes at once, not a frame later. */
+.by-stage[data-switch="instant"][data-mode="now"] > .by-room-body:not([data-mode="now"]),
+.by-stage[data-switch="instant"][data-mode="next"] > .by-room-body:not([data-mode="next"]),
+.by-stage[data-switch="instant"][data-mode="lab"] > .by-room-body:not([data-mode="lab"]) {
+  display: none;
 }
 
 .by-head {
@@ -614,6 +628,16 @@
     linear-gradient(160deg, var(--by-card), color-mix(in srgb, var(--color-ink-raised) 64%, transparent));
   border-color: color-mix(in srgb, transparent, var(--color-azure) 28%);
 }
+/* Text on the tint (light): the lead card's corner light sits under its
+   small count and state, so the card's grey text takes 16% of
+   --color-paper for 4.5:1 there (the rest of Beyond takes 6%,
+   styles/atmosphere.css). The global tokens stay the owner's values. */
+:root[data-theme="light"] .by-now-card[data-slot="hero"] {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 16%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 16%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
 .by-now-card[data-stale] {
   opacity: 0.86;
 }
@@ -748,7 +772,7 @@
   margin: 0;
   padding-bottom: 1px;
   border-bottom: 1px solid color-mix(in srgb, transparent, var(--color-azure) 45%);
-  color: var(--color-paper-dim);
+  color: var(--color-paper-dim-raised);
   transition:
     color 0.25s ease,
     border-color 0.25s ease;
@@ -950,6 +974,15 @@
     color-mix(in srgb, var(--color-ink-raised) 72%, transparent) 100%
   );
 }
+/* Text on the tint (light): the markers travel through the horizon's
+   light, so their small labels take 16% of --color-paper for 4.5:1 in it.
+   The global tokens stay the owner's values. */
+:root[data-theme="light"] .by-road {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 16%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 16%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
 /* The light at the horizon, brightening as you travel. */
 .by-road__glow {
   position: absolute;
@@ -1072,7 +1105,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: var(--color-paper-faint);
+  color: var(--color-paper-faint-raised);
 }
 /* A stem down to the pin that touches the floor. */
 .by-road__pin {
@@ -1274,6 +1307,50 @@
 
 .by-lab__tools {
   margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+/* The status key (when there's nothing to filter): small stamps in
+   lifecycle order, each pressed at its own slight angle, joined by a
+   pencilled dash. The dash trails each stamp, so a wrapped line never
+   starts with one. */
+.by-lab__key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.85rem;
+  padding: 0.3rem 0.25rem;
+}
+.by-lab__key-item {
+  display: inline-flex;
+  align-items: center;
+}
+.by-lab__key-item:not(:last-child)::after {
+  content: "";
+  width: clamp(0.9rem, 2.6vw, 2.25rem);
+  margin-inline: 0.6rem;
+  border-top: 1px dashed var(--by-pencil);
+  opacity: 0.7;
+}
+.by-lab__key .by-stamp {
+  padding: 0.2rem 0.5rem 0.16rem;
+  border-width: 1.5px;
+  outline: none;
+  font-size: 0.58rem;
+  opacity: 0.78;
+  transform: rotate(-4deg);
+  transition: none;
+}
+/* Light: full-strength ink — on paper, faded stamp text drops below 4.5:1.
+   (A card's hidden reveal pose still wins: it is more specific.) */
+:root[data-theme="light"] .by-stamp,
+:root[data-theme="light"] .by-lab__key .by-stamp {
+  opacity: 1;
+}
+.by-lab__key-item:nth-child(even) .by-stamp {
+  transform: rotate(3deg);
+}
+.by-lab__key-item:nth-child(3n) .by-stamp {
+  transform: rotate(-1.5deg);
 }
 
 .by-lab__mat {
@@ -1592,7 +1669,7 @@
 }
 
 /* ================================================================== */
-/* 7. Onward + coda                                                    */
+/* 7. Onward                                                           */
 /* ================================================================== */
 
 .by-onward {
@@ -1690,42 +1767,6 @@
   background: var(--color-azure-dim);
 }
 
-.by-coda {
-  display: grid;
-  gap: clamp(1.5rem, 3vw, 2rem);
-  margin-top: clamp(3.5rem, 8vw, 6rem);
-}
-.by-coda__rule {
-  height: 1px;
-  background: var(--by-hair-strong);
-}
-.by-coda__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem clamp(2rem, 5vw, 4rem);
-}
-.beyond-page .by-coda__link {
-  align-items: flex-end;
-  min-height: 44px;
-}
-.beyond-page .by-coda__link .arrow-link__label {
-  display: inline-grid;
-  gap: 0.3rem;
-}
-.by-coda__label {
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-paper-faint);
-}
-.by-coda__desc {
-  font-family: var(--font-fraunces);
-  font-size: clamp(1.25rem, 2vw, 1.55rem);
-  font-weight: 380;
-  letter-spacing: -0.01em;
-}
-
 /* ================================================================== */
 /* 8. Responsive                                                       */
 /* ================================================================== */
@@ -1746,6 +1787,45 @@
   }
   .by-now__cell:is([data-slot="hero"], [data-slot="wide"]) {
     grid-column: 1 / -1;
+  }
+}
+
+/* Tablet: the lead card spans the board but is short, so the signal can't
+   sit under the text. It gets its own column beside the heading and note
+   (state row and links run full width), so the trace never meets a line
+   of text. */
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  .by-now-card[data-slot="hero"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: clamp(2rem, 5vw, 3rem);
+  }
+  .by-now-card[data-slot="hero"] .by-now-card__state {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+  .by-now-card[data-slot="hero"] .by-now-card__value {
+    grid-area: 2 / 1;
+  }
+  .by-now-card[data-slot="hero"] .by-now-card__note {
+    grid-area: 3 / 1;
+  }
+  /* Free-standing here (not tucked into the card's corner), so the drawing
+     gets padding for the rings to grow into, and the mask is a soft circle
+     around the ring centre: the rings fade out before the box edge and the
+     trace fades in from the left. */
+  .by-now-card[data-slot="hero"] .by-now-card__signal {
+    position: relative;
+    grid-area: 2 / 2 / 4 / 3;
+    align-self: center;
+    width: 100%;
+    padding: 1.5rem 1.75rem 1.75rem 0;
+    -webkit-mask-image: radial-gradient(circle 8.75rem at 61% 61%, #000 58%, transparent);
+    mask-image: radial-gradient(circle 8.75rem at 61% 61%, #000 58%, transparent);
+  }
+  .by-now-card[data-slot="hero"] .by-now-card__foot {
+    grid-area: 4 / 1 / 5 / -1;
+    align-self: end;
   }
 }
 

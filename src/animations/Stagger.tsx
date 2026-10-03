@@ -1,10 +1,9 @@
 import { createElement, useContext, useMemo, useRef, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import type { MotionStyle } from "framer-motion";
 import { StaggerContext, createStaggerGroup, type StaggerSettings } from "./staggerGroup";
-import { MOTION_TAGS, type MotionPassThrough, type MotionTagName } from "./tags";
+import { plainStyle, type ElementPassThrough, type MotionTagName, type RevealStyle } from "./tags";
 import { motionSettings } from "./tokens";
-import { useReveal } from "./useReveal";
-import { entranceDelay, revealVariants, type RevealVariant } from "./variants";
+import { useClipExitFromRest, useReveal, useRevealSettled } from "./useReveal";
+import { entranceDelay, revealOpenClip, revealSettleMs, revealStyle, type RevealVariant } from "./variants";
 
 export interface StaggerProps extends Omit<HTMLAttributes<HTMLElement>, "children" | "className" | "style" | "id"> {
   children?: ReactNode;
@@ -52,45 +51,47 @@ export function Stagger({
   );
 }
 
-export interface StaggerItemProps extends MotionPassThrough {
+export interface StaggerItemProps extends ElementPassThrough {
   children?: ReactNode;
   as?: MotionTagName;
   /** Override the group's variant for this item. */
   variant?: RevealVariant;
   id?: string;
   className?: string;
-  style?: MotionStyle;
+  /** CSS for the element (plain values; its opacity and transform belong to the reveal). */
+  style?: RevealStyle;
   /** Render visible and still. */
   disabled?: boolean;
 }
 
 /** One item of a `<Stagger>`. Outside a group it behaves like `<Reveal>`. */
-export function StaggerItem({ children, as = "div", variant, disabled = false, ...rest }: StaggerItemProps) {
+export function StaggerItem({ children, as = "div", variant, disabled = false, style, ...rest }: StaggerItemProps) {
   const settings = useContext(StaggerContext);
   const ref = useRef<HTMLDivElement>(null);
-  const { state, label, reduced, active } = useReveal(ref, {
+  const { state, label, reduced, active, pristine } = useReveal(ref, {
     amount: settings?.amount,
     disabled,
     group: settings?.group,
   });
-  const delay = entranceDelay((settings?.delay ?? 0) + state.staggerDelay, state);
   const resolvedVariant = variant ?? settings?.variant ?? "rise";
-  const duration = settings?.duration;
-  const distance = settings?.distance;
-  const variants = useMemo(
-    () => revealVariants(resolvedVariant, { delay, duration, distance, reduced }),
-    [resolvedVariant, delay, duration, distance, reduced]
-  );
-  const Tag = MOTION_TAGS[as];
+  const timing = {
+    delay: entranceDelay((settings?.delay ?? 0) + state.staggerDelay, state),
+    duration: settings?.duration,
+    distance: settings?.distance,
+    reduced,
+    pristine,
+  };
+  const settled = useRevealSettled(state, label, revealSettleMs(resolvedVariant, timing), active);
+  useClipExitFromRest(ref, label, settled, active ? revealOpenClip(resolvedVariant, reduced) : null);
+  // Every allowed tag takes the same attributes; typed as one of them.
+  const Tag = as as "div";
 
   return (
     <Tag
       {...rest}
       ref={ref}
       data-reveal={label}
-      initial={active ? "below" : false}
-      animate={label}
-      variants={variants}
+      style={active ? { ...plainStyle(style), ...revealStyle(resolvedVariant, label, { ...timing, settled }) } : plainStyle(style)}
     >
       {children}
     </Tag>

@@ -12,7 +12,7 @@
     numeral   a giant, barely-there year             — Story
     grid      dense dot grid                         — Archive
     sketch    grid + fine line-work                  — Beyond › Lab
-    horizon   a forward-leaning horizon line         — Beyond › Next
+    horizon   a soft glow low on the horizon         — Beyond › Next
     pulse     a slow breathing light                 — Beyond › Now
     glow      soft light that leans toward the pointer — Home, Me, Explore
     vignette, grain                                  — every route
@@ -21,7 +21,8 @@
   work-item, me, beyond, archive, explore, not-found); page sections can
   add a sub-mood with useAtmosphere("beyond-lab"), which arrives as
   .atmo[data-atmo]. Lights and colors glide between moods over ~1.2 s
-  (registered @property values), layers crossfade, nothing snaps.
+  (registered @property values), layers crossfade, nothing snaps — except
+  on page load, where a page (or a deep link) opens directly in its mood.
 
   Performance: layers are painted once and only ever moved with
   transform/translate; hidden layers pause their animations; reduced
@@ -218,7 +219,7 @@
 }
 
 /* A giant year, barely there (set with useAtmosphere("story-2024")). */
-.atmo__numeral span {
+.atmo__year {
   position: absolute;
   right: clamp(2.5rem, 7vw, 8rem);
   bottom: -0.1em;
@@ -259,18 +260,14 @@
   mask: var(--sketch) center / cover no-repeat;
 }
 
-/* Beyond › Next: a horizon that leans forward. */
+/* Beyond › Next: light low on the horizon, far ahead on the right. Only a
+   soft glow: this layer is fixed while the page scrolls over it, so a
+   drawn line here would read as a stray rule cutting through the content
+   (the road viewer in the room draws the actual horizon line). */
 .atmo__horizon {
   background:
-    linear-gradient(
-        to right,
-        transparent,
-        color-mix(in srgb, transparent, var(--atmo-blue) 40%) 58%,
-        color-mix(in srgb, transparent, var(--atmo-violet) 28%) 82%,
-        transparent
-      )
-      0 64% / 100% 1px no-repeat,
-    radial-gradient(ellipse 72% 20% at 70% 64%, color-mix(in srgb, transparent, var(--atmo-blue) 12%), transparent 70%);
+    radial-gradient(ellipse 72% 20% at 70% 64%, color-mix(in srgb, transparent, var(--atmo-blue) 12%), transparent 70%),
+    radial-gradient(ellipse 46% 7% at 74% 64%, color-mix(in srgb, transparent, var(--atmo-violet) 7%), transparent 80%);
   animation: atmo-horizon 20s ease-in-out infinite alternate paused;
 }
 
@@ -330,10 +327,12 @@
 }
 
 /* Story — reflective and archival: warmer charcoal, a timeline ruler,
-   a giant year, a little more paper grain. */
+   a giant year, a little more paper grain. The key light and the grain
+   both brighten the top-left, where the wide rail's small labels sit —
+   stronger than this and they fall below 4.5:1 (dark). */
 .atmo[data-route="story"] {
   --atmo-tint: color-mix(in srgb, transparent, var(--atmo-sepia) 6%);
-  --atmo-key: color-mix(in srgb, transparent, var(--atmo-sepia) 10%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-sepia) 6%);
   --atmo-key-x: 12%;
   --atmo-key-y: 4%;
   --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 7%);
@@ -343,17 +342,30 @@
   --atmo-rim-x: 50%;
   --atmo-rim-y: 108%;
   --atmo-glow: transparent;
+  --atmo-grain-k: 1.1;
+}
+/* Light: the full-strength sepia key and the stronger grain (the dark-mode
+   limits above don't apply on paper). The grey text over it is deepened
+   locally instead — see "Text on the tint" in styles/story.css. */
+:root[data-theme="light"] .atmo[data-route="story"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-sepia) 10%);
   --atmo-grain-k: 1.4;
 }
-.atmo[data-route="story"] :is(.atmo__ruler, .atmo__numeral) {
+/* (Spelled out, not :is(…): a rule ending in :is() is tried against every
+   element of the page on every style change; one ending in a class only
+   against elements with that class.) */
+.atmo[data-route="story"] .atmo__ruler,
+.atmo[data-route="story"] .atmo__numeral {
   opacity: 1;
 }
 
 /* Work — the most energetic room: deeper electric blue, moving fields,
-   depth planes. A single record (work-item) keeps the same world, calmer. */
+   depth planes. A single record (work-item) keeps the same world, calmer.
+   The key light stays at 26%: the top bar's small section count sits in
+   it at the top of the page and needs 4.5:1. */
 .atmo[data-route="work"] {
   --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 7%);
-  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 30%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 26%);
   --atmo-key-x: 88%;
   --atmo-key-y: 4%;
   --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 16%);
@@ -365,6 +377,12 @@
   --atmo-glow: transparent;
   --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 22%);
   --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-violet) 12%);
+}
+/* Light: the full 30% key light (the top bar's count limit above is a
+   dark-mode one). :where keeps the lens moods in styles/work.css in charge
+   of their own key light. */
+:where(:root[data-theme="light"]) .atmo[data-route="work"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-blue) 30%);
 }
 .atmo[data-route="work-item"] {
   --atmo-tint: color-mix(in srgb, transparent, var(--atmo-blue) 4%);
@@ -381,7 +399,8 @@
   --atmo-field-1: color-mix(in srgb, transparent, var(--atmo-blue) 12%);
   --atmo-field-2: color-mix(in srgb, transparent, var(--atmo-violet) 6%);
 }
-.atmo[data-route="work"] :is(.atmo__fields, .atmo__planes) {
+.atmo[data-route="work"] .atmo__fields,
+.atmo[data-route="work"] .atmo__planes {
   opacity: 1;
 }
 .atmo[data-route="work-item"] .atmo__fields {
@@ -396,10 +415,12 @@
   animation-play-state: running;
 }
 
-/* Me — personal and human: softer, warm-dark, a warm glow. */
+/* Me — personal and human: softer, warm-dark, a warm glow. The key light
+   and glow stay low enough for small grey labels to keep 4.5:1 on them
+   (dark; light mode keeps its full warmth, below). */
 .atmo[data-route="me"] {
   --atmo-tint: color-mix(in srgb, transparent, var(--atmo-warm) 3%);
-  --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 10%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 8%);
   --atmo-key-x: 16%;
   --atmo-key-y: 8%;
   --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 8%);
@@ -409,9 +430,18 @@
   --atmo-rim-x: 62%;
   --atmo-rim-y: -6%;
   --atmo-glow: color-mix(in srgb, transparent, var(--atmo-warm) 9%);
-  --atmo-grain-k: 1.15;
+  --atmo-grain-k: 1;
 }
 .atmo[data-route="me"] .atmo__glow {
+  opacity: 0.65;
+}
+/* Light: full strength — the grey text on it is deepened locally instead
+   (see "Text on the tint" in styles/me.css). The grain lightens paper. */
+:root[data-theme="light"] .atmo[data-route="me"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 10%);
+  --atmo-grain-k: 1.15;
+}
+:root[data-theme="light"] .atmo[data-route="me"] .atmo__glow {
   opacity: 0.8;
 }
 
@@ -447,10 +477,12 @@
 }
 
 /* Explore — playful: drifting fields and a glow that follows you.
-   Each lens (below) tints the room differently. */
+   Each lens (below) tints the room differently. On a phone the glow rests
+   over the hero with the key light, so both stay soft enough for the
+   small kicker there to keep 4.5:1 (dark). */
 .atmo[data-route="explore"] {
   --atmo-tint: color-mix(in srgb, transparent, var(--atmo-violet) 3%);
-  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 14%);
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 10%);
   --atmo-key-x: 14%;
   --atmo-key-y: 10%;
   --atmo-fill: color-mix(in srgb, transparent, var(--atmo-blue) 14%);
@@ -469,6 +501,14 @@
   animation-play-state: running;
 }
 .atmo[data-route="explore"] .atmo__glow {
+  opacity: 0.55;
+}
+/* Light: full strength (the kicker limit above is a dark-mode one). :where
+   keeps the lens moods below in charge of their own key light. */
+:where(:root[data-theme="light"]) .atmo[data-route="explore"] {
+  --atmo-key: color-mix(in srgb, transparent, var(--atmo-violet) 14%);
+}
+:root[data-theme="light"] .atmo[data-route="explore"] .atmo__glow {
   opacity: 0.9;
 }
 
@@ -585,6 +625,70 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Text on the tint (light mode)                                       */
+/* ------------------------------------------------------------------ */
+/*
+  On paper, secondary and tertiary grey text have only 4.7:1 on the bare
+  page, so a full-strength mood behind them would pull small grey text
+  under 4.5:1. Instead of fading the moods, the grey text painted over a
+  route's atmosphere (the page and the footer) takes a little of
+  --color-paper: just enough for 4.5:1, with a small margin, on the
+  darkest spot of that mood measured at phone and desktop widths. The
+  tokens in theme.css keep the owner's exact values (#666B76 / #6D6B66);
+  only text on a tint renders slightly deeper, and stays well lighter
+  than primary text.
+
+  Both greys take the same share, so tertiary never reads stronger than
+  secondary; the raised-label step from theme.css is re-applied on top.
+  Brighter local lights (the Home hero's bloom, the Story wash and
+  chapter cards, lit cards on Beyond and Explore) deepen a little more in
+  their own stylesheets — same recipe, look for "Text on the tint".
+  Home, Story, Me, Work, Beyond and Explore need it; Archive's quiet
+  light doesn't.
+*/
+:root[data-theme="light"] .atmo[data-route="home"] ~ main,
+:root[data-theme="light"] .atmo[data-route="home"] ~ .site-footer,
+:root[data-theme="light"] .atmo[data-route="story"] ~ main,
+:root[data-theme="light"] .atmo[data-route="story"] ~ .site-footer {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 5%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 5%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+:root[data-theme="light"] .atmo[data-route="me"] ~ main,
+:root[data-theme="light"] .atmo[data-route="me"] ~ .site-footer {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 4%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 4%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+/* Work: the brightest room — its key light and drifting fields reach
+   every list on the page (and the Recognized results' photo bleed), and
+   the key light shows through the top bar under its section count. */
+:root[data-theme="light"] .atmo[data-route="work"] ~ main,
+:root[data-theme="light"] .atmo[data-route="work"] ~ .site-footer,
+:root[data-theme="light"] .atmo[data-route="work"] ~ .chrome .chrome-bar {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 12%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 12%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+:root[data-theme="light"] .atmo[data-route="beyond"] ~ main,
+:root[data-theme="light"] .atmo[data-route="beyond"] ~ .site-footer {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 6%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 6%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+:root[data-theme="light"] .atmo[data-route="explore"] ~ main,
+:root[data-theme="light"] .atmo[data-route="explore"] ~ .site-footer {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 10%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 10%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+
+/* ------------------------------------------------------------------ */
 /* Motion                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -635,6 +739,16 @@
   }
 }
 
+/* Page load: the prerendered stack carries [data-settling] until the page
+   has settled into its first state (Atmosphere.tsx) — a sub-mood set right
+   after hydration, or by a deep link's #fragment (/beyond/#lab,
+   /explore/#proud), is simply there instead of gliding in. */
+.atmo[data-settling],
+.atmo[data-settling] .atmo__layer,
+.atmo[data-settling] .atmo__glow {
+  transition: none;
+}
+
 /* Theme switch: the wash reveals the new theme's final colors (no glide
    inside the circle); the no-View-Transitions fallback glides at the
    same pace as the rest of the page. */
@@ -652,9 +766,9 @@ html.theme-transitioning .atmo {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .atmo *,
-  .atmo *::before,
-  .atmo *::after {
+  .atmo__layer,
+  .atmo__layer::before,
+  .atmo__layer::after {
     animation: none !important;
   }
 }
