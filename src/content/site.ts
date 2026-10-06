@@ -27,7 +27,6 @@ export const site: SiteConfig = {
   school: "Jayshree Periwal International School",
   location: {
     short: "Born & brought up in Dubai, UAE · Schooling in Jaipur, India",
-    long: "I was born and brought up in Dubai, UAE, where I still live — and I'm at school in Jaipur, India, at Jayshree Periwal International School.",
     home: "Dubai, UAE",
     school: "Jaipur, India",
   },

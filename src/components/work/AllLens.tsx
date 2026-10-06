@@ -83,11 +83,21 @@ export function AllLens({ state }: { state: WorkState }) {
 
             {rich.length > 0 && (
               <Stagger as="ul" className="wk-all__grid" gap={0.06} variant="rise">
-                {rich.map((entry) => (
-                  <StaggerItem as="li" key={entry.id} className="wk-all__cell" data-size={entry.importance}>
-                    <Tile entry={entry} from={state} />
-                  </StaggerItem>
-                ))}
+                {rich.map((entry) => {
+                  // A year with a single tile gets the wide layout, so it
+                  // doesn't sit alone beside two empty columns.
+                  const wide = entry.importance === "featured" || rich.length === 1;
+                  return (
+                    <StaggerItem
+                      as="li"
+                      key={entry.id}
+                      className="wk-all__cell"
+                      data-size={wide ? "featured" : entry.importance}
+                    >
+                      <Tile entry={entry} from={state} wide={wide} />
+                    </StaggerItem>
+                  );
+                })}
               </Stagger>
             )}
 
@@ -110,9 +120,9 @@ export function AllLens({ state }: { state: WorkState }) {
 /** Standard tiles' cover shape (work.css .wk-tile__cover); featured tiles grow with their row. */
 const TILE_RATIO = 16 / 10;
 
-function Tile({ entry, from }: { entry: WorkEntry; from: WorkState }) {
+function Tile({ entry, from, wide }: { entry: WorkEntry; from: WorkState; wide: boolean }) {
   const date = entry.dateLabel ?? (entry.year !== undefined ? String(entry.year) : undefined);
-  const featured = entry.importance === "featured";
+  const featured = wide;
 
   return (
     <RecordLink id={entry.id} href={entry.href} from={from} className="wk-tile" cursorLabel={WORK_UI.open}>

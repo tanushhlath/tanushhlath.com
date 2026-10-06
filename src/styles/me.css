@@ -531,12 +531,16 @@ html[data-hash-pending] .me-care__tab[aria-selected="true"] .me-care__lead {
     linear-gradient(165deg, var(--color-ink-raised), color-mix(in srgb, var(--color-ink-raised-2) 70%, transparent));
   box-shadow: var(--depth-shadow-md);
 }
-/* Light: the panel fades into the page rather than into the darker
-   raised-2, so its secondary text keeps 4.5:1. */
+/* Text on the tint (light): the panel keeps its full warm corner and its
+   fade into raised-2, so its grey note and label take N% of --color-paper
+   for 4.5:1 on the panel's darkest spot (the Me page's 4% isn't enough
+   here). The global tokens stay the owner's exact values; both greys take
+   the same share, so tertiary stays below secondary. */
 :root[data-theme="light"] .me-care__panel {
-  background:
-    radial-gradient(120% 80% at 100% 0%, var(--me-warm), transparent 60%),
-    linear-gradient(165deg, var(--color-ink-raised), color-mix(in srgb, var(--color-ink) 70%, transparent));
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 10%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 10%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 }
 .me-care__panel:focus-visible {
   outline-offset: 4px;

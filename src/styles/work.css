@@ -439,6 +439,13 @@ html[data-hash-pending] .wk-hero__title .wk-hero__verb {
   align-items: center;
   gap: 0.5rem;
 }
+/* Text on the tint (light): the status chip lays its own blue wash over
+   Work's key light (brightest on phones, where the project text sits
+   right under it), so its accent label takes 10% of --color-paper for
+   4.5:1 there — the same recipe as .wk-row__badge. */
+:root[data-theme="light"] .wk-feature__meta .tag--accent {
+  color: color-mix(in srgb, var(--color-paper) 10%, var(--color-azure-soft));
+}
 .wk-feature__index {
   margin-right: 0.35rem;
   font-family: var(--font-display);
@@ -1126,7 +1133,10 @@ a:hover .wk-art__front .wk-art__svg {
   line-clamp: 2;
   overflow: hidden;
 }
+/* Compact rows keep their summary to one line — using the whole column, so
+   a one-sentence summary isn't cut short beside empty space. */
 .wk-row[data-importance="archive"] .wk-row__summary {
+  max-width: none;
   -webkit-line-clamp: 1;
   line-clamp: 1;
 }
@@ -1923,6 +1933,15 @@ a:hover .wk-art__front .wk-art__svg {
 }
 .wk-dock__label {
   position: relative;
+}
+/* Text on the tint (light): the dock floats over the lists at every
+   width, so photos (the rows' photos on phones, covers and results
+   everywhere) pass under its frosted glass and darken it; its labels take
+   34% of --color-paper — 4.5:1 over all but a near-black photo. The
+   global tokens stay the owner's values; the chosen lens keeps its solid
+   pill. */
+:root[data-theme="light"] .wk-dock {
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 34%, var(--paper-dim-base));
 }
 
 /* The ending: the door into the next lens, then the ways out of Work. */

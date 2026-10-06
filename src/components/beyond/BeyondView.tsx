@@ -128,7 +128,6 @@ function beyondIndex(): string | undefined {
 /** The heading of each room: its own title, and for Now the live signal. */
 function RoomHead({ mode }: { mode: BeyondMode }) {
   const copy = beyondModes[mode];
-  const latest = getLatestNowUpdate();
   return (
     <header className="by-head" data-mode={mode}>
       <Reveal variant="fade" className="by-head__kicker">
@@ -152,12 +151,8 @@ function RoomHead({ mode }: { mode: BeyondMode }) {
             <span className="by-live__ring by-live__ring--late" />
             <span className="by-live__dot" />
           </span>
+          {/* The "Updated …" stamp is in the hero, a screen above — not repeated here. */}
           <span className="by-live__text">{copy.intro}</span>
-          {latest && (
-            <span className="by-live__date">
-              {beyondCopy.updatedPrefix} <time dateTime={latest}>{formatMonthYear(latest)}</time>
-            </span>
-          )}
         </Reveal>
       ) : (
         <Reveal as="p" delay={0.16} className="by-head__intro">

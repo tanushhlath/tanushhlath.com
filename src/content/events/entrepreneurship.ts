@@ -176,7 +176,7 @@ export const entrepreneurshipEvents: WorkEvent[] = [
     relatedStory: ["ideas-became-projects", "competitions-to-creation"],
     aliases: ["innovation-competitions"],
     detailsToAdd:
-      "The idea or project you presented each year; team or solo; how you placed at each finale.",
+      "The idea or project you presented each year; team or solo; how you placed at each finale. CHECK: the 2023 certificate used as the cover (3.png) says 'National Semi-Finalist' (rank 1 at state and national level), while this page says you reached the Grand National Finale in both 2023 and 2024 — confirm the 2023 result and adjust the recognition (e.g. 'Semi-finalist 2023, Grand National Finale 2024') or the cover.",
   },
   {
     id: "bits-pilani-bootcamp",

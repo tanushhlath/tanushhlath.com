@@ -294,7 +294,7 @@ export const exploreLenses: Record<ExploreLensKey, ExploreLensCopy> = {
     label: "Show me what I'm proud of",
     short: "Proud",
     headline: "Recognition, and the work underneath it.",
-    description: "Results and recognition, each tied back to the work behind it.",
+    description: "The results I'd point to first — and what each one took.",
   },
 };
 

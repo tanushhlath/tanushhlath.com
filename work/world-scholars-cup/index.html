@@ -34,12 +34,20 @@
         if (location.hash.length > 1 || /[?&]tab=/.test(location.search)) {
           var root = document.documentElement;
           root.setAttribute("data-hash-pending", "");
+          var started = function () {
+            return root.hasAttribute("data-motion-ready") || root.hasAttribute("data-motion-late");
+          };
+          var clear = function () {
+            root.removeAttribute("data-hash-pending");
+          };
           document.addEventListener("DOMContentLoaded", function () {
-            var started = root.hasAttribute("data-motion-ready") || root.hasAttribute("data-motion-late");
-            setTimeout(function () {
-              root.removeAttribute("data-hash-pending");
-            }, started ? 15000 : 0);
+            setTimeout(clear, started() ? 15000 : 0);
           });
+          // A stalled app script also holds DOMContentLoaded back: if the
+          // app still hasn't started after 20 s, show the panels anyway.
+          setTimeout(function () {
+            if (!started()) clear();
+          }, 20000);
         }
       })();
     </script>

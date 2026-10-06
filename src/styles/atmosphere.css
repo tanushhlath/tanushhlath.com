@@ -171,7 +171,9 @@
 .atmo__planes::after {
   content: "";
   position: absolute;
-  border: 1px solid var(--atmo-line);
+  /* Only the upper edge catches the light: a full 1px outline read as an
+     empty card slot beside sparse rows. */
+  box-shadow: inset 0 1px 0 var(--atmo-line);
   border-radius: 28px;
   background: linear-gradient(145deg, color-mix(in srgb, transparent, var(--atmo-blue) 6%), transparent 62%);
   animation: atmo-float 32s ease-in-out infinite alternate paused;
@@ -436,7 +438,8 @@
   opacity: 0.65;
 }
 /* Light: full strength — the grey text on it is deepened locally instead
-   (see "Text on the tint" in styles/me.css). The grain lightens paper. */
+   (see "Text on the tint" at the end of this file). The grain lightens
+   paper. */
 :root[data-theme="light"] .atmo[data-route="me"] {
   --atmo-key: color-mix(in srgb, transparent, var(--atmo-warm) 10%);
   --atmo-grain-k: 1.15;
@@ -631,32 +634,42 @@
   On paper, secondary and tertiary grey text have only 4.7:1 on the bare
   page, so a full-strength mood behind them would pull small grey text
   under 4.5:1. Instead of fading the moods, the grey text painted over a
-  route's atmosphere (the page and the footer) takes a little of
-  --color-paper: just enough for 4.5:1, with a small margin, on the
-  darkest spot of that mood measured at phone and desktop widths. The
-  tokens in theme.css keep the owner's exact values (#666B76 / #6D6B66);
-  only text on a tint renders slightly deeper, and stays well lighter
-  than primary text.
+  route's atmosphere takes a little of --color-paper: just enough for
+  4.5:1, with a small margin, on the darkest spot of that mood measured
+  at phone and desktop widths. The tokens in theme.css keep the owner's
+  exact values (#666B76 / #6D6B66); only text on a tint renders slightly
+  deeper, and stays well lighter than primary text.
 
   Both greys take the same share, so tertiary never reads stronger than
   secondary; the raised-label step from theme.css is re-applied on top.
   Brighter local lights (the Home hero's bloom, the Story wash and
-  chapter cards, lit cards on Beyond and Explore) deepen a little more in
-  their own stylesheets — same recipe, look for "Text on the tint".
-  Home, Story, Me, Work, Beyond and Explore need it; Archive's quiet
-  light doesn't.
+  chapter cards, lit cards on Beyond and Explore) and frosted bars that
+  photos pass under (the top bar's section count, Work's dock) deepen a
+  little more in their own stylesheets — same recipe, look for "Text on
+  the tint". Home, Story, Me, Work (and a Work record's page), Beyond and
+  Explore need it; Archive's quiet light doesn't. The footer keeps the
+  plain tokens: it lays the page colour over the atmosphere before its
+  text starts.
 */
-:root[data-theme="light"] .atmo[data-route="home"] ~ main,
-:root[data-theme="light"] .atmo[data-route="home"] ~ .site-footer,
-:root[data-theme="light"] .atmo[data-route="story"] ~ main,
-:root[data-theme="light"] .atmo[data-route="story"] ~ .site-footer {
+:root[data-theme="light"] .atmo[data-route="home"] ~ main {
   --color-paper-dim: color-mix(in srgb, var(--color-paper) 5%, var(--paper-dim-base));
   --color-paper-faint: color-mix(in srgb, var(--color-paper) 5%, var(--paper-faint-base));
   --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
   --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 }
+/* Story: the timeline's chapter wash is fixed to the screen and lies over
+   the sepia key light, so it reaches every grey line on the page — the
+   hero's ruler and the closing as much as the timeline (styles/story.css). */
+:root[data-theme="light"] .atmo[data-route="story"] ~ main {
+  --color-paper-dim: color-mix(in srgb, var(--color-paper) 11%, var(--paper-dim-base));
+  --color-paper-faint: color-mix(in srgb, var(--color-paper) 11%, var(--paper-faint-base));
+  --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
+}
+/* Me, and a Work record's own page (its calmer Work light sits under the
+   related cards' small meta). */
 :root[data-theme="light"] .atmo[data-route="me"] ~ main,
-:root[data-theme="light"] .atmo[data-route="me"] ~ .site-footer {
+:root[data-theme="light"] .atmo[data-route="work-item"] ~ main {
   --color-paper-dim: color-mix(in srgb, var(--color-paper) 4%, var(--paper-dim-base));
   --color-paper-faint: color-mix(in srgb, var(--color-paper) 4%, var(--paper-faint-base));
   --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
@@ -664,24 +677,21 @@
 }
 /* Work: the brightest room — its key light and drifting fields reach
    every list on the page (and the Recognized results' photo bleed), and
-   the key light shows through the top bar under its section count. */
+   the key light shows through the top bar's frost behind its grey text. */
 :root[data-theme="light"] .atmo[data-route="work"] ~ main,
-:root[data-theme="light"] .atmo[data-route="work"] ~ .site-footer,
 :root[data-theme="light"] .atmo[data-route="work"] ~ .chrome .chrome-bar {
   --color-paper-dim: color-mix(in srgb, var(--color-paper) 12%, var(--paper-dim-base));
   --color-paper-faint: color-mix(in srgb, var(--color-paper) 12%, var(--paper-faint-base));
   --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
   --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 }
-:root[data-theme="light"] .atmo[data-route="beyond"] ~ main,
-:root[data-theme="light"] .atmo[data-route="beyond"] ~ .site-footer {
+:root[data-theme="light"] .atmo[data-route="beyond"] ~ main {
   --color-paper-dim: color-mix(in srgb, var(--color-paper) 6%, var(--paper-dim-base));
   --color-paper-faint: color-mix(in srgb, var(--color-paper) 6%, var(--paper-faint-base));
   --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
   --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
 }
-:root[data-theme="light"] .atmo[data-route="explore"] ~ main,
-:root[data-theme="light"] .atmo[data-route="explore"] ~ .site-footer {
+:root[data-theme="light"] .atmo[data-route="explore"] ~ main {
   --color-paper-dim: color-mix(in srgb, var(--color-paper) 10%, var(--paper-dim-base));
   --color-paper-faint: color-mix(in srgb, var(--color-paper) 10%, var(--paper-faint-base));
   --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));

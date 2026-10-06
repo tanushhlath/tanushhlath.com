@@ -256,22 +256,14 @@
       --st-wash-b 1.4s var(--st-ease);
   }
   /* Light: the chapter's colour washes the page (the dark-mode limit above
-     doesn't apply on paper); the grey text over it is deepened below. */
+     doesn't apply on paper). The wash is fixed to the screen, so it also
+     reaches the hero's ruler above the timeline and the closing below it:
+     all of Story's grey text takes 11% of --color-paper for it
+     (styles/atmosphere.css); the rail and the phone chapter cards take a
+     little more (below). */
   :root[data-theme="light"] .story-timeline {
     --st-wash-a: color-mix(in srgb, transparent, var(--st-tone) 9%);
     --st-wash-b: color-mix(in srgb, transparent, var(--st-tone-2) 5%);
-  }
-  /* Text on the tint (light): grey text over the wash takes 7% of
-     --color-paper (the rest of Story takes 5%, styles/atmosphere.css); the
-     rail, which sits on the wash's centre, and the chapter cards take more
-     (below). Just enough for 4.5:1 on the measured darkest spot — the
-     global tokens stay the owner's exact values, and both greys take the
-     same share so tertiary never reads stronger than secondary. */
-  :root[data-theme="light"] .story-timeline {
-    --color-paper-dim: color-mix(in srgb, var(--color-paper) 7%, var(--paper-dim-base));
-    --color-paper-faint: color-mix(in srgb, var(--color-paper) 7%, var(--paper-faint-base));
-    --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
-    --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
   }
 
   /* The chapter's light, over the Story atmosphere and under the page. */
@@ -475,7 +467,7 @@
     }
     /* Text on the tint (light): the wide rail sits on the wash's centre,
        under the Story key light, so its small grey labels take 12% of
-       --color-paper for 4.5:1 there (the timeline's 7% isn't enough). */
+       --color-paper for 4.5:1 there (a point over the page's 11%). */
     :root[data-theme="light"] .story-rail {
       --color-paper-dim: color-mix(in srgb, var(--color-paper) 12%, var(--paper-dim-base));
       --color-paper-faint: color-mix(in srgb, var(--color-paper) 12%, var(--paper-faint-base));
@@ -647,19 +639,15 @@
   /* Text on the tint (light): the card's chapter lights sit under its
      small kicker, years and chapter list. On a phone the list stacks into
      the brightest corner, so it takes 18% of --color-paper; side by side
-     (48rem+) it sits clear of it and 8% is enough. Tone-coloured labels
-     take a little of --color-paper too. The global tokens stay the
-     owner's exact values. */
-  :root[data-theme="light"] .story-opener {
-    --color-paper-dim: color-mix(in srgb, var(--color-paper) 18%, var(--paper-dim-base));
-    --color-paper-faint: color-mix(in srgb, var(--color-paper) 18%, var(--paper-faint-base));
-    --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
-    --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
-  }
-  @media (min-width: 48rem) {
+     (48rem+) only the kicker is in that light and the page's 11% is
+     enough. Tone-coloured labels take a little of --color-paper too. The
+     global tokens stay the owner's exact values. */
+  @media (max-width: 47.99rem) {
     :root[data-theme="light"] .story-opener {
-      --color-paper-dim: color-mix(in srgb, var(--color-paper) 8%, var(--paper-dim-base));
-      --color-paper-faint: color-mix(in srgb, var(--color-paper) 8%, var(--paper-faint-base));
+      --color-paper-dim: color-mix(in srgb, var(--color-paper) 18%, var(--paper-dim-base));
+      --color-paper-faint: color-mix(in srgb, var(--color-paper) 18%, var(--paper-faint-base));
+      --color-paper-dim-raised: color-mix(in srgb, var(--color-paper) 12%, var(--color-paper-dim));
+      --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 8%, var(--color-paper-faint));
     }
   }
   :root[data-theme="light"] .story-opener__kicker-num,

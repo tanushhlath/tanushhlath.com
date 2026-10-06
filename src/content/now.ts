@@ -6,7 +6,9 @@ import type { NowItem } from "@/types/content";
  * The "this site is alive" list. Update `value`, `note` and `updatedAt`
  * (ISO date, YYYY-MM-DD) whenever something changes — the date is shown,
  * so stale entries look stale. Keep it to roughly 4–7 items: a snapshot,
- * not a log. The first three appear on the homepage.
+ * not a log. The first three appear on the homepage, each with its
+ * one-line `teaser` (the full `note` is only on Beyond → Now, so the
+ * homepage never repeats it word for word).
  *
  * `label` is one of: building, learning, reading, exploring, goal,
  * challenge (words shown for each live in `taxonomy.ts` → nowLabels).
@@ -17,6 +19,7 @@ export const now: NowItem[] = [
     label: "building",
     value: "Digital Skills & Opportunity Initiative",
     note: "I am working with my dad on a planned initiative for students from rural communities in Rajasthan. The first cohort is expected to be around 20 students, with practical training followed by internships and other opportunities.",
+    teaser: "A planned initiative for students from rural communities in Rajasthan.",
     updatedAt: "2026-08-27",
     relatedProjects: ["digital-opportunity"],
   },
@@ -25,6 +28,7 @@ export const now: NowItem[] = [
     label: "learning",
     value: "Indian Computing Olympiad prep",
     note: "I am studying algorithms, computational thinking and advanced problem-solving to prepare for competitive computer science.",
+    teaser: "Algorithms, computational thinking and advanced problem-solving.",
     updatedAt: "2026-08-27",
   },
   {
@@ -32,6 +36,7 @@ export const now: NowItem[] = [
     label: "exploring",
     value: "AI-assisted work and employability",
     note: "I am exploring how basic AI and digital tools can help people with limited technology experience become capable of doing useful, paid work.",
+    teaser: "How basic AI and digital tools can help people do useful, paid work.",
     updatedAt: "2026-08-27",
     relatedProjects: ["digital-opportunity"],
   },

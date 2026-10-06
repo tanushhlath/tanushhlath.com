@@ -401,7 +401,10 @@ export interface NowItem {
   id: string;
   label: NowLabel;
   value: string;
+  /** The full sentence or two — shown on Beyond → Now. */
   note?: string;
+  /** A one-line hook for the homepage's "Right now" cards (which link on to Beyond for the full note). */
+  teaser?: string;
   updatedAt: string; // ISO date, e.g. "2026-09-26"
   relatedProjects?: string[];
   relatedEvents?: string[];
@@ -450,7 +453,6 @@ export interface SiteConfig {
   school: string;
   location: {
     short: string; // e.g. "Born & brought up in Dubai, UAE · Schooling in Jaipur, India"
-    long: string; // full sentence for the Me page
     home: string; // "Dubai, UAE"
     school: string; // "Jaipur, India"
   };

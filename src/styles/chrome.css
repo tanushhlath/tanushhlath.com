@@ -306,6 +306,15 @@ html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-b
   margin-right: 9px;
 }
 
+/* Text on the tint (light): the bar's frost lets a photo scrolling under
+   it darken the surface (to about 84% page colour over a black photo), so
+   the indicator's small grey count and sub-label take 26% of
+   --color-paper — 4.5:1 even then. The global tokens stay the owner's
+   values, and they stay well lighter than the section name. */
+:root[data-theme="light"] .chrome-indicator {
+  --color-paper-faint-raised: color-mix(in srgb, var(--color-paper) 26%, var(--paper-faint-base));
+}
+
 .chrome-bar[data-menu-open] .chrome-indicator {
   opacity: 0;
 }
@@ -1239,6 +1248,10 @@ html:not([data-motion-ready]) .chrome-bar[data-entrance="pending"] :is(.chrome-b
   margin-top: clamp(48px, 8vw, 104px);
   padding: clamp(48px, 7vw, 88px) 0 var(--footer-pad-bottom);
   border-top: 1px solid var(--color-ink-line);
+  /* The page's fixed atmosphere (Work's glass panes, Story's ruler, the
+     Lab's doodles) fades out behind the footer instead of running through
+     its text: the page colour rises over it across the top padding. */
+  background: linear-gradient(to bottom, transparent, var(--color-ink) clamp(48px, 7vw, 88px));
   font-size: 14px;
   color: var(--color-paper-faint);
 }

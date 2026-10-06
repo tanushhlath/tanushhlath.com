@@ -938,12 +938,12 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Floating status pill (appears once the console scrolls away)        */
+/* Floating status pill (bottom; once the console scrolls away)        */
 /* ------------------------------------------------------------------ */
 
 .ar-status-wrap {
   position: fixed;
-  top: calc(var(--chrome-h) + 0.6rem);
+  bottom: max(1rem, env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   z-index: 40;

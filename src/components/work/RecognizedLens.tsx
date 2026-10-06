@@ -92,8 +92,16 @@ interface ResultBlockProps {
   from: WorkState;
 }
 
+/** Lower-case words only, for "does this already say that?" comparisons. */
+const plain = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
 function ResultBlock({ entry, size, align, from }: ResultBlockProps) {
   const { event, recognition, cover } = entry;
+  // Don't echo what the row already says: a title that IS the result
+  // ("Best Boarder Award") links as "Open the full record", and an
+  // organization the title already names ("…by BITS Pilani") isn't repeated.
+  const titleIsResult = plain(event.title) === plain(recognition.result);
+  const showOrg = event.organization && !plain(event.title).includes(plain(event.organization));
   const { num, suffix, rest } = splitResult(recognition.result);
   const headingId = `wk-rec-${event.id}`;
   const meta = [entry.year, entry.categoryLabel, eventTypes[event.type]?.label].filter(Boolean).join(" · ");
@@ -138,13 +146,17 @@ function ResultBlock({ entry, size, align, from }: ResultBlockProps) {
         )}
 
         <Reveal delay={0.18} className="wk-result__source">
-          <RecordLink id={event.id} href={entry.href} from={from} className="wk-result__link">
-            <span className="wk-result__event">{event.title}</span>
+          <RecordLink
+            id={event.id}
+            href={entry.href}
+            from={from}
+            className="wk-result__link"
+            aria-label={titleIsResult ? `${event.title} — ${WORK_UI.openRecord}` : undefined}
+          >
+            <span className="wk-result__event">{titleIsResult ? WORK_UI.openRecord : event.title}</span>
             <OpenArrow className="wk-result__open" />
           </RecordLink>
-          {event.organization && event.organization !== event.title && (
-            <span className="wk-result__org">{event.organization}</span>
-          )}
+          {showOrg && <span className="wk-result__org">{event.organization}</span>}
         </Reveal>
       </div>
 

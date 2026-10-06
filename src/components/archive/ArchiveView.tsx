@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { DUR, EASE, Reveal, useHydrated, useReducedMotionSafe } from "@/animations";
+import { DUR, EASE, Reveal, observeViewport, useHydrated, useReducedMotionSafe } from "@/animations";
 import { ArrowLink } from "@/components/ui";
 import { archiveCopy, pages, workCopy } from "@/lib/content";
 import { useHashState } from "@/routing/useHashState";
@@ -87,6 +87,7 @@ export function ArchiveView() {
   const total = archiveTotal();
 
   const consoleRef = useRef<HTMLDivElement>(null);
+  const codaRef = useRef<HTMLElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -141,16 +142,33 @@ export function ArchiveView() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // The floating status pill appears once the console has scrolled away above.
+  // The floating status pill (bottom of the screen, like Work's lens dock,
+  // so it never covers the row being read) appears once the console has
+  // scrolled away above, and steps aside again when the page's ending
+  // comes into view.
   useEffect(() => {
     const el = consoleRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
+    const end = codaRef.current;
+    if (!el || !end || typeof IntersectionObserver === "undefined") return;
+    let away = false;
+    let atEnd = false;
+    const update = () => setConsoleAway(away && !atEnd);
     const observer = new IntersectionObserver(
-      ([entry]) => setConsoleAway(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      ([entry]) => {
+        away = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        update();
+      },
       { threshold: 0 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+    const stopEnd = observeViewport(end, (phase) => {
+      atEnd = phase !== "before";
+      update();
+    });
+    return () => {
+      observer.disconnect();
+      stopEnd();
+    };
   }, []);
 
   const active = activeFilterKeys(filters);
@@ -206,7 +224,7 @@ export function ArchiveView() {
         )}
       </section>
 
-      <footer className="ar-shell ar-coda">
+      <footer ref={codaRef} className="ar-shell ar-coda">
         <Reveal variant="clip" className="ar-coda__rule" aria-hidden="true" />
         <Reveal className="ar-coda__links">
           <ArrowLink href={paths.explore()} variant="pill" cursorLabel={pages.explore.title}>
@@ -225,9 +243,9 @@ export function ArchiveView() {
               className="ar-status"
               role="region"
               aria-label={ARCHIVE_UI.filters}
-              initial={{ opacity: 0, y: reduced ? 0 : -14 }}
+              initial={{ opacity: 0, y: reduced ? 0 : 14 }}
               animate={{ opacity: 1, y: 0, transition: { duration: DUR.fast, ease: EASE.enter } }}
-              exit={{ opacity: 0, y: reduced ? 0 : -14, transition: { duration: DUR.micro, ease: EASE.exit } }}
+              exit={{ opacity: 0, y: reduced ? 0 : 14, transition: { duration: DUR.micro, ease: EASE.exit } }}
             >
               <span className="ar-status__count">
                 <strong>{results.length}</strong>

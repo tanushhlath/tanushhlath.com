@@ -125,7 +125,6 @@ File: **`src/content/site.ts`**, object `site`.
 | Long bio on the Me page (one string per paragraph) | `bioLong` |
 | School | `school` |
 | Location — one line (homepage, menu, footer) | `location.short` |
-| Location — full sentence (Me page) | `location.long` |
 | Where you live / where you study (used in structured data) | `location.home`, `location.school` |
 | Email | `email` **and** the `mailto:` entry in `social` |
 | LinkedIn (and any other profile) | `social` → `{ label, url }` |
@@ -469,8 +468,11 @@ Add, remove or reorder records freely — the grid rebalances itself.
 
 ## 12. Beyond: Now, Next, Lab
 
-- **Now** — `src/content/now.ts`. Each item: `{ id, label, value, note?, updatedAt, relatedProjects?, relatedEvents? }`.
+- **Now** — `src/content/now.ts`. Each item: `{ id, label, value, note?, teaser?, updatedAt, relatedProjects?, relatedEvents? }`.
   `label` is `building | learning | reading | exploring | goal | challenge`.
+  `note` is the full sentence or two (Beyond → Now); `teaser` is a one-line
+  version for the homepage's "Right now" cards (the first three items),
+  so the homepage never repeats the full note.
   **Update `updatedAt`** (format `"2026-09-27"`) whenever you change an
   item — the page shows the latest date as "Updated September 2026".
 - **Next** — `src/content/next.ts`. `{ id, horizon, title, description }`,
@@ -595,8 +597,10 @@ has only 4.4:1 on `--color-ink-raised`.
 
 Light mode keeps its full atmospheres (the Home hero's bloom, the Story
 wash and chapter cards, each route's lights). Grey text that sits on one
-of those tints is deepened locally instead: the tinted area redefines
-`--color-paper-dim` / `-faint` as the page grey plus a few percent of
+of those tints (or on a frosted bar that photos scroll under — the top
+bar's section count, Work's dock) is deepened locally instead: the tinted
+area redefines `--color-paper-dim` / `-faint` as the page grey plus a few
+percent of
 `--color-paper` — see the "Text on the tint" blocks in
 `styles/atmosphere.css` (one per route) and in the area files. Your values
 in `theme.css` stay exactly as you set them everywhere else. If you change

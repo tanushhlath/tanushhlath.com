@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useRef } from "react";
 import { motion, useTransform, type MotionValue } from "framer-motion";
-import { Reveal, motionSettings, useHydrated, useReducedMotionSafe, useSectionProgress } from "@/animations";
+import { motionSettings, useHydrated, useReducedMotionSafe, useSectionProgress } from "@/animations";
 import { home, site } from "@/lib/content";
 import type { ScrollOffsets } from "./homeUtils";
 import { KickerHeading } from "./parts";
@@ -10,8 +10,8 @@ import { KickerHeading } from "./parts";
  *
  * The short bio is read into light: each word brightens as the paragraph
  * scrolls up the screen, so the text "develops" at reading pace (scroll-
- * linked, so it dims again word by word going back up). Under a quiet
- * line: where I live and where I go to school, in one honest sentence.
+ * linked, so it dims again word by word going back up). Where I live and
+ * where I go to school is already in the hero, so it isn't repeated here.
  */
 
 /** 0 when the paragraph's top reaches 88% down the screen → 1 when its bottom reaches 58%. */
@@ -29,10 +29,6 @@ export function Snapshot() {
         </KickerHeading>
         <div className="home-snapshot__body">
           <ReadingText text={site.bioShort} className="home-snapshot__bio" />
-          <Reveal variant="rise" distance={16} delay={0.1} className="home-snapshot__place">
-            <span className="home-snapshot__pin" aria-hidden="true" />
-            <p>{site.location.long}</p>
-          </Reveal>
         </div>
       </div>
     </section>

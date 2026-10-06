@@ -44,7 +44,8 @@ export function CurrentStatus() {
             <StaggerItem as="li" key={item.id} className="home-now__item" data-now={item.label}>
               <p className="home-now__lead">{nowLabels[item.label].lead}</p>
               <p className="home-now__value">{item.value}</p>
-              {item.note && <p className="home-now__note">{item.note}</p>}
+              {/* The one-line hook only — the full note lives on Beyond → Now. */}
+              {item.teaser && <p className="home-now__note">{item.teaser}</p>}
             </StaggerItem>
           ))}
         </Stagger>
